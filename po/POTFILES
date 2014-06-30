@@ -1,0 +1,14 @@
+	../src/rolekit/__init__.py \
+	../src/rolekit/client.py \
+	../src/rolekit/dbus_utils.py \
+	../src/rolekit/errors.py \
+	../src/rolekit/functions.py \
+	../src/rolekit/config/dbus.py \
+	../src/rolekit/server/__init__.py \
+	../src/rolekit/server/config.py \
+	../src/rolekit/server/decorators.py \
+	../src/rolekit/server/rolekit.py \
+	../src/rolekit/server/server.py \
+	../src/rolekit/server/io/__init__.py \
+	../src/rolekitd \
+	../src/rolekitctl

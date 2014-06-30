@@ -1,0 +1,72 @@
+README for rolekit
+==================
+
+rolekit provides a D-Bus API for roles.
+
+Development:
+------------
+To check out the source repository, you can use:
+
+  git clone git://git.fedorahosted.org/git/rolekit
+
+This will create a local copy of the repository.
+
+
+Working With The Source Repository:
+-----------------------------------
+You can use the source repository directly to test out changes. Change into the 
+rolekit base directory and set the following environment variables.
+
+  export ROLEKIT_DEVEL_ENV=$(pwd)/src
+  export PYTHONPATH=$ROLEKIT_DEVEL_ENV
+
+Install the following requirements or packages:
+
+  gettext
+  intltool
+  glib2: /usr/bin/glib-compile-schemas
+  glib2-devel: /usr/share/aclocal/gsettings.m4
+  systemd-units
+  dbus-python
+  python-slip-dbus (http://fedorahosted.org/python-slip)
+  python-decorator
+
+To be able to create man pages and documentation from docbook files:
+
+  docbook-style-xsl
+
+Use
+
+  ./autogen.sh
+
+in the base directory to create for example src/server/config/__init__.py
+
+Use
+
+  make
+
+to create the documentation and to update the po files.
+
+Now you are done.
+
+
+Links:
+------
+Homepage:          https://
+Git repo browser:  https://
+Git repo:          http://git.fedorahosted.org/git/rolekit.git
+Documentation:     https://
+
+
+Directory Structure:
+--------------------
+config/                 Configuration files
+doc/                    Documentation
+doc/man/                Base directory for man pages
+doc/man/man1/           Man(1) pages
+po/                     Translations
+shell-completion/       Base directory for auto completion scripts
+shell-completion/bash/  Bash auto completion scripts
+src/                    Source tree
+src/server/             Import tree for the sevice and all applications
+src/tests/              Test scripts

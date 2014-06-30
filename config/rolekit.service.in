@@ -1,0 +1,17 @@
+[Unit]
+Description=rolekit - role server
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/rolekit
+ExecStart=@sbindir@/rolekit --nofork --nopid $ROLEKIT_ARGS
+ExecReload=/bin/kill -HUP $MAINPID
+# supress to log debug and error output also to /var/log/messages
+StandardOutput=null
+StandardError=null
+Type=dbus
+BusName=org.fedoraproject.rolekit1
+
+[Install]
+WantedBy=basic.target
+Alias=dbus-org.fedoraproject.rolekit1.service
