@@ -56,9 +56,8 @@ class RolekitD(slip.dbus.service.Object):
     @handle_exceptions
     def __init__(self, *args, **kwargs):
         super(RolekitD, self).__init__(*args, **kwargs)
-        self.roles = [ ]
         self._path = args[0]
-        self.version = ROLEKIT_VERSION
+        self._roles = [ ]
         self.start()
 
     def __del__(self):
@@ -91,10 +90,10 @@ class RolekitD(slip.dbus.service.Object):
                 obj = getattr(mod, "Role")(name, directory, self._path,
                                            "%s/%s" % (DBUS_PATH_ROLES, name))
 
-                if obj.name in self.roles:
-                    log.error("Duplicate name for role '%s'", obj.name)
+                if obj in self._roles:
+                    log.error("Duplicate role '%s'", obj.name)
                 else:
-                    self.roles.append(obj)
+                    self._roles.append(obj)
             except RolekitError as msg:
                 log.error("Failed to load role '%s': %s", name, msg)
                 continue
@@ -103,7 +102,7 @@ class RolekitD(slip.dbus.service.Object):
                 log.exception()
                 continue
 
-#        for role in self.roles:
+#        for role in self._roles:
 #            if role.auto_start == True:
 #                try:
 #                    role.start()
@@ -130,74 +129,88 @@ class RolekitD(slip.dbus.service.Object):
 
     # Property handling
 
-    @dbus_handle_exceptions
-    def _get_property(self, prop):
-        if prop == "version":
+    if hasattr(dbus.service, "property"):
+        # property support in dbus.service
+
+        @dbus.service.property(DBUS_INTERFACE, signature='s')
+        def version(self):
             return ROLEKIT_VERSION
-        elif prop == "roles":
-            return self.roles
-        else:
+
+        @dbus.service.property(DBUS_INTERFACE, signature='ao')
+        def roles(self):
+            return dbus.Array(self._roles, "o")
+
+    else:
+        # no property support in dbus.service
+
+        @dbus_handle_exceptions
+        def _get_property(self, prop):
+            if prop == "version":
+                return ROLEKIT_VERSION
+            elif prop == "roles":
+                return dbus.Array(self._roles, "o")
+            else:
+                raise dbus.exceptions.DBusException(
+                    "org.freedesktop.DBus.Error.AccessDenied: "
+                    "Property '%s' isn't exported (or may not exist)" % prop)
+
+        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ss',
+                             out_signature='v')
+        @dbus_handle_exceptions
+        def Get(self, interface_name, property_name, sender=None):
+            # get a property
+            interface_name = dbus_to_python(interface_name)
+            property_name = dbus_to_python(property_name)
+            log.debug1("Get('%s', '%s')", interface_name, property_name)
+
+            if interface_name != DBUS_INTERFACE:
+                raise dbus.exceptions.DBusException(
+                    "org.freedesktop.DBus.Error.UnknownInterface: "
+                    "rolekitd does not implement %s" % interface_name)
+
+            return self._get_property(property_name)
+
+        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
+                             out_signature='a{sv}')
+        @dbus_handle_exceptions
+        def GetAll(self, interface_name, sender=None):
+            interface_name = dbus_to_python(interface_name)
+            log.debug1("GetAll('%s')", interface_name)
+
+            if interface_name != DBUS_INTERFACE:
+                raise dbus.exceptions.DBusException(
+                    "org.freedesktop.DBus.Error.UnknownInterface: "
+                    "rolekitd does not implement %s" % interface_name)
+
+            return {
+                'version': self._get_property("version"),
+                'roles': self._get_property("roles"),
+            }
+
+
+        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
+        @dbus_handle_exceptions
+        def Set(self, interface_name, property_name, new_value, sender=None):
+            interface_name = dbus_to_python(interface_name)
+            property_name = dbus_to_python(property_name)
+            new_value = dbus_to_python(new_value)
+            log.debug1("Set('%s', '%s', '%s')", interface_name, property_name,
+                       new_value)
+            self.accessCheck(sender)
+
+            if interface_name != DBUS_INTERFACE:
+                raise dbus.exceptions.DBusException(
+                    "org.freedesktop.DBus.Error.UnknownInterface: "
+                    "rolekitd does not implement %s" % interface_name)
+
             raise dbus.exceptions.DBusException(
                 "org.freedesktop.DBus.Error.AccessDenied: "
-                "Property '%s' isn't exported (or may not exist)" % prop)
+                "Property '%s' is not settable" % property_name)
 
-    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ss',
-                         out_signature='v')
-    @dbus_handle_exceptions
-    def Get(self, interface_name, property_name, sender=None):
-        # get a property
-        interface_name = dbus_to_python(interface_name)
-        property_name = dbus_to_python(property_name)
-        log.debug1("Get('%s', '%s')", interface_name, property_name)
-
-        if interface_name != DBUS_INTERFACE:
-            raise dbus.exceptions.DBusException(
-                "org.freedesktop.DBus.Error.UnknownInterface: "
-                "rolekitd does not implement %s" % interface_name)
-
-        return self._get_property(property_name)
-
-    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
-                         out_signature='a{sv}')
-    @dbus_handle_exceptions
-    def GetAll(self, interface_name, sender=None):
-        interface_name = dbus_to_python(interface_name)
-        log.debug1("GetAll('%s')", interface_name)
-
-        if interface_name != DBUS_INTERFACE:
-            raise dbus.exceptions.DBusException(
-                "org.freedesktop.DBus.Error.UnknownInterface: "
-                "rolekitd does not implement %s" % interface_name)
-
-        return {
-            'version': self._get_property("version"),
-            'roles': self._get_property("roles"),
-        }
-        
-
-    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
-    @dbus_handle_exceptions
-    def Set(self, interface_name, property_name, new_value, sender=None):
-        interface_name = dbus_to_python(interface_name)
-        property_name = dbus_to_python(property_name)
-        new_value = dbus_to_python(new_value)
-        log.debug1("Set('%s', '%s', '%s')", interface_name, property_name,
-                   new_value)
-        self.accessCheck(sender)
-
-        if interface_name != DBUS_INTERFACE:
-            raise dbus.exceptions.DBusException(
-                "org.freedesktop.DBus.Error.UnknownInterface: "
-                "rolekitd does not implement %s" % interface_name)
-
-        raise dbus.exceptions.DBusException(
-            "org.freedesktop.DBus.Error.AccessDenied: "
-            "Property '%s' is not settable" % property_name)
-
-    @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
-    def PropertiesChanged(self, interface_name, changed_properties,
-                          invalidated_properties):
-        pass
+        @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
+        def PropertiesChanged(self, interface_name, changed_properties,
+                              invalidated_properties):
+            pass
 
     # Role methods
 
@@ -208,7 +221,7 @@ class RolekitD(slip.dbus.service.Object):
         """ return the role with the name, otherwise raise error """
         name = dbus_to_python(name)
         log.debug1("getNamedRole('%s')", name)
-        for obj in self.roles:
+        for obj in self._roles:
             if obj.name == name:
                 return obj
         raise RoleKitError(INVALID_ROLE, name)
@@ -221,7 +234,7 @@ class RolekitD(slip.dbus.service.Object):
         state = dbus_to_python(state)
         log.debug1("getRolesByState('%s')", state)
         ret_list = [ ]
-        for obj in self.roles:
+        for obj in self._roles:
             if obj.state == state:
                 ret_list.append(obj)
         return ret_list
