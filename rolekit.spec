@@ -46,7 +46,7 @@ make install DESTDIR=%{buildroot}
 
 %files -f %{name}.lang
 %doc COPYING README
-%{_sbindir}/rolekitd
+%{_sbindir}/roled
 %{_bindir}/rolectl
 %defattr(-,root,root)
 %dir %{_sysconfdir}/rolekit

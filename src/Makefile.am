@@ -1,7 +1,7 @@
 SUBDIRS = 
 
 dist_bin_SCRIPTS = rolectl
-dist_sbin_SCRIPTS = rolekitd
+dist_sbin_SCRIPTS = roled
 
 nobase_dist_python_DATA = \
 	rolekit/client.py \
