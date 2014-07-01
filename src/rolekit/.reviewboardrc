@@ -1,0 +1,3 @@
+REVIEWBOARD_URL = "https://fedorahosted.org/reviewboard/"
+REPOSITORY = "rolekit"
+BRANCH = "master"
