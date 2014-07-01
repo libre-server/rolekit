@@ -21,7 +21,13 @@
 from rolekit.server.role import RoleBase
 from rolekit.logger import log
 from rolekit.errors import *
+from rolekit.config import *
 
 class Role(RoleBase):
     def __init__(self, name, directory, *args, **kwargs):
         super(Role, self).__init__(name, directory, *args, **kwargs)
+        self._packages = [ "package1", "@group1" ]
+        self._services = [ "service1" ]
+        self._firewall["services"] = [ "service1" ]
+        self._firewall["ports"] = [ "69/tcp" ]
+        
