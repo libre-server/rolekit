@@ -1,6 +1,6 @@
 SUBDIRS = 
 
-dist_bin_SCRIPTS = rolekitctl
+dist_bin_SCRIPTS = rolectl
 dist_sbin_SCRIPTS = rolekitd
 
 nobase_dist_python_DATA = \

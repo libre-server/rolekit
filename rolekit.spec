@@ -47,9 +47,7 @@ make install DESTDIR=%{buildroot}
 %files -f %{name}.lang
 %doc COPYING README
 %{_sbindir}/rolekitd
-%{_bindir}/rolekitctl
-%dir %{_datadir}/bash-completion/completions
-%{_datadir}/bash-completion/completions/rolekitctl
+%{_bindir}/rolectl
 %defattr(-,root,root)
 %dir %{_sysconfdir}/rolekit
 %dir %{_sysconfdir}/rolekit/roles
