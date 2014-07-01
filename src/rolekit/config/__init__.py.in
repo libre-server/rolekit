@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2007-2014 Red Hat, Inc.
+# Authors:
+# Thomas Woerner <twoerner@redhat.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# translation
+import locale
+try:
+    locale.setlocale(locale.LC_ALL, "")
+except locale.Error:
+    import os
+    os.environ['LC_ALL'] = 'C'
+    locale.setlocale(locale.LC_ALL, "")
+
+DOMAIN = 'rolekit'
+import gettext
+gettext.install(domain=DOMAIN)
+
+# configuration
+DAEMON_NAME = 'rolekit'
+DATADIR = '/usr/share/' + DAEMON_NAME
+COPYRIGHT = '(C) 2010-2014 Red Hat, Inc.'
+VERSION = '@PACKAGE_VERSION@'
+AUTHORS = [
+    "Thomas Woerner <twoerner@redhat.com>",
+    ]
+LICENSE = _(
+    "This program is free software; you can redistribute it and/or modify "
+    "it under the terms of the GNU General Public License as published by "
+    "the Free Software Foundation; either version 2 of the License, or "
+    "(at your option) any later version.\n"
+    "\n"
+    "This program is distributed in the hope that it will be useful, "
+    "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the "
+    "GNU General Public License for more details.\n"
+    "\n"
+    "You should have received a copy of the GNU General Public License "
+    "along with this program.  If not, see <http://www.gnu.org/licenses/>.")
+WEBSITE = 'https://fedorahosted.org/rolekit/'
+
+ETC_ROLEKIT = '/etc/rolekit'
+ROLEKIT_CONF = ETC_ROLEKIT + '/rolekit.conf'
+ETC_ROLEKIT_ROLES = ETC_ROLEKIT + '/roles'
+
+USR_LIB_ROLEKIT = '/usr/lib/rolekit'
+ROLEKIT_ROLES = USR_LIB_ROLEKIT + '/roles'
+
+ROLEKIT_LOGFILE = '/var/log/rolekit'
+
+# fallbacks: will be overloaded by rolekit.conf
