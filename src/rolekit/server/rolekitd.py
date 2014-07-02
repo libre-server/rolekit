@@ -84,9 +84,7 @@ class RolekitD(slip.dbus.service.Object):
             escaped_name = dbus_label_escape(name)
 
             try:
-                if os.path.exists(os.path.join(directory, "role.pyc")):
-                    mod = imp.load_compiled(name, "%s/role.pyc" % directory)
-                elif os.path.exists(os.path.join(directory, "role.py")):
+                if os.path.exists(os.path.join(directory, "role.py")):
                     mod = imp.load_source(name, "%s/role.py" % directory)
 
                 # get Role from module
