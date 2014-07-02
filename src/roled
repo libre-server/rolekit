@@ -36,10 +36,34 @@ from rolekit.errors import *
 from rolekit.functions import rolekitd_is_active
 from rolekit.logger import log, FileLog
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--debug',
+                    nargs='?', const=1, default=0, type=int,
+                    choices=range(1, log.DEBUG_MAX+1),
+                    help="""Enable logging of debug messages.
+                            Additional argument in range 1..%s can be used
+                            to specify log level.""" % log.DEBUG_MAX,
+                    metavar="level")
+parser.add_argument('--debug-gc',
+                    help="""Turn on garbage collector leak information.
+                    The collector runs every 10 seconds and if there are 
+                    leaks, it prints information about the leaks.""",
+                    action="store_true")
+parser.add_argument('--nofork',
+                    help="""Turn off daemon forking,
+                            run as a foreground process.""",
+                    action="store_true")
+parser.add_argument('--nopid',
+                    help="""Disable writing pid file and don't check
+                            for existing server process.""",
+                    action="store_true")
+args = parser.parse_args()
 
+# check for root user
+if os.getuid() != 0:
+    print(_("You need to be root to run %s.") % sys.argv[0])
+    sys.exit(-1)
 
-
-# Set up logging capabilities
 log_file = FileLog(config.ROLEKIT_LOGFILE, "a")
 log.setDateFormat("%Y-%m-%d %H:%M:%S")
 log.setFormat("%(date)s %(label)s%(message)s")
@@ -132,63 +156,4 @@ except IOError as e:
         os.remove(pid_file)
     sys.exit(1)
 
-
-
-def parse_cmdline()
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug',
-                        nargs='?', const=1, default=0, type=int,
-                        choices=range(1, log.DEBUG_MAX+1),
-                        help="""Enable logging of debug messages.
-                                Additional argument in range 1..%s can be used
-                                to specify log level.""" % log.DEBUG_MAX,
-                        metavar="level")
-    parser.add_argument('--debug-gc',
-                        help="""Turn on garbage collector leak information.
-                        The collector runs every 10 seconds and if there are 
-                        leaks, it prints information about the leaks.""",
-                        action="store_true")
-    parser.add_argument('--nofork',
-                        help="""Turn off daemon forking,
-                                run as a foreground process.""",
-                        action="store_true")
-    parser.add_argument('--nopid',
-                        help="""Disable writing pid file and don't check
-                                for existing server process.""",
-                        action="store_true")
-    return parser.parse_args()
-
-def setup_logging()
-    # Set up logging capabilities
-    log_file = FileLog(config.ROLEKIT_LOGFILE, "a")
-    log.setDateFormat("%Y-%m-%d %H:%M:%S")
-    log.setFormat("%(date)s %(label)s%(message)s")
-    log.setInfoLogging("*", log.syslog, [ log.FATAL, log.ERROR ])
-    log.addInfoLogging("*", log_file, [ log.FATAL, log.ERROR ])
-    log.setInfoLogging("*", log_file, [ log.WARNING ])
-    log.setDebugLogLevel(log.NO_INFO)
-    log.setDebugLogLevel(log.NO_DEBUG)
-    log.setDebugLogging("*", log_file, [ i for i in range(1, log.DEBUG_MAX+1) ])
-
-    if args.debug:
-        log.setInfoLogLevel(log.INFO_MAX)
-        log.setDebugLogLevel(args.debug)
-        log.addInfoLogging("*", log_file)
-        log.addDebugLogging("*", log_file)
-        if args.nofork:
-            log.addInfoLogging("*", log.stdout)
-            log.addDebugLogging("*", log.stdout)
-
-def main(argv):
-    # rolekit should only be run as the root user
-    if os.getuid() != 0:
-        print(_("You need to be root to run %s.") % sys.argv[0])
-        sys.exit(-1)
-
-    # Process the command-line arguments
-    args = parse_cmdline()
-
-    sys.exit(0)
-
-if __name__ == '__main__':
-    main()
+sys.exit(0)
