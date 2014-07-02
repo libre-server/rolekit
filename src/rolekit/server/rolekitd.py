@@ -36,7 +36,7 @@ from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
-from rolekit.dbus_utils import dbus_to_python
+from rolekit.dbus_utils import dbus_to_python, dbus_label_escape
 from rolekit.errors import *
 
 ############################################################################
@@ -81,14 +81,20 @@ class RolekitD(slip.dbus.service.Object):
                 continue
 
             log.debug1("Loading role '%s'", name)
+            escaped_name = dbus_label_escape(name)
+
             try:
                 if os.path.exists(os.path.join(directory, "role.pyc")):
                     mod = imp.load_compiled(name, "%s/role.pyc" % directory)
                 elif os.path.exists(os.path.join(directory, "role.py")):
                     mod = imp.load_source(name, "%s/role.py" % directory)
 
-                obj = getattr(mod, "Role")(name, directory, self._path,
-                                           "%s/%s" % (DBUS_PATH_ROLES, name))
+                # get Role from module
+                role = getattr(mod, "Role")
+
+                # create role object
+                obj = role(name, directory, self._path,
+                           "%s/%s" % (DBUS_PATH_ROLES, escaped_name))
 
                 if obj in self._roles:
                     log.error("Duplicate role '%s'", obj.name)

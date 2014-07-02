@@ -22,6 +22,7 @@
 import dbus
 import pwd
 import sys
+import urllib
 
 PY2 = sys.version < '3'
 
@@ -126,3 +127,24 @@ def dbus_to_python(obj):
         return obj
     else:
         raise TypeError("Unhandled %s" % obj)
+
+def dbus_label_escape(label):
+    # Escape labels to only contain characters dbus is able to handle.
+    # The empty string is a special case and returns '_'.
+
+    # Derived from systemd
+    # Copyright (C) 2013 Lennard Poettering
+
+    if len(label) < 0:
+        return "_"
+
+    ret = ""
+    for x in label:
+        if (x >= "a" and x <= "z") or (x >= "A" and x <= "Z") \
+           or (x >= "0" and x <= "9"):
+            ret += x
+        else:
+            # add hex repressentation of the char and replace 0x by _
+            ret += hex(ord(x)).replace("0x", "_")
+
+    return ret
