@@ -32,7 +32,7 @@ rolekit is a server daemon that provides a D-Bus interface and server roles.
 %install
 make install DESTDIR=%{buildroot}
 
-%find_lang %{name} --all-name
+#%find_lang %{name} --all-name
 
 %post
 %systemd_post rolekit.service
@@ -44,7 +44,8 @@ make install DESTDIR=%{buildroot}
 %systemd_postun_with_restart rolekit.service 
 
 
-%files -f %{name}.lang
+#%files -f %{name}.lang
+%files
 %doc COPYING README
 %{_sbindir}/roled
 %{_bindir}/rolectl
@@ -53,10 +54,11 @@ make install DESTDIR=%{buildroot}
 %dir %{_sysconfdir}/rolekit/roles
 %dir %{_prefix}/lib/rolekit
 %dir %{_prefix}/lib/rolekit/roles
+%{_prefix}/lib/rolekit/roles/*/*.py*
 %config(noreplace) %{_sysconfdir}/sysconfig/rolekit
 %{_unitdir}/rolekit.service
 %config(noreplace) %{_sysconfdir}/dbus-1/system.d/rolekit1.conf
-%{_datadir}/polkit-1/actions/org.fedoraproject.Rolekit1.policy
+%{_datadir}/polkit-1/actions/org.fedoraproject.rolekit1.policy
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit/config
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit/server
@@ -65,8 +67,8 @@ make install DESTDIR=%{buildroot}
 %{python_sitelib}/rolekit/config/*.py*
 %{python_sitelib}/rolekit/server/*.py*
 %{python_sitelib}/rolekit/server/io/*.py*
-%{_mandir}/man1/rolekitctl*.1*
-%{_mandir}/man1/rolekit*.1*
+%{_mandir}/man1/role*.1*
+%{_mandir}/man5/role*.5*
 
 
 %changelog

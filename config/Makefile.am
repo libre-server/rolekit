@@ -19,7 +19,7 @@ BUILT_SOURCES = \
 
 all: $(polkit1_action_DATA)
 
-CLEANFILES = *~ *\# .\#* rolekit.service
+CLEANFILES = *~ *\# .\#* rolekit.service roles/*/*~ roles/*/*.py*
 
 DISTCLEANFILES = \
 	$(polkit1_action_DATA)
