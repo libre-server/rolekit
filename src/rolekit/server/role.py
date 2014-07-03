@@ -27,13 +27,12 @@ import dbus
 import dbus.service
 import slip.dbus
 import slip.dbus.service
-import types
 
 from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
-#from rolekit.server.io.rolesettings import RoleSettings
+from rolekit.server.io.rolesettings import RoleSettings
 from rolekit.dbus_utils import dbus_to_python
 from rolekit.errors import *
 
@@ -66,8 +65,7 @@ class RoleBase(slip.dbus.service.Object):
         self._custom_firewall = False
         self._lasterror = ""
 #        self._backup_paths = [ ]
-#        self._settings = RoleSettings()
-        self._settings = { }
+        self._settings = RoleSettings(self._name)
         if not hasattr(dbus.service, "property"):
             self._exported_ro_properties = [ "name", "version", "state",
                                              "packages", "services", "firewall",
@@ -155,7 +153,7 @@ class RoleBase(slip.dbus.service.Object):
             new_value = dbus_to_python(new_value)
             self._check_string_array(new_value)
             self._settings["firewall_zones"] = new_value
-            #self._settings.write()
+            self._settings.write()
             self.PropertiesChanged(DBUS_INTERFACE_ROLES,
                                    { "firewall_zones": new_value }, [ ])
 
@@ -172,7 +170,7 @@ class RoleBase(slip.dbus.service.Object):
             new_value = dbus_to_python(new_value)
             self._check_bool(new_value)
             self._settings["custom_firewall"] = new_value
-            #self._settings.write()
+            self._settings.write()
             self.PropertiesChanged(DBUS_INTERFACE_ROLES,
                                    { "custom_firewall": new_value }, [ ])
 
@@ -193,7 +191,7 @@ class RoleBase(slip.dbus.service.Object):
 #            new_value = dbus_to_python(new_value)
 #            self._check_string_array(new_value)
 #            self._settings["backup_paths"] = new_value
-#            #self._settings.write()
+#            self._settings.write()
 #            self.PropertiesChanged(DBUS_INTERFACE_ROLES,
 #                                   { "backup_paths": new_value }, [ ])
 
