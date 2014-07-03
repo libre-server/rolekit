@@ -34,6 +34,7 @@ Install the following requirements or packages:
 To be able to create man pages and documentation from docbook files:
 
   docbook-style-xsl
+  transifex-client
 
 Use
 
