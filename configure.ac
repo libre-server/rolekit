@@ -66,6 +66,7 @@ AC_CONFIG_FILES([Makefile
 		 doc/Makefile
 		 doc/man/Makefile
 		 doc/man/man1/Makefile
+		 doc/man/man5/Makefile
 		 doc/xml/Makefile
 		 po/Makefile.in
 		 src/rolekit/config/__init__.py

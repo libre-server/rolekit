@@ -8,11 +8,11 @@ man_MANS = $(man1_MANS) $(man5_MANS)
 HTMLS = $(man1_MANS:../man/man1/%.1=../html/%.html) $(man5_MANS:../man/man5/%.5=../html/%.html)
 
 man1_MANS = \
-	../man/man1/rolekitctl.1 \
-	../man/man1/rolekit.1
+	../man/man1/rolectl.1 \
+	../man/man1/roled.1
 
 man5_MANS = \
-	../man/man5/rolekit.conf.5 \
+	../man/man5/rolekit.5 \
 	../man/man5/rolekit.dbus.5 \
 	../man/man5/rolekit.roles.5
 

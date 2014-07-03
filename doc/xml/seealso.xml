@@ -3,7 +3,7 @@
 <!--
   This file is part of rolekit.
 
-  Copyright (C) 2010-2013 Red Hat, Inc.
+  Copyright (C) 2014 Red Hat, Inc.
   Authors:
   Thomas Woerner <twoerner@redhat.com>
 
@@ -26,8 +26,8 @@
 
   <simplelist type="inline">
     <member><citerefentry><refentrytitle>rolekit</refentrytitle><manvolnum>1</manvolnum></citerefentry></member>
-    <member><citerefentry><refentrytitle>rolekitctl</refentrytitle><manvolnum>1</manvolnum></citerefentry></member>
-    <member><citerefentry><refentrytitle>rolekit.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
+    <member><citerefentry><refentrytitle>rolectl</refentrytitle><manvolnum>1</manvolnum></citerefentry></member>
+    <member><citerefentry><refentrytitle>roled</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
     <member><citerefentry><refentrytitle>rolekit.dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
     <member><citerefentry><refentrytitle>rolekit.roles</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
   </simplelist>

@@ -1,5 +1,4 @@
-#SUBDIRS = config doc po src
-SUBDIRS = config src
+SUBDIRS = config doc po src
 
 EXTRA_DIST = \
 	COPYING \
