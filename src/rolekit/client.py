@@ -189,7 +189,7 @@ class RolekitClient(object):
     @handle_exceptions
     def _init_vars(self):
         self.rk = None
-        self.rK-roles = None
+        self.rk_roles = None
         self.connected = False
 
     @handle_exceptions
