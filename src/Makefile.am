@@ -15,7 +15,8 @@ nobase_dist_python_DATA = \
 	rolekit/server/rolekitd.py \
 	rolekit/server/__init__.py \
 	rolekit/server/server.py \
-	rolekit/server/io/__init__.py
+	rolekit/server/io/__init__.py \
+	rolekit/server/io/rolesettings.py
 
 EXTRA_DIST = \
 	rolekit/config/__init__.py.in
