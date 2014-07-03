@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from rolekit.config import *
+from rolekit.config.dbus import *
+from rolekit.server.decorators import *
 from rolekit.server.role import RoleBase
 from rolekit.logger import log
 from rolekit.errors import *
@@ -30,4 +33,3 @@ class Role(RoleBase):
         self._services = [ "service1" ]
         self._firewall["services"] = [ "service1" ]
         self._firewall["ports"] = [ "69/tcp" ]
-        

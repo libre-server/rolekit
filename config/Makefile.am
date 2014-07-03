@@ -29,6 +29,7 @@ EXTRA_DIST = \
 	rolekit.init \
 	rolekit.service.in \
 	rolekit.sysconfig
+	roles/testrole/role.py
 
 INSTALL_TARGETS = install-config
 UNINSTALL_TARGETS = uninstall-config
