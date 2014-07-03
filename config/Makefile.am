@@ -28,7 +28,7 @@ EXTRA_DIST = \
 	$(polkit1_action_FILES) \
 	rolekit.init \
 	rolekit.service.in \
-	rolekit.sysconfig
+	rolekit.sysconfig \
 	roles/testrole/role.py
 
 INSTALL_TARGETS = install-config
