@@ -28,17 +28,17 @@ from rolekit.logger import log
 
 PY2 = sys.version < '3'
 
-def rolekitd_is_active():
-    """ Check if rolekitd is active
+def roled_is_active():
+    """ Check if roled is active
 
-    @return True if there is a rolekitd pid file and the pid is used by rolekitd
+    @return True if there is a roled pid file and the pid is used by roled
     """
 
-    if not os.path.exists("/var/run/rolekitd.pid"):
+    if not os.path.exists("/var/run/roled.pid"):
         return False
 
     try:
-        with open("/var/run/rolekitd.pid", "r") as fd:
+        with open("/var/run/roled.pid", "r") as fd:
             pid = fd.readline()
     except:
         return False
@@ -52,7 +52,7 @@ def rolekitd_is_active():
     except:
         return False
 
-    if "rolekitd" in cmdline:
+    if "roled" in cmdline:
         return True
 
     return False

@@ -12,7 +12,7 @@ nobase_dist_python_DATA = \
 	rolekit/config/dbus.py \
 	rolekit/config/__init__.py \
 	rolekit/server/decorators.py \
-	rolekit/server/rolekitd.py \
+	rolekit/server/roled.py \
 	rolekit/server/__init__.py \
 	rolekit/server/server.py \
 	rolekit/server/io/__init__.py \

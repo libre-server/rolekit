@@ -39,7 +39,7 @@ import slip.dbus
 
 from rolekit.config.dbus import *
 from rolekit.logger import log
-from rolekit.server.rolekitd import RolekitD
+from rolekit.server.roled import RoleD
 
 ############################################################################
 #
@@ -88,7 +88,7 @@ def run_server(debug_gc=False):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SystemBus()
         name = dbus.service.BusName(DBUS_INTERFACE, bus=bus)
-        service = RolekitD(name, DBUS_PATH)
+        service = RoleD(name, DBUS_PATH)
 
         mainloop = GLib.MainLoop()
         slip.dbus.service.set_mainloop(mainloop)

@@ -10,5 +10,5 @@ src/rolekit/server/decorators.py
 src/rolekit/server/rolekit.py
 src/rolekit/server/server.py
 src/rolekit/server/io/__init__.py
-src/rolekitd
-src/rolekitctl
+src/roled
+src/rolectl

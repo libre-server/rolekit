@@ -33,7 +33,7 @@ import argparse
 
 from rolekit import config
 from rolekit.errors import *
-from rolekit.functions import rolekitd_is_active
+from rolekit.functions import roled_is_active
 from rolekit.logger import log, FileLog
 
 parser = argparse.ArgumentParser()
@@ -83,8 +83,8 @@ if args.debug:
         log.addInfoLogging("*", log.stdout)
         log.addDebugLogging("*", log.stdout)
 
-if not args.nopid and rolekitd_is_active():
-    log.fatal(_("Not starting rolekitd, already running."))
+if not args.nopid and roled_is_active():
+    log.fatal(_("Not starting roled, already running."))
     sys.exit(1)
 
 try:

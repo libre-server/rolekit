@@ -41,21 +41,21 @@ from rolekit.errors import *
 
 ############################################################################
 #
-# class RolekitD
+# class RoleD
 #
 ############################################################################
 
-class RolekitD(slip.dbus.service.Object):
-    """RolekitD main class"""
+class RoleD(slip.dbus.service.Object):
+    """RoleD main class"""
 
 #    persistent = True
-    """ Make RolekitD persistent. """
+    """ Make RoleD persistent. """
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
     @handle_exceptions
     def __init__(self, *args, **kwargs):
-        super(RolekitD, self).__init__(*args, **kwargs)
+        super(RoleD, self).__init__(*args, **kwargs)
         self._path = args[0]
         self._roles = [ ]
         self.start()
@@ -170,7 +170,7 @@ class RolekitD(slip.dbus.service.Object):
             if interface_name != DBUS_INTERFACE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "rolekitd does not implement %s" % interface_name)
+                    "roled does not implement %s" % interface_name)
 
             return self._get_property(property_name)
 
@@ -184,7 +184,7 @@ class RolekitD(slip.dbus.service.Object):
             if interface_name != DBUS_INTERFACE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "rolekitd does not implement %s" % interface_name)
+                    "roled does not implement %s" % interface_name)
 
             return {
                 'version': self._get_property("version"),
@@ -205,7 +205,7 @@ class RolekitD(slip.dbus.service.Object):
             if interface_name != DBUS_INTERFACE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "rolekitd does not implement %s" % interface_name)
+                    "roled does not implement %s" % interface_name)
 
             raise dbus.exceptions.DBusException(
                 "org.freedesktop.DBus.Error.AccessDenied: "
