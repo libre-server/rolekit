@@ -1,0 +1,55 @@
+* role instances
+
+* roled suspend with save current states (for automatic wakeup, dbus activation)
+
+* async and simultaneous method call support for role handling
+  - callback structure
+  - threads
+  - locks
+
+* finalize role states
+
+* implement role handling
+  - start
+  - stop
+  - restart
+  - deploy
+  - decommission
+  - update
+
+* implement package handling
+  - installPackages
+
+* implement service handling
+  - startServices
+  - restartServices
+  - stopServices
+
+* implement firewall handling
+  - installFirewall
+  - updateFirewall
+  - uninstallFirewall
+
+* save old settings in case of changes
+  - for updateFirewall, the old firewall settings are needed to make sure only to remove firewall settings, that have been set before by installFirewall
+  - old settings are removed while using the updateFirewall call
+
+* rolectl
+  - roled state
+  - role handlling, state
+  - instance handling, state
+
+* handle role updates
+
+* documentation
+  - rolectl
+  - roled
+  - rolekit.dbus
+  - rolekit.roles
+  - rolekit
+
+* translations
+  - create and upload pot file (to transifex?)
+  - adapt tx-pull target if needed
+  - get translations
+  - enable "%find_lang %{name} --all-name" and "%files -f %{name}.lang" in spec
