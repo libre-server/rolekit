@@ -115,7 +115,7 @@ class RoleBase(slip.dbus.service.Object):
         def name(self):
             return self._name
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='ao')
+        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='i')
         @dbus_handle_exceptions
         def version(self):
             return self._version
