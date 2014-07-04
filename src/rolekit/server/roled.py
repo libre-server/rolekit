@@ -231,10 +231,10 @@ class RoleD(slip.dbus.service.Object):
         raise RoleKitError(INVALID_ROLE, name)
 
     @dbus_service_method(DBUS_INTERFACE, in_signature='s',
-                         out_signature='o')
+                         out_signature='ao')
     @dbus_handle_exceptions
     def getRolesByState(self, state, sender=None):
-        """ return the list of roles that are in the state i """
+        """ return the list of roles that are in a particular state """
         state = dbus_to_python(state)
         log.debug1("getRolesByState('%s')", state)
         ret_list = [ ]
