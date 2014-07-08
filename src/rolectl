@@ -29,9 +29,9 @@ import argparse
 import dbus
 import os
 
-from server.client import *
-from server.errors import *
-from server.functions import joinArgs, splitArgs
+from rolekit.client import *
+from rolekit.errors import *
+from rolekit.functions import joinArgs, splitArgs
 
 def __print(msg=None):
     if msg and not a.quiet:
@@ -78,11 +78,8 @@ def __exception_handler(exception_message):
 Make sure polkit agent is running or run the application as superuser."""
         __print_and_exit(msg, NOT_AUTHORIZED)
     else:
-        code = ServerError.get_code(exception_message)
-        if code in [ ALREADY_ENABLED, NOT_ENABLED, ZONE_ALREADY_SET ]:
-            __print_and_exit("Warning: %s" % exception_message)
-        else:
-            __print_and_exit("Error: %s" % exception_message, code)
+        code = RolekitError.get_code(exception_message)
+        __print_and_exit("Error: %s" % exception_message, code)
 
 parser = argparse.ArgumentParser(usage="see rolectl man page",
                                  add_help=False)
@@ -95,10 +92,11 @@ parser_group_standalone = parser.add_mutually_exclusive_group()
 parser_group_standalone.add_argument("-h", "--help",
                                      action="store_true")
 parser_group_standalone.add_argument("-V", "--version", action="store_true")
+parser_group_standalone.add_argument("-s", "--state", action="store_true")
 
-a = parser.parse_args(args)
+a = parser.parse_args()
 
-options_standalone = a.help or a.version or a.state 
+options_standalone = a.help or a.version or a.state
 
 
 # these are supposed to only write out some output
@@ -119,9 +117,9 @@ if rk.connected == False:
         __print_and_exit ("Rolekit is not running", NOT_RUNNING)
 
 if a.version:
-    __print_and_exit(fw.get_property("version"))
+    __print_and_exit(rk.get_property("version"))
 elif a.state:
-    state = fw.get_property("status")
+    state = rk.get_property("status")
     if state == "RUNNING":
         __print_and_exit ("running")
     else:
