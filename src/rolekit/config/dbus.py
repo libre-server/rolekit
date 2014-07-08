@@ -26,7 +26,7 @@ DBUS_INTERFACE = "org.fedoraproject.rolekit%d" % DBUS_INTERFACE_VERSION
 DBUS_INTERFACE_ROLES = DBUS_INTERFACE+".roles"
 
 DBUS_PATH = "/org/fedoraproject/rolekit%d" % DBUS_INTERFACE_VERSION
-DBUS_PATH_ROLES = DBUS_PATH + "roles"
+DBUS_PATH_ROLES = DBUS_PATH + "/roles"
 
 # Polkit actions
 _PK_ACTION = "org.fedoraproject.rolekit%d" % DBUS_INTERFACE_VERSION
