@@ -57,7 +57,7 @@ def __print_if_verbose(msg=None):
 
 def __usage():
     print ("""
-Usage: server-cmd [OPTIONS...]
+Usage: rolectl [OPTIONS...]
 
 General Options
   -h, --help           Prints a short help text and exists
@@ -84,7 +84,7 @@ Make sure polkit agent is running or run the application as superuser."""
         else:
             __print_and_exit("Error: %s" % exception_message, code)
 
-parser = argparse.ArgumentParser(usage="see server-cmd man page",
+parser = argparse.ArgumentParser(usage="see rolectl man page",
                                  add_help=False)
 
 parser_group_output = parser.add_mutually_exclusive_group()
