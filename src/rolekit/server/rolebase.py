@@ -110,37 +110,37 @@ class RoleBase(slip.dbus.service.Object):
     if hasattr(dbus.service, "property"):
         # property support in dbus.service
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
         @dbus_handle_exceptions
         def name(self):
             return self._name
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='i')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='i')
         @dbus_handle_exceptions
         def version(self):
             return self._version
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
         @dbus_handle_exceptions
         def state(self):
             return self._state
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
         @dbus_handle_exceptions
         def packages(self):
             return dbus.Array(self._packages, "s")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
         @dbus_handle_exceptions
         def services(self):
             return dbus.Array(self._services, "s")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='a{sas}')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sas}')
         @dbus_handle_exceptions
         def firewall(self):
             return dbus.Dictionary(self._firewall, "sas")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
         @dbus_handle_exceptions
         def firewall_zones(self):
             if "firewall_zones" in self._settings:
@@ -154,10 +154,10 @@ class RoleBase(slip.dbus.service.Object):
             self._check_string_array(new_value)
             self._settings["firewall_zones"] = new_value
             self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLES,
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
                                    { "firewall_zones": new_value }, [ ])
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='b')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='b')
         @dbus_handle_exceptions
         def custom_firewall(self):
             if "custom_firewall" in self._settings:
@@ -171,15 +171,15 @@ class RoleBase(slip.dbus.service.Object):
             self._check_bool(new_value)
             self._settings["custom_firewall"] = new_value
             self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLES,
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
                                    { "custom_firewall": new_value }, [ ])
 
-        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
         @dbus_handle_exceptions
         def lasterror(self):
             return self._lasterror
 
-#        @dbus.service.property(DBUS_INTERFACE_ROLES, signature='as')
+#        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
 #        def backup_paths(self):
 #            if "backup_paths" in self._settings:
 #                return dbus.Array(self._settings["backup_paths"], "s")
@@ -192,7 +192,7 @@ class RoleBase(slip.dbus.service.Object):
 #            self._check_string_array(new_value)
 #            self._settings["backup_paths"] = new_value
 #            self._settings.write()
-#            self.PropertiesChanged(DBUS_INTERFACE_ROLES,
+#            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
 #                                   { "backup_paths": new_value }, [ ])
 
     else:
@@ -242,7 +242,7 @@ class RoleBase(slip.dbus.service.Object):
             property_name = dbus_to_python(property_name)
             log.debug1("config.Get('%s', '%s')", interface_name, property_name)
 
-            if interface_name != DBUS_INTERFACE_ROLES:
+            if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
@@ -256,7 +256,7 @@ class RoleBase(slip.dbus.service.Object):
             interface_name = dbus_to_python(interface_name)
             log.debug1("config.GetAll('%s')", interface_name)
 
-            if interface_name != DBUS_INTERFACE_ROLES:
+            if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
@@ -275,7 +275,7 @@ class RoleBase(slip.dbus.service.Object):
             log.debug1("config.Set('%s', '%s', '%s')", interface_name,
                        property_name, new_value)
 
-            if interface_name != DBUS_INTERFACE_ROLES:
+            if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
@@ -353,7 +353,7 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Public methods
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
     @dbus_handle_exceptions
     def start(self, sender=None):
         """start role"""
@@ -361,7 +361,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
     @dbus_handle_exceptions
     def stop(self, sender=None):
         """stop role"""
@@ -369,7 +369,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
     @dbus_handle_exceptions
     def restart(self, sender=None):
         """restart role"""
@@ -377,7 +377,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, in_signature='a{sv}',
+    @dbus_service_method(DBUS_INTERFACE_ROLE, in_signature='a{sv}',
                          out_signature='')
     @dbus_handle_exceptions
     def deploy(self, values, sender=None):
@@ -387,7 +387,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
     @dbus_handle_exceptions
     def decommission(self, sender=None):
         """decommission role"""
@@ -395,7 +395,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLES, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
     @dbus_handle_exceptions
     def update(self, sender=None):
         """update role"""

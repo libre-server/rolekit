@@ -80,24 +80,24 @@ class RolekitClientRole(object):
         self.path = path
         self.dbus_obj = self.bus.get_object(DBUS_INTERFACE, path)
         self.role = dbus.Interface(self.dbus_obj,
-                                   dbus_interface=DBUS_INTERFACE_ROLES)
+                                   dbus_interface=DBUS_INTERFACE_ROLE)
         self.properties = dbus.Interface(
             self.dbus_obj, dbus_interface='org.freedesktop.DBus.Properties')
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
     def get_property(self, prop):
-        return dbus_to_python(self.properties.Get(DBUS_INTERFACE_ROLES, prop))
+        return dbus_to_python(self.properties.Get(DBUS_INTERFACE_ROLE, prop))
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
     def get_properties(self):
-        return dbus_to_python(self.properties.GetAll(DBUS_INTERFACE_ROLES))
+        return dbus_to_python(self.properties.GetAll(DBUS_INTERFACE_ROLE))
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
     def set_property(self, prop, value):
-        self.properties.Set(DBUS_INTERFACE_ROLES, prop, value)
+        self.properties.Set(DBUS_INTERFACE_ROLE, prop, value)
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
@@ -156,7 +156,7 @@ class RolekitClient(object):
             dbus_interface="org.freedesktop.DBus")
 
         for interface in [ DBUS_INTERFACE,
-                           DBUS_INTERFACE_ROLES ]:
+                           DBUS_INTERFACE_ROLE ]:
             self.bus.add_signal_receiver(self._signal_receiver,
                                          dbus_interface=interface,
                                          interface_keyword='interface',
@@ -268,7 +268,7 @@ class RolekitClient(object):
 
         # config signals need special treatment
         # pimp signal name
-        if interface.startswith(DBUS_INTERFACE_ROLES):
+        if interface.startswith(DBUS_INTERFACE_ROLE):
             signal = "config:Role" + signal
 
         for callback in self._callbacks:
