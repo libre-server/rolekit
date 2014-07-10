@@ -23,13 +23,43 @@ from rolekit.config.dbus import *
 from rolekit.server.decorators import *
 from rolekit.server.rolebase import RoleBase
 from rolekit.logger import log
+from rolekit.dbus_utils import *
 from rolekit.errors import *
 from rolekit.config import *
 
 class Role(RoleBase):
+    _DEFAULTS = {
+        "version": 1,
+        "services": [ "service1" ],
+        "packages": [ "package1", "@group1" ],
+        "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
+        "firewall_zones": [ ],
+        "custom_firewall": False,
+        "backup_paths": [ ]
+    }
+
+    @handle_exceptions
     def __init__(self, name, directory, *args, **kwargs):
         super(Role, self).__init__(name, directory, *args, **kwargs)
-        self._packages = [ "package1", "@group1" ]
-        self._services = [ "service1" ]
-        self._firewall["services"] = [ "service1" ]
-        self._firewall["ports"] = [ "69/tcp" ]
+
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}')
+    @dbus_handle_exceptions
+    def deploy(self, values, sender=None):
+        # Call deploy in parent class first, the values are written to
+        # self_settings["new"].
+        super(Role, self).deploy(values)
+
+        # Then do the magic and use the new values.
+        # After successful deployment, move the values from self_settings["new"]
+        # to self_settings["deployed"] and call self._settings.write() to save
+        # this change.
+
+    # The definition of decommision is only needed if there are additional
+    # steps needed
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_handle_exceptions
+    def decommission(self, sender=None):
+        # Do some magic here if needed, then call decommission of parent class
+        # for cleanup: remove settings file, remove from dbus connection and
+        # destroy instance
+        super(Role, self).decommission()
