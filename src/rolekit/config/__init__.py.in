@@ -45,6 +45,8 @@ ROLEKIT_ROLES = USR_LIB_ROLEKIT + '/roles'
 
 ROLEKIT_LOGFILE = '/var/log/rolekit'
 
+MAX_INSTANCES = 1
+
 NASCENT = "nascent"
 DEPLOYED = "deployed"
 READY_TO_START = "ready-to-start"
