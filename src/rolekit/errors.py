@@ -21,6 +21,8 @@
 
 ALREADY_STARTED     =   11
 NOT_STARTED         =   12
+TOO_MANY_INSTANCES  =   13
+NAME_CONFLICT       =   14
 
 COMMAND_FAILED      =   99
 
