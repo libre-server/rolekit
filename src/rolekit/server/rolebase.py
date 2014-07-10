@@ -33,7 +33,7 @@ from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.io.rolesettings import RoleSettings
-from rolekit.dbus_utils import dbus_to_python
+from rolekit.dbus_utils import *
 from rolekit.errors import *
 
 ############################################################################
@@ -43,41 +43,49 @@ from rolekit.errors import *
 ############################################################################
 
 class RoleBase(slip.dbus.service.Object):
-    """Role class"""
+    """Role Instance class"""
 
-#    persistent = True
-    """ Make RolekitD persistent. """
+    _DEFAULTS = {
+        "version": 0,
+        "services": [ ],
+        "packages": [ ],
+        "firewall": { "ports": [ ], "services": [ ] },
+        "firewall_zones": [ ],
+        "custom_firewall": False,
+#        "backup_paths": [ ]
+    }
+    # last_error is in _settings
+
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
     @handle_exceptions
-    def __init__(self, name, directory, *args, **kwargs):
+    def __init__(self, parent, name, type_name, directory, settings,
+                 *args, **kwargs):
         super(RoleBase, self).__init__(*args, **kwargs)
         self._path = args[0]
+        self._parent = parent
         self._name = name
+        self._escaped_name = dbus_label_escape(name)
+        self._type = type_name
+        self._escaped_type = dbus_label_escape(type_name)
+        self._log_prefix = "role.%s.%s" % (self._escaped_type,
+                                           self._escaped_name)
         self._directory = directory
-        self._version = 0
-        self._state = NASCENT
-        self._packages = [ ]
-        self._services = [ ]
-        self._firewall = { "ports": [ ], "services": [ ] }
-        self._firewall_zones = [ ]
-        self._custom_firewall = False
-        self._lasterror = ""
-#        self._backup_paths = [ ]
-        self._settings = RoleSettings(self._name)
+        self._settings = settings
+
+        if not "state" in self._settings:
+            self._settings["state"] = NASCENT
+
         if not hasattr(dbus.service, "property"):
-            self._exported_ro_properties = [ "name", "version", "state",
-                                             "packages", "services", "firewall",
-                                             "lasterror" ]
+            self._exported_ro_properties = [
+                "name", "version", "state", "packages", "services", "firewall",
+                "lasterror"
+            ]
             self._exported_rw_properties = [
                 "firewall_zones", "custom_firewall",
-                # "backup_paths",
+#                "backup_paths",
             ]
-
-    @handle_exceptions
-    def __del__(self):
-        self.remove_from_connection()
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # property check methods
@@ -107,45 +115,100 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Property handling
 
+    # Static method for use in roles and instances
+    #
+    # Usage in roles: <class>.get_dbus_property(<class>, key)
+    #   Returns values from _DEFAULTS as dbus types
+    #
+    # Usage in instances: role.get_dbus_property(role, key)
+    #   Returns values from instance _settings if set, otherwise from _DEFAULTS
+    #   as dbus types
+    #
+    # This method needs to be extended for new role settings.
+    @staticmethod
+    @dbus_handle_exceptions
+    def get_dbus_property(x, prop):
+        if prop == "name":
+            return dbus.String(x._name)
+        elif prop == "type":
+            return dbus.String(x._type)
+        elif prop == "version":
+            return dbus.Int32(x._DEFAULTS["version"])
+        elif prop == "state":
+            if hasattr(x, "_settings") and "state" in x._settings:
+                return dbus.String(x._settings["state"])
+            else:
+                return dbus.String("")
+        elif prop == "packages":
+            return dbus.Array(x._DEFAULTS["packages"], "s")
+        elif prop == "services":
+            return dbus.Array(x._DEFAULTS["services"], "s")
+        elif prop == "firewall":
+            return dbus.Dictionary(x._DEFAULTS["firewall"], "sas")
+        elif prop == "firewall_zones":
+            if hasattr(x, "_settings") and "firewall_zones" in x._settings:
+                return dbus.Array(x._settings["firewall_zones"], "s")
+            return dbus.Array(x._DEFAULTS["firewall_zones"], "s")
+        elif prop == "custom_firewall":
+            if hasattr(x, "_settings") and "custom_firewall" in x._settings:
+                return x._settings["custom_firewall"]
+            return x._DEFAULTS["custom_firewall"]
+#        elif prop == "backup_paths":
+#            if hasattr(x, "_settings") and "backup_paths" in x._settings:
+#                return dbus.Array(x._settings["backup_paths"], "s")
+#            return dbus.Array(x._DEFAULTS["backup_paths"], "s")
+        elif prop == "lasterror":
+            if hasattr(x, "_settings") and "lasterror" in x._settings:
+                return dbus.String(x._settings["lasterror"])
+            else:
+                return ""
+
+        raise dbus.exceptions.DBusException(
+            "org.freedesktop.DBus.Error.AccessDenied: "
+            "Property '%s' isn't exported (or may not exist)" % prop)
+
     if hasattr(dbus.service, "property"):
         # property support in dbus.service
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
         @dbus_handle_exceptions
         def name(self):
-            return self._name
+            return self.get_dbus_property(self, "name")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='i')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def type(self):
+            return self.get_dbus_property(self, "type")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='i')
         @dbus_handle_exceptions
         def version(self):
-            return self._version
+            return self.get_dbus_property(self, "version")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
         @dbus_handle_exceptions
         def state(self):
-            return self._state
+            return self.get_dbus_property(self, "state")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='as')
         @dbus_handle_exceptions
         def packages(self):
-            return dbus.Array(self._packages, "s")
+            return self.get_dbus_property(self, "packages")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='as')
         @dbus_handle_exceptions
         def services(self):
-            return dbus.Array(self._services, "s")
+            return self.get_dbus_property(self, "services")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sas}')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='a{sas}')
         @dbus_handle_exceptions
         def firewall(self):
-            return dbus.Dictionary(self._firewall, "sas")
+            return self.get_dbus_property(self, "firewall")
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='as')
         @dbus_handle_exceptions
         def firewall_zones(self):
-            if "firewall_zones" in self._settings:
-                return dbus.Array(self._settings["firewall_zones"], "s")
-            return dbus.Array(self._firewall_zones, "s")
+            return self.get_dbus_property(self, "firewall_zones")
 
         @firewall_zones.setter
         @dbus_handle_exceptions
@@ -154,15 +217,13 @@ class RoleBase(slip.dbus.service.Object):
             self._check_string_array(new_value)
             self._settings["firewall_zones"] = new_value
             self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
                                    { "firewall_zones": new_value }, [ ])
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='b')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='b')
         @dbus_handle_exceptions
         def custom_firewall(self):
-            if "custom_firewall" in self._settings:
-                return self._settings["custom_firewall"]
-            return self._custom_firewall
+            return self.get_dbus_property(self, "custom_firewall")
 
         @custom_firewall.setter
         @dbus_handle_exceptions
@@ -171,19 +232,17 @@ class RoleBase(slip.dbus.service.Object):
             self._check_bool(new_value)
             self._settings["custom_firewall"] = new_value
             self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
                                    { "custom_firewall": new_value }, [ ])
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
         @dbus_handle_exceptions
         def lasterror(self):
-            return self._lasterror
+            return self.get_dbus_property(self, "lasterror")
 
-#        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='as')
+#        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='as')
 #        def backup_paths(self):
-#            if "backup_paths" in self._settings:
-#                return dbus.Array(self._settings["backup_paths"], "s")
-#            return dbus.Array(self._backup_paths, "s")
+#            return self.get_dbus_property(self, "backup_paths")
 
 #        @backup_paths.setter
 #        @dbus_handle_exceptions
@@ -192,46 +251,11 @@ class RoleBase(slip.dbus.service.Object):
 #            self._check_string_array(new_value)
 #            self._settings["backup_paths"] = new_value
 #            self._settings.write()
-#            self.PropertiesChanged(DBUS_INTERFACE_ROLE,
+#            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
 #                                   { "backup_paths": new_value }, [ ])
 
     else:
         # no property support in dbus.service
-
-        @dbus_handle_exceptions
-        def _get_property(self, prop):
-            if prop in self._exported_ro_properties or \
-               prop in self._exported_rw_properties:
-                if prop == "name":
-                    return self._name
-                elif prop == "version":
-                    return self._version
-                elif prop == "state":
-                    return self._state
-                elif prop == "packages":
-                    return dbus.Array(self._packages, "s")
-                elif prop == "services":
-                    return dbus.Array(self._services, "s")
-                elif prop == "firewall":
-                    return dbus.Dictionary(self._firewall, "sas")
-                elif prop == "firewall_zones":
-                    if "firewall_zones" in self._settings:
-                        return dbus.Array(self._settings["firewall_zones"], "s")
-                    return dbus.Array(self._firewall_zones, "s")
-                elif prop == "custom_firewall":
-                    if "custom_firewall" in self._settings:
-                        return self._settings["custom_firewall"]
-                    return self._custom_firewall
-                elif prop == "lasterror":
-                    return self._lasterror
-#                elif prop == "backup_paths":
-#                    if "backup_paths" in self._settings:
-#                        return dbus.Array(self._settings["backup_paths"], "s")
-#                    return dbus.Array(self._backup_paths, "s")
-
-            raise dbus.exceptions.BusException(
-                "org.freedesktop.DBus.Error.AccessDenied: "
-                "Property '%s' isn't exported (or may not exist)" % prop)
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ss',
                              out_signature='v')
@@ -242,12 +266,12 @@ class RoleBase(slip.dbus.service.Object):
             property_name = dbus_to_python(property_name)
             log.debug1("config.Get('%s', '%s')", interface_name, property_name)
 
-            if interface_name != DBUS_INTERFACE_ROLE:
+            if interface_name != DBUS_INTERFACE_ROLE_INSTANCE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
 
-            return self._get_property(property_name)
+            return self.get_dbus_property(self, property_name)
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
                              out_signature='a{sv}')
@@ -256,14 +280,14 @@ class RoleBase(slip.dbus.service.Object):
             interface_name = dbus_to_python(interface_name)
             log.debug1("config.GetAll('%s')", interface_name)
 
-            if interface_name != DBUS_INTERFACE_ROLE:
+            if interface_name != DBUS_INTERFACE_ROLE_INSTANCE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
 
             ret = { }
             for name in self._exported_ro_properties + self._exported_rw_properties:
-                ret[name] = self._get_property(name)
+                ret[name] = self.get_dbus_property(self, name)
             return ret
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
@@ -275,7 +299,7 @@ class RoleBase(slip.dbus.service.Object):
             log.debug1("config.Set('%s', '%s', '%s')", interface_name,
                        property_name, new_value)
 
-            if interface_name != DBUS_INTERFACE_ROLE:
+            if interface_name != DBUS_INTERFACE_ROLE_INSTANCE:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
@@ -309,95 +333,117 @@ class RoleBase(slip.dbus.service.Object):
     # Private methods
 
     @handle_exceptions
+    def get_name(self):
+        return self._name
+
+    @handle_exceptions
+    def get_state(self):
+        if "state" in self._settings:
+            return self._settings["state"]
+        return ""
+
+    @handle_exceptions
     def installPackages(self):
         """install packages"""
-        log.debug1("roles.%s.installPackages()", self._name)
+        log.debug1("%s.installPackages()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def startServices(self):
         """start services"""
-        log.debug1("roles.%s.startServices()", self._name)
+        log.debug1("%s.startServices()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def restartServices(self):
         """restart services"""
-        log.debug1("roles.%s.restartServices()", self._name)
+        log.debug1("%s.restartServices()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def stopServices(self):
         """stopServices"""
-        log.debug1("roles.%s.stopServices()", self._name)
+        log.debug1("%s.stopServices()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def installFirewall(self):
         """install firewall"""
-        log.debug1("roles.%s.installFirewall()", self._name)
+        log.debug1("%s.installFirewall()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def updateFirewall(self):
         """update firewall"""
-        log.debug1("roles.%s.updateFirewall()", self._name)
+        log.debug1("%s.updateFirewall()", self._log_prefix)
         raise NotImplementedError()
 
     @handle_exceptions
     def uninstallFirewall(self):
         """uninstall firewall"""
-        log.debug1("roles.%s.uninstallFirewall()", self._name)
+        log.debug1("%s.uninstallFirewall()", self._log_prefix)
         raise NotImplementedError()
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Public methods
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
+    @dbus.service.signal(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+    @dbus_handle_exceptions
+    def StateChanged(self, state):
+        log.debug1("%s.StateChanged('%s')", self._log_prefix, state)
+
+
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def start(self, sender=None):
         """start role"""
-        log.debug1("roles.%s.start()", self._name)
+        log.debug1("%s.start()", self._log_prefix)
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def stop(self, sender=None):
         """stop role"""
-        log.debug1("roles.%s.stop()", self._name)
+        log.debug1("%s.stop()", self._log_prefix)
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def restart(self, sender=None):
         """restart role"""
-        log.debug1("roles.%s.restart()", self._name)
+        log.debug1("%s.restart()", self._log_prefix)
         raise NotImplementedError()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, in_signature='a{sv}',
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
                          out_signature='')
     @dbus_handle_exceptions
     def deploy(self, values, sender=None):
         """deploy role"""
         values = dbus_to_python(values)
-        log.debug1("roles.%s.deploy(%s)", values, self._name)
-        raise NotImplementedError()
+        log.debug1("%s.deploy(%s)", self._log_prefix, values)
+        for x in self._DEFAULTS:
+            self._settings[x] = self._DEFAULTS[x]
+
+        self._settings["new"] = values
+        self._settings.write()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def decommission(self, sender=None):
         """decommission role"""
-        log.debug1("roles.%s.decommission()", self._name)
-        raise NotImplementedError()
+        log.debug1("%s.decommission()", self._log_prefix)
+        self._settings.remove()
+        self.remove_from_connection()
+        self._parent.remove_instance(self)
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def update(self, sender=None):
         """update role"""
-        log.debug1("roles.%s.update()", self._name)
+        log.debug1("%s.update()", self._log_prefix)
         raise NotImplementedError()

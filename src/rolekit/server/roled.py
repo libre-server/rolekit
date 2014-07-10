@@ -24,7 +24,7 @@ from gi.repository import GLib, GObject
 import sys
 sys.modules['gobject'] = GObject
 
-import os
+import os, errno
 import imp
 
 import dbus
@@ -36,6 +36,7 @@ from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
+from rolekit.server.dbusrole import *
 from rolekit.dbus_utils import dbus_to_python, dbus_label_escape
 from rolekit.errors import *
 
@@ -48,8 +49,6 @@ from rolekit.errors import *
 class RoleD(slip.dbus.service.Object):
     """RoleD main class"""
 
-#    persistent = True
-    """ Make RoleD persistent. """
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
@@ -58,6 +57,7 @@ class RoleD(slip.dbus.service.Object):
         super(RoleD, self).__init__(*args, **kwargs)
         self._path = args[0]
         self._roles = [ ]
+        self._instances = [ ]
         self.start()
 
     def __del__(self):
@@ -68,9 +68,23 @@ class RoleD(slip.dbus.service.Object):
         """ starts rolekit """
         log.debug1("start()")
 
+        try:
+            os.makedirs(ETC_ROLEKIT_ROLES)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                if not os.path.isdir(ETC_ROLEKIT_ROLES):
+                    log.fatal("'%s' is not a directory.", e.strerror)
+            else:
+                log.fatal("Failed to create '%s': %s", e.strerror)
+                raise
+        else:
+            log.info1("Created missing '%s'.", ETC_ROLEKIT_ROLES)
 
-        role_name = "role"
         path = ROLEKIT_ROLES
+
+        if not os.path.exists(path) or not os.path.isdir(path):
+            log.error("Role directory '%s' does not exist.", path)
+            return
 
         for name in sorted(os.listdir(path)):
             directory = "%s/%s" % (path, name)
@@ -90,9 +104,9 @@ class RoleD(slip.dbus.service.Object):
                 # get Role from module
                 role = getattr(mod, "Role")
 
-                # create role object
-                obj = role(name, directory, self._path,
-                           "%s/%s" % (DBUS_PATH_ROLES, escaped_name))
+                # create role object that contains the role instance class
+                obj = DBusRole(role, name, directory, self._path,
+                                "%s/%s" % (DBUS_PATH_ROLES, escaped_name))
 
                 if obj in self._roles:
                     log.error("Duplicate role '%s'", obj.name)
@@ -106,13 +120,6 @@ class RoleD(slip.dbus.service.Object):
                 log.exception()
                 continue
 
-#        for role in self._roles:
-#            if role.auto_start == True:
-#                try:
-#                    role.start()
-#                except RolekitError as msg:
-#                    log.error("Failed to auto start role %s '%s': %s",
-#                              role.name, msg)
 
     @handle_exceptions
     def suspend(self):
@@ -230,15 +237,28 @@ class RoleD(slip.dbus.service.Object):
                 return obj
         raise RoleKitError(INVALID_ROLE, name)
 
+    @dbus_service_method(DBUS_INTERFACE, in_signature='',
+                         out_signature='ao')
+    @dbus_handle_exceptions
+    def getAllRoleInstances(self, sender=None):
+        """ return the list of all role instances """
+        log.debug1("getAllRoleInstances()")
+        ret_list = [ ]
+        for obj in self._roles:
+            for instance in obj.get_instances().values():
+                ret_list.append(instance)
+        return ret_list
+
     @dbus_service_method(DBUS_INTERFACE, in_signature='s',
                          out_signature='ao')
     @dbus_handle_exceptions
-    def getRolesByState(self, state, sender=None):
-        """ return the list of roles that are in a particular state """
+    def getAllRoleInstancesByState(self, state, sender=None):
+        """ return the list of all roles instances that are in a particular state """
         state = dbus_to_python(state)
-        log.debug1("getRolesByState('%s')", state)
+        log.debug1("getAllRoleInstancesByState('%s')", state)
         ret_list = [ ]
         for obj in self._roles:
-            if obj.state == state:
-                ret_list.append(obj)
+            for instance in obj.get_instances().values():
+                if instance.get_state() == state:
+                    ret_list.append(instance)
         return ret_list
