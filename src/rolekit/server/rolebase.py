@@ -60,7 +60,7 @@ class RoleBase(slip.dbus.service.Object):
         self._state = NASCENT
         self._packages = [ ]
         self._services = [ ]
-        self._firewall = { "ports": [ ], "services": [ ] } 
+        self._firewall = { "ports": [ ], "services": [ ] }
         self._firewall_zones = [ ]
         self._custom_firewall = False
         self._lasterror = ""
@@ -97,7 +97,7 @@ class RoleBase(slip.dbus.service.Object):
             raise RolekitError(INVALID_VALUE, new_value)
         for x in new_value:
             if type(x) is not str:
-                raise RolekitError(INVALID_VALUE, x)        
+                raise RolekitError(INVALID_VALUE, x)
 
     @handle_exceptions
     def _check_bool(self, new_value):
@@ -319,7 +319,7 @@ class RoleBase(slip.dbus.service.Object):
         """start services"""
         log.debug1("roles.%s.startServices()", self._name)
         raise NotImplementedError()
-        
+
     @handle_exceptions
     def restartServices(self):
         """restart services"""
