@@ -18,14 +18,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import dbus
+import dbus.service
+import slip.dbus
+import slip.dbus.service
+
 from rolekit.config import *
 from rolekit.config.dbus import *
+from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.rolebase import RoleBase
-from rolekit.logger import log
 from rolekit.dbus_utils import *
 from rolekit.errors import *
-from rolekit.config import *
 
 class Role(RoleBase):
     _DEFAULTS = {
@@ -35,7 +39,8 @@ class Role(RoleBase):
         "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
         "firewall_zones": [ ],
         "custom_firewall": False,
-        "backup_paths": [ ]
+        "myownsetting": "something",
+        "failonthis": 123,
     }
 
     @handle_exceptions
@@ -63,3 +68,15 @@ class Role(RoleBase):
         # for cleanup: remove settings file, remove from dbus connection and
         # destroy instance
         super(Role, self).decommission()
+
+    # If there are additional _DEFAULTS, then the definition of
+    # get_dbus_properties is needed to cover them.
+    @staticmethod
+    @dbus_handle_exceptions
+    def get_dbus_property(x, prop):
+        # At first cover the additional settings and return dbus types.
+        # Then return the result of the call to get_dbus_property of the
+        # parent class.
+        if prop == "myownsetting":
+            return dbus.String(x._DEFAULTS["myownsetting"])
+        return super(Role, x).get_dbus_property(x, prop)
