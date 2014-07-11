@@ -100,10 +100,14 @@ class DBusRole(slip.dbus.service.Object):
 
         @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sv}')
         @dbus_handle_exceptions
-        def DEFFAULTS(self):
+        def DEFAULTS(self):
             ret = dbus.Dictionary(signature = "sv")
             for x in self._role._DEFAULTS:
-                ret[x] = self._role.get_dbus_property(self._role, x)
+                try:
+                    ret[x] = self._role.get_dbus_property(self._role, x)
+                except Exception as e:
+                    log.error("role.%s.DEFAULTS(): Failed to get/convert property '%s'", self._escaped_name, x)
+                    pass
             return ret
 
     else:
@@ -139,7 +143,11 @@ class DBusRole(slip.dbus.service.Object):
 
             ret = dbus.Dictionary(signature = "sv")
             for x in self._role._DEFAULTS:
-                ret[x] = self._role.get_dbus_property(self._role, x)
+                try:
+                    ret[x] = self._role.get_dbus_property(self._role, x)
+                except Exception as e:
+                    log.error("role.%s.DEFAULTS(): Failed to get/convert property '%s'", self._escaped_name, x)
+                    pass
             return ret
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
