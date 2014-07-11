@@ -19,34 +19,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os, io
+import os
 import shutil
-import sys
 import json
 
 from rolekit.config import *
 from rolekit.errors import *
-from rolekit.functions import b2u
-
-PY2 = sys.version < '3'
 
 class RoleSettings(dict):
     """ Rolesettings store """
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, type_name, name, *args, **kwargs):
         super(RoleSettings, self).__init__(*args, **kwargs)
         self.name = name
-        self.path = ETC_ROLEKIT_ROLES
-        self.filename = "%s.json" % name
-        self.read()
-        
+        self._type = type_name
+        self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._type)
+        self.filepath = "%s/%s.json" % (self.path, self.name)
+
     def read(self):
-        name = "%s/%s" % (self.path, self.filename)
-
-        if not os.path.exists(name):
-            return
-
-        with open(name, "r") as f:
+        with open(self.filepath, "r") as f:
             data = f.read()
         imported = json.loads(data)
         del data
@@ -58,15 +49,24 @@ class RoleSettings(dict):
         del imported
 
     def write(self):
-        name = "%s/%s" % (self.path, self.filename)
+        try:
+            os.mkdir(self.path)
+        except OSError:
+            pass
 
-        if os.path.exists(name):
-            try:
-                shutil.copy2(name, "%s.old" % name)
-            except Exception as msg:
-                raise IOError("Backup of '%s' failed: %s" % (name, msg))
+        try:
+            shutil.copy2(self.filepath, "%s.old" % self.filepath)
+        except Exception as msg:
+            if os.path.exists(self.filepath):
+                raise IOError("Backup of '%s' failed: %s" % (self.filepath,
+                                                             msg))
 
         d = json.dumps(self)
-        with open(name, "w") as f:
+        with open(self.filepath, "w") as f:
             f.write(d)
 
+    def remove(self):
+        try:
+            os.remove(self.filepath)
+        except OSError:
+            pass
