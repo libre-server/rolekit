@@ -43,7 +43,8 @@ tag:
 	git push --all
 	git push --tags
 
-dist: clean-docs update-docs tx-pull
+#dist: clean-docs update-docs tx-pull
+dist: clean-docs update-docs
 
 update-docs:
 	make -C doc/xml
@@ -54,6 +55,10 @@ clean-docs:
 tx-pull:
 	tx pull
 
+tx-push:
+	tx push -s
+
+#archive: update-po tx-push $(desktop_DATA) tag dist
 archive: update-po $(desktop_DATA) tag dist
 	scp "${PACKAGE_NAME}-$(PACKAGE_VERSION).tar.bz2" fedorahosted.org:${PACKAGE_NAME}
 	@echo "The archive is in ${PACKAGE_NAME}-$(PACKAGE_VERSION).tar.bz2"
@@ -74,10 +79,12 @@ test-rpm: dist
 test-srpm: dist
 	@rpmbuild -ts $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.bz2
 
+update-po-files:
+	find $(top_srcdir)/src/ \( -name "*.py" -or -executable -not -type d \) -print | sort > $(top_srcdir)/po/POTFILES.in
+
 update-po:
 	ls $(top_srcdir)/po/*.po | sed 's/.*\/po\///;s/.po//' > $(top_srcdir)/po/LINGUAS
 	make -C po update-po ${PACKAGE_NAME}.pot
-	tx push -s
 
 clean-po:
 	@for cat in `cat ${top_srcdir}/po/LINGUAS`; do \
