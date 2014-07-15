@@ -235,7 +235,7 @@ class RoleD(slip.dbus.service.Object):
         for obj in self._roles:
             if obj.name == name:
                 return obj
-        raise RoleKitError(INVALID_ROLE, name)
+        raise RolekitError(INVALID_ROLE, name)
 
     @dbus_service_method(DBUS_INTERFACE, in_signature='',
                          out_signature='ao')
