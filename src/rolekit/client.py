@@ -32,6 +32,7 @@ import slip.dbus
 from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.dbus_utils import dbus_to_python
+from rolekit.functions import b2u
 from decorator import decorator
 
 exception_handler = None
