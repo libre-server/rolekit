@@ -863,7 +863,7 @@ if __name__ == '__main__':
     log.info(log.INFO2, "info2 fmt", fmt="%(file)s:%(line)d %(message)s")
 
     try:
-        a = b
+        a = 0/0
     except Exception as e:
         log.exception()
 
