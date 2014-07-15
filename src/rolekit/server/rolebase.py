@@ -97,7 +97,7 @@ class RoleBase(slip.dbus.service.Object):
     @handle_exceptions
     def __check_custom_firewall(self, value):
         if type(value) is not bool:
-            raise RolekitError(INVALID_VALUE, x)
+            raise RolekitError(INVALID_VALUE, value)
 
     @handle_exceptions
     def _check_string_array(self, new_value):
