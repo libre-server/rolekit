@@ -56,6 +56,12 @@ class RoleBase(slip.dbus.service.Object):
     }
     # last_error is in _settings
 
+    # properties that can not be changed within a deploy and update call
+    _READONLY_SETTINGS = [
+        "lasterror", "version",
+        "services", "packages", "firewall",
+    ]
+
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
@@ -74,93 +80,116 @@ class RoleBase(slip.dbus.service.Object):
         self._directory = directory
         self._settings = settings
 
+        # No loaded self._settings, set state to NASCENT
         if not "state" in self._settings:
             self._settings["state"] = NASCENT
-
-        if not hasattr(dbus.service, "property"):
-            self._exported_ro_properties = [
-                "name", "version", "state", "packages", "services", "firewall",
-                "lasterror"
-            ]
-            self._exported_rw_properties = [
-                "firewall_zones", "custom_firewall",
-#                "backup_paths",
-            ]
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # property check methods
 
-    def __check_firewall_zones(self, new_value):
-        self._check_string_aray(new_value)
+    # check property method
 
-    def __check_custom_firewall(self, value):
-        if type(value) is not bool:
-            raise RolekitError(INVALID_VALUE, value)
+    def _check_property(self, prop, value):
+        if prop in [ "name", "type", "state", "lasterror" ]:
+            self._check_type_string(value)
+        elif prop in [ "packages", "services", "firewall_zones" ]: # "backup_paths"
+            self._check_type_string_list(value)
+        elif prop in [ "version" ]:
+            self._check_type_int(value)
+        elif prop in [ "firewall" ]:
+            self._check_type_dict(value)
+            for x in value.keys():
+                if x not in [ "ports", "services" ]:
+                    raise RolekitError(INVALID_VALUE, x)
+                self._check_type_string_list(value[x])
+        elif prop in [ "custom_firewall" ]:
+            self._check_type_bool(value)
 
-    def _check_string_array(self, new_value):
-        if type(new_value) is not list:
-            raise RolekitError(INVALID_VALUE, new_value)
+        raise RolekitError(MISSING_CHECK, prop)
+
+    # common type checking methods
+
+    def _check_type_int(self, new_value):
+        if type(new_value) is not int:
+            raise RolekitError(INVALID_VALUE, "%s is not a int" % new_value)
+
+    def _check_type_string(self, new_value):
+        if type(new_value) is not str:
+            raise RolekitError(INVALID_VALUE, "%s is not a string" % new_value)
+
+    def _check_type_string_list(self, new_value):
+        self._check_type_list(new_value)
         for x in new_value:
-            if type(x) is not str:
-                raise RolekitError(INVALID_VALUE, x)
+            self._check_type_string(x)
 
-    def _check_bool(self, new_value):
+    def _check_type_bool(self, new_value):
         if type(new_value) is not bool:
-            raise RolekitError(INVALID_VALUE, new_value)
+            raise RolekitError(INVALID_VALUE, "%s is not bool." % new_value)
+
+    def _check_type_dict(self, new_value):
+        if type(new_value) is not dict:
+            raise RolekitError(INVALID_VALUE, "%s is not a dict" % new_value)
+
+    def _check_type_list(self, new_value):
+        if type(new_value) is not list:
+            raise RolekitError(INVALID_VALUE, "%s is not a list" % new_value)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Property handling
 
     # Static method for use in roles and instances
     #
-    # Usage in roles: <class>.get_dbus_property(<class>, key)
+    # Usage in roles: <class>.get_property(<class>, key)
     #   Returns values from _DEFAULTS as dbus types
     #
-    # Usage in instances: role.get_dbus_property(role, key)
+    # Usage in instances: role.get_property(role, key)
     #   Returns values from instance _settings if set, otherwise from _DEFAULTS
-    #   as dbus types
+    #
+    # This method needs to be extended for new role settings.
+    @staticmethod
+    def get_property(x, prop):
+        if hasattr(x, "_settings") and prop in x._settings:
+            return x._settings[prop]
+        if prop == "name":
+            return x._name
+        elif prop == "type":
+            return x._type
+        elif prop == "state":
+            return ""
+        elif prop == "lasterror":
+            return ""
+        elif prop in x._DEFAULTS:
+            return x._DEFAULTS[prop]
+
+        raise RolekitError(UNKNOWN_SETTING, prop)
+
+    # Static method for use in roles and instances
+    #
+    # Usage in roles: <class>.get_dbus_property(<class>, key)
+    #   Returns settings as dbus types
+    #
+    # Usage in instances: role.get_dbus_property(role, key)
+    #   Uses role.get_property(role, key)
     #
     # This method needs to be extended for new role settings.
     @staticmethod
     def get_dbus_property(x, prop):
-        if prop == "name":
-            return dbus.String(x._name)
-        elif prop == "type":
-            return dbus.String(x._type)
-        elif prop == "version":
-            return dbus.Int32(x._DEFAULTS["version"])
-        elif prop == "state":
-            if hasattr(x, "_settings") and "state" in x._settings:
-                return dbus.String(x._settings["state"])
-            else:
-                return dbus.String("")
-        elif prop == "packages":
-            return dbus.Array(x._DEFAULTS["packages"], "s")
-        elif prop == "services":
-            return dbus.Array(x._DEFAULTS["services"], "s")
-        elif prop == "firewall":
-            return dbus.Dictionary(x._DEFAULTS["firewall"], "sas")
-        elif prop == "firewall_zones":
-            if hasattr(x, "_settings") and "firewall_zones" in x._settings:
-                return dbus.Array(x._settings["firewall_zones"], "s")
-            return dbus.Array(x._DEFAULTS["firewall_zones"], "s")
-        elif prop == "custom_firewall":
-            if hasattr(x, "_settings") and "custom_firewall" in x._settings:
-                return x._settings["custom_firewall"]
-            return x._DEFAULTS["custom_firewall"]
-#        elif prop == "backup_paths":
-#            if hasattr(x, "_settings") and "backup_paths" in x._settings:
-#                return dbus.Array(x._settings["backup_paths"], "s")
-#            return dbus.Array(x._DEFAULTS["backup_paths"], "s")
-        elif prop == "lasterror":
-            if hasattr(x, "_settings") and "lasterror" in x._settings:
-                return dbus.String(x._settings["lasterror"])
-            else:
-                return ""
+        if prop in [ "name", "type", "state", "lasterror" ]:
+            return dbus.String(x.get_property(x, prop))
+        elif prop in [ "packages", "services", "firewall_zones" ]: # "backup_paths"
+            return dbus.Array(x.get_property(x, prop), "s")
+        elif prop in [ "version" ]:
+            return dbus.Int32(x.get_property(x, prop))
+        elif prop in [ "firewall" ]:
+            return dbus.Dictionary(x.get_property(x, prop), "sas")
+        elif prop in [ "custom_firewall" ]:
+            return dbus.Boolean(x.get_property(x, prop))
 
         raise dbus.exceptions.DBusException(
             "org.freedesktop.DBus.Error.AccessDenied: "
             "Property '%s' isn't exported (or may not exist)" % prop)
+
+    # property methods
 
     if hasattr(dbus.service, "property"):
         # property support in dbus.service
@@ -205,30 +234,10 @@ class RoleBase(slip.dbus.service.Object):
         def firewall_zones(self):
             return self.get_dbus_property(self, "firewall_zones")
 
-        @firewall_zones.setter
-        @dbus_handle_exceptions
-        def firewall_zones(self, new_value):
-            new_value = dbus_to_python(new_value)
-            self._check_string_array(new_value)
-            self._settings["firewall_zones"] = new_value
-            self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
-                                   { "firewall_zones": new_value }, [ ])
-
         @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='b')
         @dbus_handle_exceptions
         def custom_firewall(self):
             return self.get_dbus_property(self, "custom_firewall")
-
-        @custom_firewall.setter
-        @dbus_handle_exceptions
-        def custom_firewall(self, new_value):
-            new_value = dbus_to_python(new_value)
-            self._check_bool(new_value)
-            self._settings["custom_firewall"] = new_value
-            self._settings.write()
-            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
-                                   { "custom_firewall": new_value }, [ ])
 
         @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
         @dbus_handle_exceptions
@@ -238,16 +247,6 @@ class RoleBase(slip.dbus.service.Object):
 #        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='as')
 #        def backup_paths(self):
 #            return self.get_dbus_property(self, "backup_paths")
-
-#        @backup_paths.setter
-#        @dbus_handle_exceptions
-#        def backup_paths(self, new_value):
-#            new_value = dbus_to_python(new_value)
-#            self._check_string_array(new_value)
-#            self._settings["backup_paths"] = new_value
-#            self._settings.write()
-#            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
-#                                   { "backup_paths": new_value }, [ ])
 
     else:
         # no property support in dbus.service
@@ -281,8 +280,10 @@ class RoleBase(slip.dbus.service.Object):
                     "RolekitD does not implement %s" % interface_name)
 
             ret = { }
-            for name in self._exported_ro_properties + self._exported_rw_properties:
+            for name in self._DEFAULTS:
                 ret[name] = self.get_dbus_property(self, name)
+            # lasterror is not in _DEFAULTS, but in _settings
+            ret["lasterror"] = self.get_dbus_property(self, "lasterror")
             return ret
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
@@ -299,16 +300,8 @@ class RoleBase(slip.dbus.service.Object):
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
 
-            if property_name in self._exported_rw_properties:
-                if not hasattr(self, "__check_%s", property_name):
-                    raise RolekitError(MISSING_CHECK, property_name)
-                x = getattr(self, "__check_%s", property_name)
-                x(new_value)
-                self._settings.set(property_name, new_value)
-                self._settings.write()
-                self.PropertiesChanged(interface_name,
-                                       { property_name: new_value }, [ ])
-            elif property_name in self._exported_ro_properties:
+            if property_name in self._DEFAULTS or \
+               property_name in self._READONLY_SETTINGS:
                 raise dbus.exceptions.DBusException(
                     "org.freedesktop.DBus.Error.PropertyReadOnly: "
                     "Property '%s' is read-only" % property_name)
@@ -334,6 +327,38 @@ class RoleBase(slip.dbus.service.Object):
         if "state" in self._settings:
             return self._settings["state"]
         return ""
+
+    # apply values
+
+    def apply_values(self, values):
+        # Copy key value pairs for the properties that are read-write to
+        # self._settings and write the settings out.
+        values = dbus_to_python(values)
+
+        changed = [ ]
+        for x in values:
+            if x in self._DEFAULTS:
+                if x in self._READONLY_SETTINGS:
+                    raise RolekitError(READONLY_SETTING, x)
+                # use _check_property method from derived or parent class
+                self._check_property(x, values[x])
+                # set validated setting
+                self._settings[x] = values[x]
+                changed.append(x)
+            else:
+                raise RolekitError(UNKNOWN_SETTING, x)
+
+        if len(changed) > 0:
+            dbus_changed = dbus.Dictionary(signature="sv")
+            for x in changed:
+                dbus_changed[x] = self.get_dbus_property(self, x)
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
+                                   dbus_changed, [ ])
+
+            # write validated setting
+            self._settings.write()
+
+    # package handling
 
     def installPackages(self):
         """install packages"""
@@ -413,8 +438,7 @@ class RoleBase(slip.dbus.service.Object):
         for x in self._DEFAULTS:
             self._settings[x] = self._DEFAULTS[x]
 
-        self._settings["new"] = values
-        self._settings.write()
+        self.apply_values(values)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
@@ -427,9 +451,11 @@ class RoleBase(slip.dbus.service.Object):
         self._parent.remove_instance(self)
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}')
     @dbus_handle_exceptions
-    def update(self, sender=None):
+    def update(self, values, sender=None):
         """update role"""
-        log.debug1("%s.update()", self._log_prefix)
-        raise NotImplementedError()
+        values = dbus_to_python(values)
+        log.debug1("%s.update(%s)", self._log_prefix, values)
+
+        self.apply_values(values)
