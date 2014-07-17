@@ -47,11 +47,17 @@ ROLEKIT_LOGFILE = '/var/log/rolekit'
 
 MAX_INSTANCES = 1
 
+# persistent states
 NASCENT = "nascent"
-DEPLOYED = "deployed"
 READY_TO_START = "ready-to-start"
-STARTED = "started"
 RUNNING = "running"
-STOPPED = "stopped"
-DECOMISSIONED = "decomissioned"
 ERROR = "error"
+
+# transitional states
+DEPLOYING = "deploying"
+DECOMMISSIONING = "decommissioning"
+STARTING = "starting"
+STOPPING = "stopping"
+
+PERSISTENT_STATES = [ NASCENT, READY_TO_START, RUNNING, ERROR ]
+TRANSITIONAL_STATES = [ DEPLOYING, DECOMMISSIONING, STARTING, STOPPING ]
