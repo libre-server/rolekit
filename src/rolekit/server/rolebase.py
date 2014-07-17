@@ -65,7 +65,6 @@ class RoleBase(slip.dbus.service.Object):
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
-    @handle_exceptions
     def __init__(self, parent, name, type_name, directory, settings,
                  *args, **kwargs):
         super(RoleBase, self).__init__(*args, **kwargs)
