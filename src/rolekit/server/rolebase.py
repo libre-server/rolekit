@@ -90,16 +90,13 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # property check methods
 
-    @handle_exceptions
     def __check_firewall_zones(self, new_value):
         self._check_string_aray(new_value)
 
-    @handle_exceptions
     def __check_custom_firewall(self, value):
         if type(value) is not bool:
             raise RolekitError(INVALID_VALUE, value)
 
-    @handle_exceptions
     def _check_string_array(self, new_value):
         if type(new_value) is not list:
             raise RolekitError(INVALID_VALUE, new_value)
@@ -107,7 +104,6 @@ class RoleBase(slip.dbus.service.Object):
             if type(x) is not str:
                 raise RolekitError(INVALID_VALUE, x)
 
-    @handle_exceptions
     def _check_bool(self, new_value):
         if type(new_value) is not bool:
             raise RolekitError(INVALID_VALUE, new_value)
@@ -126,7 +122,6 @@ class RoleBase(slip.dbus.service.Object):
     #
     # This method needs to be extended for new role settings.
     @staticmethod
-    @dbus_handle_exceptions
     def get_dbus_property(x, prop):
         if prop == "name":
             return dbus.String(x._name)
@@ -332,53 +327,44 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Private methods
 
-    @handle_exceptions
     def get_name(self):
         return self._name
 
-    @handle_exceptions
     def get_state(self):
         if "state" in self._settings:
             return self._settings["state"]
         return ""
 
-    @handle_exceptions
     def installPackages(self):
         """install packages"""
         log.debug1("%s.installPackages()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def startServices(self):
         """start services"""
         log.debug1("%s.startServices()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def restartServices(self):
         """restart services"""
         log.debug1("%s.restartServices()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def stopServices(self):
         """stopServices"""
         log.debug1("%s.stopServices()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def installFirewall(self):
         """install firewall"""
         log.debug1("%s.installFirewall()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def updateFirewall(self):
         """update firewall"""
         log.debug1("%s.updateFirewall()", self._log_prefix)
         raise NotImplementedError()
 
-    @handle_exceptions
     def uninstallFirewall(self):
         """uninstall firewall"""
         log.debug1("%s.uninstallFirewall()", self._log_prefix)
