@@ -328,6 +328,11 @@ class RoleBase(slip.dbus.service.Object):
             return self._settings["state"]
         return ""
 
+    # copy defaults
+
+    def copy_defaults(self):
+        self._settings.update(self._DEFAULTS)
+
     # apply values
 
     def apply_values(self, values):
@@ -435,8 +440,7 @@ class RoleBase(slip.dbus.service.Object):
         """deploy role"""
         values = dbus_to_python(values)
         log.debug1("%s.deploy(%s)", self._log_prefix, values)
-        for x in self._DEFAULTS:
-            self._settings[x] = self._DEFAULTS[x]
+        self.copy_defaults()
 
         self.apply_values(values)
 
