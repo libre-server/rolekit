@@ -323,10 +323,28 @@ class RoleBase(slip.dbus.service.Object):
     def get_name(self):
         return self._name
 
+    # get/assert and change state
+
     def get_state(self):
         if "state" in self._settings:
             return self._settings["state"]
         return ""
+
+    def assert_state(self, state):
+        if self._settings["state"] != state:
+            raise RolekitError(INVALID_STATE, "%s != %s" % (self._settings["state"], state))
+
+    def change_state(self, state, write=False):
+        # change the state of the instance to state if it is valid and not in
+        # this state already
+        if state not in PERSISTENT_STATES and \
+           state not in TRANSITIONAL_STATES:
+            raise RolekitError(INVALID_STATE, state)
+        if state != self._settings["state"]:
+            self._settings["state"] = state
+            if write:
+                self._settings.write()
+            self.StateChanged(state)
 
     # copy defaults
 
@@ -403,6 +421,34 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Public methods
 
+    # Start code
+    def do_start(self, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
+    # Stop code
+    def do_stop(self, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
+    # Deploy code
+    def do_deploy(self, values, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
+    # Decommission code
+    def do_decommission(self, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
+    # Deploy code
+    def do_update(self, values, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    # D-Bus methods
+
     @dbus.service.signal(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
     @dbus_handle_exceptions
     def StateChanged(self, state):
@@ -413,24 +459,66 @@ class RoleBase(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def start(self, sender=None):
         """start role"""
+        # Make sure we are in the proper state
+        self.assert_state(READY_TO_START)
+
+        # Log
         log.debug1("%s.start()", self._log_prefix)
-        raise NotImplementedError()
+
+        # Change state to starting
+        self.change_state(STARTING)
+
+        # Call do_start
+        try:
+            self.do_start(sender)
+        except:
+            self.change_state(READY_TO_START)
+            raise
+
+        # Continue only after successful start:
+        self.change_state(RUNNING, write=True)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def stop(self, sender=None):
         """stop role"""
+        # Make sure we are in the proper state
+        self.assert_state(RUNNING)
+
+        # Log
         log.debug1("%s.stop()", self._log_prefix)
-        raise NotImplementedError()
+
+        # Change state to stopping
+        self.change_state(STOPPING)
+
+        # Call do_start
+        try:
+            self.do_stop(sender)
+        except:
+            self.change_state(ERROR)
+            raise
+
+        # Continue only after successful stop:
+        self.change_state(READY_TO_START, write=True)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def restart(self, sender=None):
         """restart role"""
+        # Make sure we are in the proper state
+        self.assert_state(RUNNING)
+
+        # Log
         log.debug1("%s.restart()", self._log_prefix)
-        raise NotImplementedError()
+
+        # Stop
+        self.stop()
+
+        # Start if state is ready to start
+        self.assert_state(READY_TO_START)
+        self.start()
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
@@ -439,17 +527,57 @@ class RoleBase(slip.dbus.service.Object):
     def deploy(self, values, sender=None):
         """deploy role"""
         values = dbus_to_python(values)
+
+        # Make sure we are in the proper state
+        self.assert_state(NASCENT)
+
+        # Log
         log.debug1("%s.deploy(%s)", self._log_prefix, values)
+
+        # Change to deploying state
+        self.change_state(DEPLOYING)
+
+        # Copy _DEFAULTS to self._settings
         self.copy_defaults()
 
+        # Call do_deploy
+        try:
+            self.do_deploy(values, sender)
+        except:
+            self.change_state(NASCENT)
+            raise
+
+        # Continue only after successful deployment:
+        # Apply values to self._settings
         self.apply_values(values)
+
+        # Change to ready to start state
+        self.change_state(READY_TO_START, write=True)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
     @dbus_handle_exceptions
     def decommission(self, sender=None):
         """decommission role"""
+        # Make sure we are in the proper state
+        self.assert_state(READY_TO_START)
+
+        # Log
         log.debug1("%s.decommission()", self._log_prefix)
+
+        # Change state to decommissioning
+        self.change_state(DECOMMISSIONING)
+
+        # Call do_decommission
+        try:
+            self.do_decommission(sender)
+        except:
+            self.change_state(ERROR)
+            raise
+
+        # Continue only after successful decommission:
+        # Then cleantup: remove settings file, remove from dbus
+        # connection and destroy instance
         self._settings.remove()
         self.remove_from_connection()
         self._parent.remove_instance(self)
@@ -460,6 +588,22 @@ class RoleBase(slip.dbus.service.Object):
     def update(self, values, sender=None):
         """update role"""
         values = dbus_to_python(values)
+
+        # Make sure we are in the proper state
+        self.assert_state(READY_TO_START)
+
+        # Log
         log.debug1("%s.update(%s)", self._log_prefix, values)
 
-        self.apply_values(values)
+        # Change to state updating
+        self.change_state(UPDATING)
+
+        # Call do_update
+        try:
+            self.do_update(values, sender)
+        except:
+            self.change_state(ERROR)
+
+        # Continue only after successful update:
+        # Change to deploying state
+        self.change_state(READY_TO_START)
