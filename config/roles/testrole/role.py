@@ -59,35 +59,40 @@ class Role(RoleBase):
     def do_start(self, sender=None):
         # Do the magic
         #
-        # In case of error raise and exception
+        # In case of error raise an exception
+        pass
 
 
     # Stop code
     def do_stop(self, sender=None):
         # Do the magic
         #
-        # In case of error raise and exception
+        # In case of error raise an exception
+        pass
 
 
     # Deploy code
     def do_deploy(self, values, sender=None):
         # Do the magic
         #
-        # In case of error raise and exception
+        # In case of error raise an exception
+        pass
 
 
     # Decommission code
     def do_decommission(self, sender=None):
         # Do the magic
         #
-        # In case of error raise and exception
+        # In case of error raise an exception
+        pass
 
 
     # Deploy code
     def do_update(self, values, sender=None):
         # Do the magic
         #
-        # In case of error raise and exception
+        # In case of error raise an exception
+        pass
 
 
     # Static method for use in roles and instances
