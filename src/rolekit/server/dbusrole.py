@@ -98,6 +98,11 @@ class DBusRole(slip.dbus.service.Object):
     if hasattr(dbus.service, "property"):
     # property support in dbus.service
 
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
+        @dbus_handle_exceptions
+        def name(self):
+            return dbus.String(self._name)
+
         @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sv}')
         @dbus_handle_exceptions
         def DEFAULTS(self):
