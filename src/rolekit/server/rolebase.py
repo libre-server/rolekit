@@ -581,7 +581,7 @@ class RoleBase(slip.dbus.service.Object):
     def decommission(self, sender=None):
         """decommission role"""
         # Make sure we are in the proper state
-        self.assert_state(READY_TO_START)
+        self.assert_state(READY_TO_START, ERROR)
 
         # Log
         log.debug1("%s.decommission()", self._log_prefix)
