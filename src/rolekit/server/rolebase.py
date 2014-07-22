@@ -104,7 +104,8 @@ class RoleBase(slip.dbus.service.Object):
         elif prop in [ "custom_firewall" ]:
             self._check_type_bool(value)
 
-        raise RolekitError(MISSING_CHECK, prop)
+        else:
+            raise RolekitError(MISSING_CHECK, prop)
 
     # common type checking methods
 
