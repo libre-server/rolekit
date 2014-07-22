@@ -487,7 +487,7 @@ class RoleBase(slip.dbus.service.Object):
         try:
             self.do_start(sender)
         except:
-            self.change_state(READY_TO_START)
+            self.change_state(READY_TO_START, write=True)
             raise
 
         # Continue only after successful start:
@@ -511,7 +511,7 @@ class RoleBase(slip.dbus.service.Object):
         try:
             self.do_stop(sender)
         except:
-            self.change_state(ERROR)
+            self.change_state(ERROR, write=True)
             raise
 
         # Continue only after successful stop:
@@ -565,12 +565,18 @@ class RoleBase(slip.dbus.service.Object):
         try:
             self.do_deploy(values, sender)
         except:
-            self.change_state(NASCENT)
+            # deploy failed set state to error
+            self.change_state(ERROR, write=True)
             raise
 
         # Continue only after successful deployment:
         # Apply values to self._settings
-        self.apply_values(values)
+        try:
+            self.apply_values(values)
+        except:
+            # applying of values failed, set state to error
+            self.change_state(ERROR, write=True)
+            raise
 
         # Change to ready to start state
         self.change_state(READY_TO_START, write=True)
@@ -593,7 +599,7 @@ class RoleBase(slip.dbus.service.Object):
         try:
             self.do_decommission(sender)
         except:
-            self.change_state(ERROR)
+            self.change_state(ERROR, write=True)
             raise
 
         # Continue only after successful decommission:
@@ -623,8 +629,8 @@ class RoleBase(slip.dbus.service.Object):
         try:
             self.do_update(values, sender)
         except:
-            self.change_state(ERROR)
+            self.change_state(ERROR, write=True)
 
         # Continue only after successful update:
         # Change to deploying state
-        self.change_state(READY_TO_START)
+        self.change_state(READY_TO_START, write=True)
