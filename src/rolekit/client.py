@@ -102,38 +102,76 @@ class RolekitClientRole(object):
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
+    def deploy(self, name, values):
+        self.role.deploy(name, values)
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def getInstances(self):
+        return dbus_to_python(self.role.getInstances())
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def getNamedInstance(self, name):
+        return dbus_to_python(self.role.getNamedInstance(name))
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def getNamedInstanceObj(self, name):
+        return RolekitClientRoleInstance(self.bus, dbus_to_python(self.role.getNamedInstance(name)))
+
+# rolekit client role instance
+
+class RolekitClientRoleInstance(object):
+    @handle_exceptions
+    def __init__(self, bus, path):
+        self.bus = bus
+        self.path = path
+        self.dbus_obj = self.bus.get_object(DBUS_INTERFACE, path)
+        self.instance = dbus.Interface(self.dbus_obj,
+                                       dbus_interface=DBUS_INTERFACE_ROLE_INSTANCE)
+        self.properties = dbus.Interface(
+            self.dbus_obj, dbus_interface='org.freedesktop.DBus.Properties')
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def get_property(self, prop):
+        return dbus_to_python(self.properties.Get(DBUS_INTERFACE_ROLE_INSTANCE, prop))
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def get_properties(self):
+        return dbus_to_python(self.properties.GetAll(DBUS_INTERFACE_ROLE_INSTANCE))
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def set_property(self, prop, value):
+        self.properties.Set(DBUS_INTERFACE_ROLE_INSTANCE, prop, value)
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
     def start(self):
-        self.role.start()
+        self.instance.start()
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
     def stop(self):
-        self.role.stop()
+        self.instance.stop()
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
     def restart(self):
-        self.role.restart()
+        self.instance.restart()
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
-    def deploy(self):
-        self.role.deploy()
+    def decommission(self):
+        self.instance.decommission()
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
-    def decomission(self):
-        self.role.decomission()
-
-    @slip.dbus.polkit.enable_proxy
-    @handle_exceptions
-    def updateRole(self):
-        self.role.updateRole()
-
-    @slip.dbus.polkit.enable_proxy
-    @handle_exceptions
-    def getFirewallZones(self):
-        self.role.getFirewallZones()
+    def update(self, values):
+        self.instance.update(values)
 
 # rolekit client
 
@@ -173,7 +211,10 @@ class RolekitClient(object):
             "connection-lost": "connection-lost",
             # rolekit callbacks
             # rolekit.role callbacks
-            "role:StateChanged": "role:StateChanged",
+            "role:InstanceAdded": "role:InstanceAdded",
+            "role:InstanceRemoved": "role:InstanceRemoved",
+            # rolekit.role.instance callbacks
+            "role:instance:StateChanged": "role:instance:StateChanged",
             }
 
         # initialize variables used for connection
@@ -317,5 +358,31 @@ class RolekitClient(object):
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
-    def getRolesByState(self, state):
-        self.rk.getRolesByState(state)
+    def getAllRoleInstances(self):
+        return self.rk.getAllRoleInstances()
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def getAllRoleInstancesByState(self, state):
+        return self.rk.getAllRoleInstancesByState(state)
+
+    @handle_exceptions
+    def getRoleObj(self, path):
+        return RolekitClientRole(self.bus, path)
+
+    @handle_exceptions
+    def getNamedRoleObj(self, name):
+        path = self.rk.getNamedRole(name)
+        return RolekitClientRole(self.bus, path)
+
+    @handle_exceptions
+    def getRoleInstanceObj(self, path):
+        return RolekitClientRoleInstance(self.bus, path)
+
+    @handle_exceptions
+    def getRoles(self):
+        return self.get_property("roles")
+
+    @handle_exceptions
+    def getRoleNames(self):
+        return [ self.getRoleObj(r).get_property("name") for r in self.get_property("roles") ]
