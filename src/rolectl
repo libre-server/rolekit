@@ -55,17 +55,6 @@ def __print_if_verbose(msg=None):
     if msg and a.verbose:
         print(msg)
 
-def __usage():
-    print ("""
-Usage: rolectl [OPTIONS...]
-
-General Options
-  -h, --help           Prints a short help text and exists
-  -V, --version        Print the version string of rolekit
-  -q, --quiet          Do not print status messages
-
-""")
-
 def __print_query_result(value):
     if value:
         __print_and_exit("yes")
@@ -81,48 +70,212 @@ Make sure polkit agent is running or run the application as superuser."""
         code = RolekitError.get_code(exception_message)
         __print_and_exit("Error: %s" % exception_message, code)
 
-parser = argparse.ArgumentParser(usage="see rolectl man page",
-                                 add_help=False)
+def instance_type(arg):
+    if not "/" in arg:
+        raise ValueError("Not a valid instance, use <role/instance>")
+    return arg
 
-parser_group_output = parser.add_mutually_exclusive_group()
-parser_group_output.add_argument("-v", "--verbose", action="store_true")
-parser_group_output.add_argument("-q", "--quiet", action="store_true")
+def create_settings(_list):
+    settings = { }
+    if _list:
+        for x in _list:
+            if not "=" in x:
+                __print_and_exit("Error: %s is not a valid key/value pair" % x)
+            splits = x.split("=")
+            settings[splits[0].strip()] = splits[1].strip()
+    return settings
 
-parser_group_standalone = parser.add_mutually_exclusive_group()
-parser_group_standalone.add_argument("-h", "--help",
-                                     action="store_true")
-parser_group_standalone.add_argument("-V", "--version", action="store_true")
-parser_group_standalone.add_argument("-s", "--state", action="store_true")
+parser = argparse.ArgumentParser(description="Rolekit command line control utility")
+subparsers = parser.add_subparsers(help="Commands")
+#subparsers.required = True
+
+
+grp_output = parser.add_mutually_exclusive_group()
+grp_output.add_argument("-v", "--verbose", action="store_true")
+grp_output.add_argument("-V", "--version", action="store_true")
+grp_output.add_argument("-q", "--quiet", action="store_true")
+
+
+grp_version = subparsers.add_parser("version", help="Show rolekit version")
+grp_version.set_defaults(parser="version")
+
+
+grp_list = subparsers.add_parser("list", help="List roles or instances")
+grp_list.set_defaults(parser="list")
+grp_list_subparsers = grp_list.add_subparsers(help="Commands")
+
+
+grp_list_roles = grp_list_subparsers.add_parser("roles", help="List roles")
+grp_list_roles.set_defaults(list="roles")
+grp_list_roles.add_argument("--object-path", action="store_true")
+
+
+grp_list_instances = grp_list_subparsers.add_parser("instances", help="List instances")
+grp_list_instances.set_defaults(list="instances")
+grp_list_instances.add_argument("--state", metavar="<state>")
+grp_list_instances.add_argument("--object-path", action="store_true")
+
+
+
+
+grp_settings = subparsers.add_parser("settings", help="Settings for roles or instances")
+grp_settings.set_defaults(parser="settings")
+grp_settings.add_argument("what", type=str, metavar="<role>|<role/instance>")
+grp_settings.add_argument("--key", metavar="<key>")
+
+
+grp_deploy = subparsers.add_parser("deploy", help="Deploy a role to create a role instance")
+grp_deploy.set_defaults(parser="deploy")
+grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
+grp_deploy.add_argument("--name", metavar="<name>", default="")
+grp_deploy.add_argument("--set", metavar="<key>=<value>", nargs='*')
+
+
+grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
+grp_redeploy.set_defaults(parser="redeploy")
+grp_redeploy.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
+grp_redeploy.add_argument("--set", metavar="<key>=<value>", nargs='*')
+
+
+grp_status = subparsers.add_parser("status", help="Get status for role/instance")
+grp_status.set_defaults(parser="status")
+grp_status.add_argument("instance", type=instance_type, metavar="<role/instance>")
+
+
+grp_start = subparsers.add_parser("start", help="Start a role instance")
+grp_start.set_defaults(parser="start")
+grp_start.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+
+
+grp_stop = subparsers.add_parser("stop", help="Stop a role instance")
+grp_stop.set_defaults(parser="stop")
+grp_stop.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+
+
+grp_restart = subparsers.add_parser("restart", help="Restart a role instance")
+grp_restart.set_defaults(parser="restart")
+grp_restart.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+
+
+grp_update = subparsers.add_parser("update", help="Update a role instance")
+grp_update.set_defaults(parser="update")
+grp_update.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_update.add_argument("--set", metavar="<key>=<value>", nargs='*')
+
+
+grp_decommission = subparsers.add_parser("decommission", help="Decommission a role instance")
+grp_decommission.set_defaults(parser="decommission")
+grp_decommission.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+
 
 a = parser.parse_args()
 
-options_standalone = a.help or a.version or a.state
-
-
-# these are supposed to only write out some output
-options_list_get = a.help or a.version
-
 # Check various impossible combinations of options
 
-if a.help:
-    __usage()
-    sys.exit(0)
+# use rolekit
 
 rk = RolekitClient()
 rk.setExceptionHandler(__exception_handler)
 if rk.connected == False:
-    if a.state:
-        __print_and_exit ("not running", NOT_RUNNING)
-    else:
-        __print_and_exit ("Rolekit is not running", NOT_RUNNING)
+    __print_and_exit ("Rolekit is not running", NOT_RUNNING)
 
-if a.version:
+# version
+if a.parser == "version":
     __print_and_exit(rk.get_property("version"))
-elif a.state:
-    state = rk.get_property("status")
-    if state == "RUNNING":
-        __print_and_exit ("running")
+
+#list
+elif a.parser == "list":
+    if a.list == "roles":
+        if a.object_path:
+            __print_and_exit("\n".join(sorted(rk.getRoles())))
+        __print_and_exit("\n".join(sorted(rk.getRoleNames())))
+    elif a.list == "instances":
+        if a.state:
+            instances = rk.getAllRoleInstancesByState(a.state)
+        instances = rk.getAllRoleInstances()
+
+        if a.object_path:
+            __print_and_exit("\n".join(instances))
+
+        names = [ ]
+        for i in instances:
+            o = rk.getRoleInstanceObj(i)
+            names.append("%s/%s" % (o.get_property("type"),
+                                    o.get_property("name")))
+        __print_and_exit("\n".join(names))
+
+# settings
+elif a.parser == "settings":
+    if "/" in a.what:
+        splits = a.what.split("/")
+        obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
     else:
-        __print_and_exit ("not running", NOT_RUNNING)
+        obj = rk.getNamedRoleObj(a.what)
+
+    if a.key:
+        __print_and_exit(obj.get_property(key))
+
+    if "/" in a.what:
+        props = obj.get_properties()
+    else:
+        props = obj.get_properties()["DEFAULTS"]
+
+    str = ""
+    for key,value in props.items():
+        str += "%s = %s\n" % (key, value)
+    __print_and_exit(str)
+
+
+# deploy
+elif a.parser == "deploy":
+    obj = rk.getNamedRoleObj(a.role)
+    obj.deploy(a.name, create_settings(a.set))
+
+
+elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
+                   "decommission" ]:
+
+    splits = a.instance.split("/")
+    obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
+
+
+    # redeploy
+    if a.parser == "redeploy":
+        obj.redeploy(create_settings(a.set))
+
+
+    # status
+    elif a.parser == "status":
+        __print_and_exit(obj.get_property("state"))
+
+
+    # start
+    elif a.parser == "start":
+        obj.start()
+
+
+    # stop
+    elif a.parser == "stop":
+        obj.stop()
+
+
+    # restart
+    elif a.parser == "restart":
+        obj.restart()
+
+
+    # update
+    elif a.parser == "update":
+        obj.update()
+
+
+    # decommission
+    elif a.parser == "decommission":
+        obj.decommission()
+
+
+else:
+    __fail("Uncaught argument")
+
 
 __print_and_exit("success")
