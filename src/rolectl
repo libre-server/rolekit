@@ -166,7 +166,6 @@ grp_restart.add_argument("instance", type=instance_type, action="store", metavar
 grp_update = subparsers.add_parser("update", help="Update a role instance")
 grp_update.set_defaults(parser="update")
 grp_update.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
-grp_update.add_argument("--set", metavar="<key>=<value>", nargs='*')
 
 
 grp_decommission = subparsers.add_parser("decommission", help="Decommission a role instance")
