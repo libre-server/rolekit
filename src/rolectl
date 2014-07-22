@@ -28,6 +28,7 @@ sys.modules['gobject'] = GObject
 import argparse
 import dbus
 import os
+import json
 
 from rolekit.client import *
 from rolekit.errors import *
@@ -81,8 +82,13 @@ def create_settings(_list):
         for x in _list:
             if not "=" in x:
                 __print_and_exit("Error: %s is not a valid key/value pair" % x)
-            splits = x.split("=")
-            settings[splits[0].strip()] = splits[1].strip()
+            splits = x.split("=", 1)
+            value = splits[1].strip()
+            try:
+                json_value = json.loads(value)
+            except Exception as e:
+                __print_and_exit("Error: %s is not a valid value: %s" % (value, e))
+            settings[splits[0].strip()] = json_value
     return settings
 
 parser = argparse.ArgumentParser(description="Rolekit command line control utility")
@@ -128,13 +134,13 @@ grp_deploy = subparsers.add_parser("deploy", help="Deploy a role to create a rol
 grp_deploy.set_defaults(parser="deploy")
 grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
 grp_deploy.add_argument("--name", metavar="<name>", default="")
-grp_deploy.add_argument("--set", metavar="<key>=<value>", nargs='*')
+grp_deploy.add_argument("--set", metavar="<key>='<value>'", nargs='*')
 
 
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
 grp_redeploy.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
-grp_redeploy.add_argument("--set", metavar="<key>=<value>", nargs='*')
+grp_redeploy.add_argument("--set", metavar="<key>='<value>'", nargs='*')
 
 
 grp_status = subparsers.add_parser("status", help="Get status for role/instance")
