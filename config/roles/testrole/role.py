@@ -79,6 +79,14 @@ class Role(RoleBase):
         pass
 
 
+    # Redeploy code
+    def do_redeploy(self, values, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        pass
+
+
     # Decommission code
     def do_decommission(self, sender=None):
         # Do the magic

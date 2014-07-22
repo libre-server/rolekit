@@ -150,6 +150,11 @@ class RolekitClientRoleInstance(object):
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
+    def redeploy(self, values):
+        self.instance.redeploy(values)
+
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
     def start(self):
         self.instance.start()
 

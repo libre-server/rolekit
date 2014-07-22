@@ -451,6 +451,11 @@ class RoleBase(slip.dbus.service.Object):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
+    # Redeploy code
+    def do_redeploy(self, values, sender=None):
+        # NOT IMPLEMENTED
+        raise NotImplementedError()
+
     # Decommission code
     def do_decommission(self, sender=None):
         # NOT IMPLEMENTED
@@ -564,6 +569,51 @@ class RoleBase(slip.dbus.service.Object):
         # Call do_deploy
         try:
             self.do_deploy(values, sender)
+        except:
+            # deploy failed set state to error
+            self.change_state(ERROR, write=True)
+            raise
+
+        # Continue only after successful deployment:
+        # Apply values to self._settings
+        try:
+            self.apply_values(values)
+        except:
+            # applying of values failed, set state to error
+            self.change_state(ERROR, write=True)
+            raise
+
+        # Change to ready to start state
+        self.change_state(READY_TO_START, write=True)
+
+
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
+                         out_signature='')
+    @dbus_handle_exceptions
+    def redeploy(self, values, sender=None):
+        """deploy role"""
+        values = dbus_to_python(values)
+
+        # Make sure we are in the proper state
+        self.assert_state(READY_TO_START, ERROR)
+
+        # Log
+        log.debug1("%s.redeploy(%s)", self._log_prefix, values)
+
+        # Check values
+        try:
+            self.check_values(values)
+        except:
+            # checking of values failed, set state to error
+            self.change_state(ERROR, write=True)
+            raise
+
+        # Change to deploying state
+        self.change_state(REDEPLOYING)
+
+        # Call do_deploy
+        try:
+            self.do_redeploy(values, sender)
         except:
             # deploy failed set state to error
             self.change_state(ERROR, write=True)
