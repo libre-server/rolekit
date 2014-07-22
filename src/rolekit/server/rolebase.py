@@ -461,8 +461,8 @@ class RoleBase(slip.dbus.service.Object):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
-    # Deploy code
-    def do_update(self, values, sender=None):
+    # Update code
+    def do_update(self, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -660,24 +660,23 @@ class RoleBase(slip.dbus.service.Object):
         self._parent.remove_instance(self)
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE)
     @dbus_handle_exceptions
-    def update(self, values, sender=None):
+    def update(self, sender=None):
         """update role"""
-        values = dbus_to_python(values)
 
         # Make sure we are in the proper state
         self.assert_state(READY_TO_START)
 
         # Log
-        log.debug1("%s.update(%s)", self._log_prefix, values)
+        log.debug1("%s.update()", self._log_prefix)
 
         # Change to state updating
         self.change_state(UPDATING)
 
         # Call do_update
         try:
-            self.do_update(values, sender)
+            self.do_update(sender)
         except:
             self.change_state(ERROR, write=True)
 

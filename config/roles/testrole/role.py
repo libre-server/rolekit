@@ -95,8 +95,8 @@ class Role(RoleBase):
         pass
 
 
-    # Deploy code
-    def do_update(self, values, sender=None):
+    # Update code
+    def do_update(self, sender=None):
         # Do the magic
         #
         # In case of error raise an exception

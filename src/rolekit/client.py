@@ -175,8 +175,8 @@ class RolekitClientRoleInstance(object):
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
-    def update(self, values):
-        self.instance.update(values)
+    def update(self):
+        self.instance.update()
 
 # rolekit client
 
