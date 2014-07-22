@@ -127,7 +127,7 @@ class DBusRole(slip.dbus.service.Object):
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
 
-            return self.get_dbus_property(property_name)
+            return self._role.get_dbus_property(self._role, property_name)
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
                              out_signature='a{sv}')
