@@ -520,8 +520,6 @@ class RoleBase(slip.dbus.service.Object):
         self.start()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
-                         out_signature='')
     @dbus_handle_exceptions
     def deploy(self, values, sender=None):
         """deploy role"""
