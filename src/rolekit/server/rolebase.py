@@ -350,6 +350,21 @@ class RoleBase(slip.dbus.service.Object):
     def copy_defaults(self):
         self._settings.update(self._DEFAULTS)
 
+    # check values
+
+    def check_values(self, values):
+        # Check key value pairs for the properties
+        values = dbus_to_python(values)
+
+        for x in values:
+            if x in self._DEFAULTS:
+                if x in self._READONLY_SETTINGS:
+                    raise RolekitError(READONLY_SETTING, x)
+                # use _check_property method from derived or parent class
+                self._check_property(x, values[x])
+            else:
+                raise RolekitError(UNKNOWN_SETTING, x)
+
     # apply values
 
     def apply_values(self, values):
@@ -530,6 +545,14 @@ class RoleBase(slip.dbus.service.Object):
 
         # Log
         log.debug1("%s.deploy(%s)", self._log_prefix, values)
+
+        # Check values
+        try:
+            self.check_values(values)
+        except:
+            # checking of values failed, set state to error
+            self.change_state(ERROR, write=True)
+            raise
 
         # Change to deploying state
         self.change_state(DEPLOYING)
