@@ -1,1 +1,1 @@
-SUBDIRS = xml man
+SUBDIRS = xml man graphics

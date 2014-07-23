@@ -1,0 +1,51 @@
+digraph Server_Roles {
+  /* Setup Flow */
+  Nascent -> Deploying [label="deploy()", color=green]
+  Deploying -> ReadyToStart [color=green]
+
+  /* Start-up Flow */
+  ReadyToStart -> Starting [label="start()"]
+  Starting -> Running [color=green]
+  Running -> Stopping [label="stop()"]
+  Stopping -> ReadyToStart [color=green]
+
+  /* Redeploy Flow */
+  ReadyToStart -> Redeploying [label="redeploy()"]
+  Redeploying -> ReadyToStart [color=green]
+  Redeploying -> Error [label="Redeploy Failed", color=red]
+
+  /* Update Flow */
+  ReadyToStart -> Updating [label="update()"]
+  Updating -> ReadyToStart [color=green]
+  Updating -> Error [color=red]
+
+  /* Decommission Flow */
+  ReadyToStart -> Decommissioning [label="decommission()"]
+  Decommissioning -> Nascent [color=green]
+
+  /* Error Cases */
+  Deploying -> Error [label="Deploy Failed", color=red]
+  Starting -> Error [label="Failed to start", color=red]
+  Running -> Error [label="Crash", color=red]
+
+  /* Recovery Cases */
+  Error -> Deploying [label="deploy()"]
+  Error -> ReadyToStart [label="resetError()"]
+  Error -> Decommissioning [label="decommission()"]
+
+  /* Colors */
+
+  /* Persistent States */
+  Nascent [fillcolor="lightskyblue" style=filled]
+  ReadyToStart [fillcolor="lightskyblue" style=filled]
+  Running [fillcolor="lightskyblue" style=filled]
+  Error [fillcolor="lightskyblue" style=filled]
+
+  /* Transition States */
+  Deploying [fillcolor="beige" style=filled]
+  Redeploying [fillcolor="beige" style=filled]
+  Decommissioning [fillcolor="beige" style=filled]
+  Starting [fillcolor="beige" style=filled]
+  Stopping [fillcolor="beige" style=filled]
+  Updating [fillcolor="beige" style=filled]
+}
