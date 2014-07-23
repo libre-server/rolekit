@@ -28,6 +28,7 @@ import dbus.service
 import slip.dbus
 import slip.dbus.service
 
+from rolekit import async
 from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
@@ -457,7 +458,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
     # Deploy code
-    def do_deploy(self, values, sender=None):
+    def do_deploy_async(self, values, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -552,7 +553,7 @@ class RoleBase(slip.dbus.service.Object):
 
 
     @dbus_handle_exceptions
-    def deploy(self, values, sender=None):
+    def deploy_async(self, values, sender=None):
         """deploy role"""
         values = dbus_to_python(values)
 
@@ -578,7 +579,7 @@ class RoleBase(slip.dbus.service.Object):
 
         # Call do_deploy
         try:
-            self.do_deploy(values, sender)
+            yield async.async_call(self.do_deploy_async(values, sender))
         except:
             # deploy failed set state to error
             self.change_state(ERROR, write=True)

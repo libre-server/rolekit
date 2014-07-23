@@ -72,11 +72,11 @@ class Role(RoleBase):
 
 
     # Deploy code
-    def do_deploy(self, values, sender=None):
+    def do_deploy_async(self, values, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        yield None
 
 
     # Redeploy code

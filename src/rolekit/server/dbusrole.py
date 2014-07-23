@@ -29,6 +29,7 @@ import dbus.service
 import slip.dbus
 import slip.dbus.service
 
+from rolekit import async
 from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
@@ -258,11 +259,17 @@ class DBusRole(slip.dbus.service.Object):
     # deploy: create new instance and deploy
 
     @dbus_service_method(DBUS_INTERFACE_ROLE, in_signature='sa{sv}',
-                         out_signature='')
+                         out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def deploy(self, name, values, sender=None):
+    def deploy(self, name, values,
+               reply_handler, error_handler,
+               sender=None):
         """deploy role"""
+        async.start_async_with_callbacks(self.__deploy_async(name, values),
+                                         reply_handler, error_handler)
 
+    def __deploy_async(self, name, values):
         values = dbus_to_python(values)
         name = dbus_to_python(name)
         log.debug1("role.%s.deploy('%s', %s)", self._escaped_name, name, values)
@@ -306,7 +313,5 @@ class DBusRole(slip.dbus.service.Object):
         # TODO: unlock
 
         # deploy role, lock in role now
-        role.deploy(values)
-
-        return role
-
+        result = yield async.async_call(role.deploy_async(values))
+        yield result
