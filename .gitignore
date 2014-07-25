@@ -29,3 +29,5 @@ aclocal.m4
 src/rolekit/config/__init__.py
 config/org.fedoraproject.rolekit1.policy
 config/rolekit.service
+/test-driver
+/test-suite.log

@@ -4,6 +4,7 @@ dist_bin_SCRIPTS = rolectl
 dist_sbin_SCRIPTS = roled
 
 nobase_dist_python_DATA = \
+	rolekit/async.py \
 	rolekit/client.py \
 	rolekit/dbus_utils.py \
 	rolekit/errors.py \

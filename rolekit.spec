@@ -13,6 +13,7 @@ BuildRequires: glib2, glib2-devel
 BuildRequires: systemd-units
 BuildRequires: docbook-style-xsl
 Requires: dbus-python
+Requires: python-futures
 Requires: python-slip-dbus
 Requires: python-decorator
 Requires: pygobject3-base

@@ -1,11 +1,17 @@
 SUBDIRS = config doc po src
 
+TESTS = tests/async_test.py
+TEST_EXTENSIONS = .py
+PY_LOG_COMPILER = python
+AM_TESTS_ENVIRONMENT = export PYTHONPATH=$(abs_top_srcdir)/src;
+
 EXTRA_DIST = \
 	COPYING \
 	README \
 	autogen.sh \
 	${PACKAGE_NAME}.spec \
-	fix_python_shebang.sh
+	fix_python_shebang.sh \
+	$(TESTS)
 
 CLEANFILES = *~ *\# .\#* *.tar*
 
