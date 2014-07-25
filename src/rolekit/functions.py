@@ -77,7 +77,7 @@ def writefile(filename, line):
 
 def joinArgs(args):
     if "quote" in dir(shlex):
-        return " ".join(shlex.quote(a) for a in args)
+        return " ".join(shlex.quote(a) for a in args)  # @UndefinedVariable
     else:
         return " ".join(pipes.quote(a) for a in args)
 
