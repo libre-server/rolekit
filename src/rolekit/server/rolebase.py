@@ -416,20 +416,40 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.installPackages()", self._log_prefix)
         raise NotImplementedError()
 
-    def startServices(self):
-        """start services"""
-        log.debug1("%s.startServices()", self._log_prefix)
-        raise NotImplementedError()
+    def start_services_async(self):
+        """Start services defined by self._settings["services"]"""
+        log.debug1("%s.start_services_async()", self._log_prefix)
+
+        with SystemdJobHandler() as job_handler:
+            for service in self._settings["services"]:
+                job_path = job_handler.manager.StartUnit(service, "replace")
+                job_handler.register_job(job_path)
+
+            job_results = yield job_handler.all_jobs_done_future()
+
+        if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+            details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+            raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
 
     def restartServices(self):
         """restart services"""
         log.debug1("%s.restartServices()", self._log_prefix)
         raise NotImplementedError()
 
-    def stopServices(self):
-        """stopServices"""
-        log.debug1("%s.stopServices()", self._log_prefix)
-        raise NotImplementedError()
+    def stop_services_async(self):
+        """stop_services_async"""
+        log.debug1("%s.stop_services_async()", self._log_prefix)
+
+        with SystemdJobHandler() as job_handler:
+            for service in self._settings["services"]:
+                job_path = job_handler.manager.StopUnit(service, "replace")
+                job_handler.register_job(job_path)
+
+            job_results = yield job_handler.all_jobs_done_future()
+
+        if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+            details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+            raise RolekitError(COMMAND_FAILED, "Stopping services failed: %s" % details)
 
     def installFirewall(self):
         """install firewall"""

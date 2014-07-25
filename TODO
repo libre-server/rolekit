@@ -19,9 +19,7 @@
 
 * implement service handling
   - systemd targets (outstanding)
-  - startServices (on review)
   - restartServices (on review)
-  - stopServices (on review)
 
 * implement firewall handling (outstanding)
   - installFirewall

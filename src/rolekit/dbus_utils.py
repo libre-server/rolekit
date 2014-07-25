@@ -21,10 +21,18 @@
 
 import dbus
 import pwd
+import slip.dbus
 import sys
 import urllib
 
+from concurrent.futures import Future
+from rolekit.logger import log
+
 PY2 = sys.version < '3'
+
+SYSTEMD_MANAGER_INTERFACE = "org.freedesktop.systemd1.Manager"
+SYSTEMD_MANAGER_NAME = "org.freedesktop.systemd1"
+SYSTEMD_MANAGER_PATH = "/org/freedesktop/systemd1"
 
 def command_of_pid(pid):
     """ Get command for pid from /proc """
@@ -36,7 +44,7 @@ def command_of_pid(pid):
     return cmd
 
 def pid_of_sender(bus, sender):
-    """ Get pid from sender string using 
+    """ Get pid from sender string using
     org.freedesktop.DBus.GetConnectionUnixProcessID """
 
     dbus_obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -49,7 +57,7 @@ def pid_of_sender(bus, sender):
     return pid
 
 def uid_of_sender(bus, sender):
-    """ Get user id from sender string using 
+    """ Get user id from sender string using
     org.freedesktop.DBus.GetConnectionUnixUser """
 
     dbus_obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -71,7 +79,7 @@ def user_of_uid(uid):
     return pws[0]
 
 def context_of_sender(bus, sender):
-    """ Get SELinux context from sender string using 
+    """ Get SELinux context from sender string using
     org.freedesktop.DBus.GetConnectionSELinuxSecurityContext """
 
     dbus_obj = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -148,3 +156,84 @@ def dbus_label_escape(label):
             ret += hex(ord(x)).replace("0x", "_")
 
     return ret
+
+
+# FIXME: Is it possible to write a reasonably stand-alone test for this?
+class SystemdJobHandler(object):
+    """An utility for waiting for one or more systemd jobs.
+
+    Usage:
+
+    with SystemdJobHandler() as job_handler:
+        job_path = job_handler.manager.$do_something_to_create_a_job
+        job_handler.register_job(job_path)
+        # Can register more parallel jobs like this
+
+        job_results = yield job_handler.all_jobs_done_future()
+
+    job_results will be a dictionary, in SYSTEMD_MANAGER_INTERFACE.JobRemoved
+    terms job_results[unit] = result
+    """
+
+    def __init__(self):
+        self.__future = Future()
+        self.__pending_jobs = set()
+        self.__job_results = {}
+        self.__signal_match = None
+
+        bus = slip.dbus.SystemBus()
+        manager_object = bus.get_object(SYSTEMD_MANAGER_NAME,
+                                        SYSTEMD_MANAGER_PATH)
+        self.__manager = dbus.Interface(manager_object,
+                                         SYSTEMD_MANAGER_INTERFACE)
+
+    def __job_removed_handler(self, job_id, job_path, unit, result):
+        """SYSTEMD_MANAGER_INTERFACE.JobRemoved signal handler"""
+        log.debug1("systemd JobRemoved signal: %s" %
+                   repr((job_id, job_path, unit, result)))
+        if job_path in self.__pending_jobs:
+            self.__job_results[unit] = result
+            self.__pending_jobs.remove(job_path)
+            if len(self.__pending_jobs) == 0:
+                self.__future.set_result(self.__job_results)
+
+    # We use the context manager protocol to ensure the signal registration is
+    # correctly removed.
+    def __enter__(self):
+        assert self.__signal_match is None, "Recursive use of SystemdJobProcessor"
+        assert not self.__future.done(), "Repeated use of SystemdJobProcessor"
+        self.__signal_match = self.__manager.connect_to_signal("JobRemoved", self.__job_removed_handler)
+        return self # To allow “with SystemdJobHandler as job_handler:”…
+
+    def __exit__(self, *args):
+        self.__signal_match.remove()
+        self.__signal_match = None
+        return False
+
+    # This is not strictly speaking a necessary part of the API, but since we
+    # need the interface object for ourselves and the caller needs it as well,
+    # let’s make it available.
+    @property
+    def manager(self):
+        """A dbus.Interface object for SYSTEMD_MANAGER_INTERFACE."""
+        return self.__manager
+
+    def register_job(self, job_path):
+        """Register a job to be followed to completion.
+
+        :param job_path: A path of the job object.  Make sure to provide the
+        path soon after receiving it (in particular before allowing any D-Bus
+        signals to be processed).
+        """
+        assert self.__signal_match is not None, \
+            "Registering for jobs when not watching for results"
+        self.__pending_jobs.add(job_path)
+
+    def all_jobs_done_future(self):
+        """Return a future for results of registered jobs.
+
+        :returns: a future.  The value eventually set as a result is
+        a dictionary of unit name -> job result string.
+        """
+        assert self.__signal_match is not None and len(self.__pending_jobs) != 0
+        return self.__future

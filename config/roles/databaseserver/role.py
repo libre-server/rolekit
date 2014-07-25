@@ -36,39 +36,29 @@ class Role(RoleBase):
     # Without overwrites or new settings, this can be omitted.
     _DEFAULTS = dict(RoleBase._DEFAULTS, **{
         "version": 1,
-        "services": [ "service1" ],
-        "packages": [ "package1", "@group1" ],
-        "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
-        "myownsetting": "something",
-        "failonthis": 123,
+        "services": [ "postgresql.service" ],
+        "packages": [ "postgresql-server", "postgresql-contrib" ],
+        "firewall": { "ports": [], "services": [ "postgresql" ] },
+#        "myownsetting": "something",
+#        "failonthis": 123,
     })
 
     # Use _READONLY_SETTINGS from RoleBase and add new if needed.
     # Without new readonly settings, this can be omitted.
-    _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + [
-        "myownsetting"
-    ]
+#    _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + [
+#        "myownsetting"
+#    ]
 
 
     # Initialize role
     def __init__(self, name, directory, *args, **kwargs):
         super(Role, self).__init__(name, directory, *args, **kwargs)
 
-
-    # Start code
     def do_start_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
+        yield async.call_future(self.start_services_async())
 
-
-    # Stop code
     def do_stop_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
+        yield async.call_future(self.stop_services_async())
 
 
     # Deploy code
@@ -76,7 +66,8 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        yield None
+        # FIXME: install packages, run initdb, enable services
+        raise NotImplementedError()
 
 
     # Redeploy code
@@ -84,7 +75,8 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        # FIXME: should just chain to parent for the common fields?
+        raise NotImplementedError()
 
 
     # Decommission code
@@ -92,7 +84,8 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        # FIXME: disable services
+        raise NotImplementedError() # FIXME: what about the data?
 
 
     # Update code
@@ -100,7 +93,8 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        # FIXME: should just chain to parent for the common fields?
+        raise NotImplementedError()
 
 
     # Static method for use in roles and instances
@@ -113,17 +107,17 @@ class Role(RoleBase):
     #
     # This method needs to be extended for new role settings.
     # Without additional properties, this can be omitted.
-    @staticmethod
-    def get_property(x, prop):
-        # At first cover additional settings.
-        # Then return the result of the call to get_property of the
-        # parent class.
-        if hasattr(x, "_settings") and prop in x._settings:
-            return x._settings[prop]
-        if prop == "myownsetting":
-            return x._name
-
-        return super(Role, x).get_property(x, prop)
+#   @staticmethod
+#   def get_property(x, prop):
+#       # At first cover additional settings.
+#       # Then return the result of the call to get_property of the
+#       # parent class.
+#       if hasattr(x, "_settings") and prop in x._settings:
+#           return x._settings[prop]
+#       if prop == "myownsetting":
+#           return x._name
+#
+#       return super(Role, x).get_property(x, prop)
 
 
     # Static method for use in roles and instances
@@ -136,11 +130,11 @@ class Role(RoleBase):
     #
     # This method needs to be extended for new role settings.
     # Without additional properties, this can be omitted.
-    @staticmethod
-    def get_dbus_property(x, prop):
-        # At first cover additional settings and return a proper dbus type.
-        # Then return the result of the call to get_dbus_property of the
-        # parent class.
-        if prop == "myownsetting":
-            return dbus.String(x.get_property(x, prop))
-        return super(Role, x).get_dbus_property(x, prop)
+#   @staticmethod
+#   def get_dbus_property(x, prop):
+#       # At first cover additional settings and return a proper dbus type.
+#       # Then return the result of the call to get_dbus_property of the
+#       # parent class.
+#       if prop == "myownsetting":
+#           return dbus.String(x.get_property(x, prop))
+#       return super(Role, x).get_dbus_property(x, prop)
