@@ -40,7 +40,7 @@ def handle_exceptions(func, *args, **kwargs):
         return func(*args, **kwargs)
     except RolekitError as error:
         log.error(error)
-    except Exception as msg:
+    except Exception:
         log.exception()
 
 @decorator
