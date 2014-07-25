@@ -448,12 +448,12 @@ class RoleBase(slip.dbus.service.Object):
     # Public methods
 
     # Start code
-    def do_start(self, sender=None):
+    def do_start_async(self, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
     # Stop code
-    def do_stop(self, sender=None):
+    def do_stop_async(self, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -486,52 +486,46 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.StateChanged('%s')", self._log_prefix, state)
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def start(self, sender=None):
+    def start(self, reply_handler, error_handler, sender=None):
         """start role"""
-        # Make sure we are in the proper state
-        self.assert_state(READY_TO_START)
+        async.start_async_with_callbacks(self.__start_async(sender),
+                                         reply_handler, error_handler)
 
-        # Log
+    def __start_async(self, sender):
+        self.assert_state(READY_TO_START)
         log.debug1("%s.start()", self._log_prefix)
 
-        # Change state to starting
-        self.change_state(STARTING)
-
-        # Call do_start
         try:
-            self.do_start(sender)
+            self.change_state(STARTING)
+            yield async.async_call(self.do_start_async(sender))
+            self.change_state(RUNNING, write=True)
         except:
             self.change_state(READY_TO_START, write=True)
             raise
 
-        # Continue only after successful start:
-        self.change_state(RUNNING, write=True)
 
-
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def stop(self, sender=None):
+    def stop(self, reply_handler, error_handler, sender=None):
         """stop role"""
-        # Make sure we are in the proper state
-        self.assert_state(RUNNING)
+        async.start_async_with_callbacks(self.__stop_async(sender),
+                                         reply_handler, error_handler)
 
-        # Log
+    def __stop_async(self, sender):
+        self.assert_state(RUNNING)
         log.debug1("%s.stop()", self._log_prefix)
 
-        # Change state to stopping
-        self.change_state(STOPPING)
-
-        # Call do_start
         try:
-            self.do_stop(sender)
+            self.change_state(STOPPING)
+            yield async.async_call(self.do_stop_async(sender))
+            self.change_state(READY_TO_START, write=True)
         except:
             self.change_state(ERROR, write=True)
             raise
-
-        # Continue only after successful stop:
-        self.change_state(READY_TO_START, write=True)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')

@@ -56,19 +56,19 @@ class Role(RoleBase):
 
 
     # Start code
-    def do_start(self, sender=None):
+    def do_start_async(self, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        yield None
 
 
     # Stop code
-    def do_stop(self, sender=None):
+    def do_stop_async(self, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        yield None
 
 
     # Deploy code
