@@ -30,8 +30,6 @@ AM_PATH_PYTHON
 AC_PATH_PROG([XSLTPROC], [xsltproc])
 AC_PATH_PROG([KILL], [kill], [/usr/bin/kill])
 
-GLIB_GSETTINGS
-
 #############################################################
 
 AC_ARG_ENABLE([systemd],

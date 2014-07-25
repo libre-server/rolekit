@@ -27,7 +27,7 @@ EXTRA_DIST = \
 
 CLEANFILES = *~ *\# .\#* *.py?
 
-install-data-local:
+install-exec-hook:
 	@echo "Fixing python shebang"
 	@list='$(dist_bin_SCRIPTS)'; \
 	for p in $$list; do \

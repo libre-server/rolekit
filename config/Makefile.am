@@ -15,7 +15,6 @@ BUILT_SOURCES = \
 
 @INTLTOOL_POLICY_RULE@
 @INTLTOOL_XML_NOMERGE_RULE@
-@GSETTINGS_RULES@
 
 all: $(polkit1_action_DATA)
 
@@ -86,11 +85,12 @@ install-config:
 	$(MKDIR_P) $(DESTDIR)$(sconfdir)
 	$(MKDIR_P) $(DESTDIR)$(sconfdir)/roles
 	$(MKDIR_P) $(DESTDIR)$(prefixlibdir)
-	cp -r roles $(DESTDIR)$(prefixlibdir)
+	cp -r $(srcdir)/roles $(DESTDIR)$(prefixlibdir)
+	chmod -R u+w $(DESTDIR)$(prefixlibdir)/roles
 
 uninstall-config:
 	rmdir $(DESTDIR)$(sconfdir)/roles
-	rm -f $(DESTDIR)$(prefixlibdir)/roles/*
+	rm -rf $(DESTDIR)$(prefixlibdir)/roles/*
 	rmdir $(DESTDIR)$(prefixlibdir)/roles
 
 install-data-local: $(INSTALL_TARGETS)
