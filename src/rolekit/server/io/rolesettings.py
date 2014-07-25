@@ -24,7 +24,6 @@ import shutil
 import json
 
 from rolekit.config import *
-from rolekit.errors import *
 
 class RoleSettings(dict):
     """ Rolesettings store """
