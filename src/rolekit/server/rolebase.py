@@ -663,7 +663,7 @@ class RoleBase(slip.dbus.service.Object):
             raise
 
         # Continue only after successful decommission:
-        # Then cleantup: remove settings file, remove from dbus
+        # Then clean up: remove settings file, remove from dbus
         # connection and destroy instance
         self._settings.remove()
         self.remove_from_connection()

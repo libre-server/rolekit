@@ -33,7 +33,7 @@ from rolekit.errors import *
 
 @decorator
 def handle_exceptions(func, *args, **kwargs):
-    """Decorator to handle exceptions and log them. Used if not conneced 
+    """Decorator to handle exceptions and log them. Used if not connected
     to D-Bus.
     """
     try:
