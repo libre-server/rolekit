@@ -565,36 +565,26 @@ class RoleBase(slip.dbus.service.Object):
         # Check values
         try:
             self.check_values(values)
-        except:
-            # checking of values failed, set state to error
-            self.change_state(ERROR, write=True)
-            raise
 
-        # Change to deploying state
-        self.change_state(DEPLOYING)
+            # Change to deploying state
+            self.change_state(DEPLOYING)
 
-        # Copy _DEFAULTS to self._settings
-        self.copy_defaults()
+            # Copy _DEFAULTS to self._settings
+            self.copy_defaults()
 
-        # Call do_deploy
-        try:
+            # Call do_deploy
             yield async.async_call(self.do_deploy_async(values, sender))
-        except:
-            # deploy failed set state to error
-            self.change_state(ERROR, write=True)
-            raise
 
-        # Continue only after successful deployment:
-        # Apply values to self._settings
-        try:
+            # Continue only after successful deployment:
+            # Apply values to self._settings
             self.apply_values(values)
+
+            # Change to ready to start state
+            self.change_state(READY_TO_START, write=True)
         except:
-            # applying of values failed, set state to error
+            # Something failed, set state to error
             self.change_state(ERROR, write=True)
             raise
-
-        # Change to ready to start state
-        self.change_state(READY_TO_START, write=True)
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
