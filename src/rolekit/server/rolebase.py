@@ -67,6 +67,15 @@ class RoleBase(slip.dbus.service.Object):
 
     def __init__(self, parent, name, type_name, directory, settings,
                  *args, **kwargs):
+        """The DBUS_INTERFACE_ROLE_INSTANCE implementation.
+
+        :param parent: A DBusRole
+        :param name: Instance name
+        :param type_name: Role name
+        :param directory: FIXME: unused???
+        :param settings: RoleSettings for the role
+        :param path: (Implicit in *args) FIXME: unused???
+        """
         super(RoleBase, self).__init__(*args, **kwargs)
         self._path = args[0]
         self._parent = parent

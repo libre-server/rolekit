@@ -51,6 +51,13 @@ class DBusRole(slip.dbus.service.Object):
 
     @handle_exceptions
     def __init__(self, role, name, directory, *args, **kwargs):
+        """The DBUS_INTERFACE_ROLE implementation
+
+        :param role: RoleBase descendant
+        :param name: Role name
+        :param directory: FIXME: unused???
+        :param path: (Implicit in *args) FIXME: unused???
+        """
         super(DBusRole, self).__init__(*args, **kwargs)
         self._path = args[0]
         self._role = role
@@ -204,6 +211,10 @@ class DBusRole(slip.dbus.service.Object):
 
     @handle_exceptions
     def remove_instance(self, instance):
+        """Remove an instance from our list.
+
+        Note that this neither undeploys it nor deletes the settings file.
+        """
         name = instance.get_name()
         escaped_name = dbus_label_escape(name)
 
