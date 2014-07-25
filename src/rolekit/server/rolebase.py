@@ -552,7 +552,6 @@ class RoleBase(slip.dbus.service.Object):
         self.start()
 
 
-    @dbus_handle_exceptions
     def deploy_async(self, values, sender=None):
         """deploy role"""
         values = dbus_to_python(values)
