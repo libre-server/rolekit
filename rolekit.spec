@@ -60,6 +60,7 @@ make install DESTDIR=%{buildroot}
 %{_unitdir}/rolekit.service
 %config(noreplace) %{_sysconfdir}/dbus-1/system.d/rolekit1.conf
 %{_datadir}/polkit-1/actions/org.fedoraproject.rolekit1.policy
+%{_datadir}/dbus-1/system-services/org.fedoraproject.rolekit1.service
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit/config
 %attr(0755,root,root) %dir %{python_sitelib}/rolekit/server
