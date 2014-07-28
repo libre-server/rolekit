@@ -1,5 +1,7 @@
 SUBDIRS = config doc po src
 
+DISTCHECK_CONFIGURE_FLAGS = --with-system-bus-services-dir="$$dc_install_base"/$(datadir)//dbus-1/system-services
+
 TESTS = tests/async_test.py
 TEST_EXTENSIONS = .py
 PY_LOG_COMPILER = python

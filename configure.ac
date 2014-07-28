@@ -49,6 +49,11 @@ AC_ARG_WITH([systemd-unitdir],
        [SYSTEMD_UNITDIR=$withval], [SYSTEMD_UNITDIR="${prefix}/lib/systemd/system"])
 AC_SUBST(SYSTEMD_UNITDIR)
 
+AC_ARG_WITH([system-bus-services-dir],
+       AS_HELP_STRING([--with-system-bus-services-dir], [Directory for system services files]),
+       [SYSTEM_BUS_SERVICES_DIR=$withval], [SYSTEM_BUS_SERVICES_DIR="$(pkg-config dbus-1 --variable=system_bus_services_dir)"])
+AC_SUBST(SYSTEM_BUS_SERVICES_DIR)
+
 #############################################################
 
 AC_SUBST([GETTEXT_PACKAGE], '[PKG_NAME]')

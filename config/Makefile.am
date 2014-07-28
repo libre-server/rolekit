@@ -8,6 +8,8 @@ polkit1_action_DATA = $(polkit1_action_FILES:.in=)
 dbus_policydir = $(sysconfdir)/dbus-1/system.d
 dist_dbus_policy_DATA = rolekit1.conf
 
+systembusservicesdir = $(SYSTEM_BUS_SERVICES_DIR)
+dist_systembusservices_DATA = org.fedoraproject.rolekit1.service
 
 BUILT_SOURCES = \
 	$(polkit1_action_DATA) \

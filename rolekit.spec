@@ -9,7 +9,7 @@ BuildArch: noarch
 BuildRequires: gettext
 BuildRequires: intltool
 # glib2-devel is needed for gsettings.m4
-BuildRequires: glib2, glib2-devel
+BuildRequires: glib2, glib2-devel, dbus-devel
 BuildRequires: systemd-units
 BuildRequires: docbook-style-xsl
 Requires: dbus-python
