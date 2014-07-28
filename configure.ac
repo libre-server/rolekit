@@ -46,7 +46,7 @@ AC_SUBST(INSTALL_SYSCONFIG)
 
 AC_ARG_WITH([systemd-unitdir],
        AS_HELP_STRING([--with-systemd-unitdir], [Directory for systemd service files]),
-       [SYSTEMD_UNITDIR=$withval], [SYSTEMD_UNITDIR="${prefix}/lib/systemd/system"])
+       [SYSTEMD_UNITDIR=$withval], [SYSTEMD_UNITDIR="$(pkg-config systemd --variable=systemdsystemunitdir)"])
 AC_SUBST(SYSTEMD_UNITDIR)
 
 AC_ARG_WITH([system-bus-services-dir],
