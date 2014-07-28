@@ -1,4 +1,5 @@
 /.intltool-merge-cache
+/Makefile.in.in
 POTFILES
 *.mo
 *.*~*
