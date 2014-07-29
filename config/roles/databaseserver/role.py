@@ -27,56 +27,120 @@ from rolekit.config import *
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
-from rolekit.server.rolebase import RoleBase
+from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
 
 class Role(RoleBase):
-    _DEFAULTS = {
+    # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
+    # Without overwrites or new settings, this can be omitted.
+    _DEFAULTS = dict(RoleBase._DEFAULTS, **{
         "version": 1,
         "services": [ "service1" ],
         "packages": [ "package1", "@group1" ],
         "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
-        "firewall_zones": [ ],
-        "custom_firewall": False,
         "myownsetting": "something",
         "failonthis": 123,
-    }
+    })
 
-    @handle_exceptions
+    # Use _READONLY_SETTINGS from RoleBase and add new if needed.
+    # Without new readonly settings, this can be omitted.
+    _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + [
+        "myownsetting"
+    ]
+
+
+    # Initialize role
     def __init__(self, name, directory, *args, **kwargs):
         super(Role, self).__init__(name, directory, *args, **kwargs)
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}')
-    @dbus_handle_exceptions
-    def deploy(self, values, sender=None):
-        # Call deploy in parent class first, the values are written to
-        # self_settings["new"].
-        super(Role, self).deploy(values)
 
-        # Then do the magic and use the new values.
-        # After successful deployment, move the values from self_settings["new"]
-        # to self_settings["deployed"] and call self._settings.write() to save
-        # this change.
+    # Start code
+    def do_start_async(self, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        yield None
 
-    # The definition of decommision is only needed if there are additional
-    # steps needed
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
-    @dbus_handle_exceptions
-    def decommission(self, sender=None):
-        # Do some magic here if needed, then call decommission of parent class
-        # for cleanup: remove settings file, remove from dbus connection and
-        # destroy instance
-        super(Role, self).decommission()
 
-    # If there are additional _DEFAULTS, then the definition of
-    # get_dbus_properties is needed to cover them.
+    # Stop code
+    def do_stop_async(self, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        yield None
+
+
+    # Deploy code
+    def do_deploy_async(self, values, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        yield None
+
+
+    # Redeploy code
+    def do_redeploy(self, values, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        pass
+
+
+    # Decommission code
+    def do_decommission(self, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        pass
+
+
+    # Update code
+    def do_update(self, sender=None):
+        # Do the magic
+        #
+        # In case of error raise an exception
+        pass
+
+
+    # Static method for use in roles and instances
+    #
+    # Usage in roles: <class>.get_property(<class>, key)
+    #   Returns values from _DEFAULTS as dbus types
+    #
+    # Usage in instances: role.get_property(role, key)
+    #   Returns values from instance _settings if set, otherwise from _DEFAULTS
+    #
+    # This method needs to be extended for new role settings.
+    # Without additional properties, this can be omitted.
     @staticmethod
-    @dbus_handle_exceptions
+    def get_property(x, prop):
+        # At first cover additional settings.
+        # Then return the result of the call to get_property of the
+        # parent class.
+        if hasattr(x, "_settings") and prop in x._settings:
+            return x._settings[prop]
+        if prop == "myownsetting":
+            return x._name
+
+        return super(Role, x).get_property(x, prop)
+
+
+    # Static method for use in roles and instances
+    #
+    # Usage in roles: <class>.get_dbus_property(<class>, key)
+    #   Returns settings as dbus types
+    #
+    # Usage in instances: role.get_dbus_property(role, key)
+    #   Uses role.get_property(role, key)
+    #
+    # This method needs to be extended for new role settings.
+    # Without additional properties, this can be omitted.
+    @staticmethod
     def get_dbus_property(x, prop):
-        # At first cover the additional settings and return dbus types.
+        # At first cover additional settings and return a proper dbus type.
         # Then return the result of the call to get_dbus_property of the
         # parent class.
         if prop == "myownsetting":
-            return dbus.String(x._DEFAULTS["myownsetting"])
+            return dbus.String(x.get_property(x, prop))
         return super(Role, x).get_dbus_property(x, prop)
