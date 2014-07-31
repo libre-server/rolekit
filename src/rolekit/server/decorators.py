@@ -45,10 +45,11 @@ def handle_exceptions(func, *args, **kwargs):
 
 @decorator
 def dbus_handle_exceptions(func, *args, **kwargs):
-    """Decorator to handle exceptions, log and report them into D-Bus
+    """Decorator to handle exceptions, log and convert into DBusExceptions.
 
-    :Raises DBusException: on a rolekit error code problems.
+    :Raises DBusException: on any exception raised by the decorated function.
     """
+    # Keep this in sync with async.start_async_with_dbus_callbacks()
     try:
         return func(*args, **kwargs)
     except RolekitError as error:

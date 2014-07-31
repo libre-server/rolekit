@@ -493,8 +493,8 @@ class RoleBase(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def start(self, reply_handler, error_handler, sender=None):
         """start role"""
-        async.start_async_with_callbacks(self.__start_async(sender),
-                                         reply_handler, error_handler)
+        async.start_async_with_dbus_callbacks(self.__start_async(sender),
+                                              reply_handler, error_handler)
 
     def __start_async(self, sender):
         self.assert_state(READY_TO_START)
@@ -514,8 +514,8 @@ class RoleBase(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def stop(self, reply_handler, error_handler, sender=None):
         """stop role"""
-        async.start_async_with_callbacks(self.__stop_async(sender),
-                                         reply_handler, error_handler)
+        async.start_async_with_dbus_callbacks(self.__stop_async(sender),
+                                              reply_handler, error_handler)
 
     def __stop_async(self, sender):
         self.assert_state(RUNNING)

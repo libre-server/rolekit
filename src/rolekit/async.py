@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+from rolekit.logger import log
+from dbus.exceptions import DBusException
 
 """Helpers for writing asynchronous code in a more natural way.
 
@@ -77,7 +79,7 @@ def start_async_with_callbacks(generator, result_handler, error_handler):
     is equivalent to yielding None.
     :param result_handler: A function to be called with the final yielded
     value of generator.
-    :param error_handler: A function to be called on error_handler, with an exception
+    :param error_handler: A function to be called on error, with an exception
     object.
 
     The requirement to yield the final return value instead of just returning
@@ -127,6 +129,36 @@ def start_async_with_callbacks(generator, result_handler, error_handler):
             error_handler(e)
 
     async_step(None)
+
+def start_async_with_dbus_callbacks(generator, result_handler, error_handler):
+    """Set up generator as an async D-Bus-responding coroutine, calling a handler when done.
+
+    :param generator: A generator object (result of calling a generator
+    function); instead of blocking, this generator should repeatedly
+    yield concurrent.futures.Future objects (and configure them to be
+    resolved somehow to prevent a hang), and finally yield a value that
+    is not a concurrent.futures.Future.  Returning without yielding a value
+    is equivalent to yielding None.
+    :param result_handler: A function to be called with the final yielded
+    value of generator.
+    :param error_handler: A function to be called on error, with an exception
+    object.
+
+    The requirement to yield the final return value instead of just returning
+    could go away with PEP 380 (i.e. requiring Python 3.3).
+    """
+    # Keep this in sync with decorators.dbus_handle_exceptions()
+    def error_handler_with_conversion(e):
+        # We can’t use log.exception() because the traceback is no longer available.
+        # So the three cases in dbus_handle_exceptions amount to just this.
+        if not isinstance(e, DBusException):
+            log.error(str(e))
+            e = DBusException(str(e))
+        error_handler(e)
+
+    return start_async_with_callbacks(generator, result_handler,
+                                      error_handler_with_conversion)
+
 
 def async_call(generator):
     """Return a future used to record output of generator

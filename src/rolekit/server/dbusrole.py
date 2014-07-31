@@ -269,8 +269,8 @@ class DBusRole(slip.dbus.service.Object):
                reply_handler, error_handler,
                sender=None):
         """deploy role"""
-        async.start_async_with_callbacks(self.__deploy_async(name, values),
-                                         reply_handler, error_handler)
+        async.start_async_with_dbus_callbacks(self.__deploy_async(name, values),
+                                              reply_handler, error_handler)
 
     def __deploy_async(self, name, values):
         values = dbus_to_python(values)
