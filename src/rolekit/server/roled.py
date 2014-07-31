@@ -59,6 +59,7 @@ class RoleD(slip.dbus.service.Object):
         self._roles = [ ]
         self._instances = [ ]
         self.start()
+        self.timeout_restart()
 
     def __del__(self):
         self.stop()
