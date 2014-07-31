@@ -306,7 +306,8 @@ class DBusRole(slip.dbus.service.Object):
         role = self._role(self, name, self._name, self._directory, settings,
                           self._path,
                           "%s/%s/%s" % (DBUS_PATH_ROLES, self._escaped_name,
-                                        instance_escaped_name))
+                                        instance_escaped_name),
+                          persistent=self.persistent)
         self._instances[instance_escaped_name] = role
         self.InstanceAdded(instance_escaped_name)
 

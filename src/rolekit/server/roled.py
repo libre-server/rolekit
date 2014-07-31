@@ -106,7 +106,8 @@ class RoleD(slip.dbus.service.Object):
 
                 # create role object that contains the role instance class
                 obj = DBusRole(role, name, directory, self._path,
-                                "%s/%s" % (DBUS_PATH_ROLES, escaped_name))
+                                "%s/%s" % (DBUS_PATH_ROLES, escaped_name),
+                               persistent=self.persistent)
 
                 if obj in self._roles:
                     log.error("Duplicate role '%s'", obj.name)

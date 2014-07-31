@@ -58,6 +58,9 @@ def parse_cmdline():
                         help="""Disable writing pid file and don't check
                                 for existing server process.""",
                         action="store_true")
+    parser.add_argument('--persistent',
+                        help="""Run persistently, no auto-termination.""",
+                        action="store_true")
     return parser.parse_args()
 
 def setup_logging(args):
@@ -125,7 +128,7 @@ def startup(args):
 
         # Start the server mainloop here
         from rolekit.server import server
-        server.run_server(args.debug_gc)
+        server.run_server(args.debug_gc, args.persistent)
 
         # Clean up on exit
         if not args.nopid:

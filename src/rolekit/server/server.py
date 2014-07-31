@@ -60,7 +60,7 @@ def sigterm(mainloop):
 #
 ############################################################################
 
-def run_server(debug_gc=False):
+def run_server(debug_gc=False, persistent=False):
     """ Main function for rolekit server. Handles D-Bus and GLib mainloop.
     """
     service = None
@@ -88,7 +88,7 @@ def run_server(debug_gc=False):
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SystemBus()
         name = dbus.service.BusName(DBUS_INTERFACE, bus=bus)
-        service = RoleD(name, DBUS_PATH)
+        service = RoleD(name, DBUS_PATH, persistent=persistent)
 
         mainloop = GLib.MainLoop()
         slip.dbus.service.set_mainloop(mainloop)
