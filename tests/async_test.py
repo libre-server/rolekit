@@ -83,7 +83,7 @@ class TestAsyncInfrastructure(unittest.TestCase):
             logging.debug("top: after second yield: %s", repr(e))
             assert type(e) is ValueError and e.args == (2,)
         else:
-            raise AssertionError(v2)
+            raise AssertionError(v)
 
         logging.debug("top: yielding result")
         yield 42 * subroutine_result
