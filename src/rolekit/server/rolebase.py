@@ -93,6 +93,8 @@ class RoleBase(slip.dbus.service.Object):
         if not "state" in self._settings:
             self._settings["state"] = NASCENT
 
+        self.timeout_restart()
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # property check methods
 

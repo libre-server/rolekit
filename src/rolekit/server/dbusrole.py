@@ -97,6 +97,8 @@ class DBusRole(slip.dbus.service.Object):
                                   persistent=self.persistent)
                 self._instances[instance_escaped_name] = role
 
+        self.timeout_restart()
+
     @handle_exceptions
     def __del__(self):
         self.remove_from_connection()
