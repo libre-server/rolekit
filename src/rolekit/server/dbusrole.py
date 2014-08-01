@@ -93,7 +93,8 @@ class DBusRole(slip.dbus.service.Object):
                                   settings, self._path,
                                   "%s/%s/%s" % (DBUS_PATH_ROLES,
                                                 self._escaped_name,
-                                                instance_escaped_name))
+                                                instance_escaped_name),
+                                  persistent=self.persistent)
                 self._instances[instance_escaped_name] = role
 
     @handle_exceptions
