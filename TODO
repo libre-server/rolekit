@@ -1,55 +1,61 @@
-* role instances
+* rng
 
 * roled suspend with save current states (for automatic wakeup, dbus activation)
+  - status update
 
 * async and simultaneous method call support for role handling
-  - callback structure
-  - threads
-  - locks
-
-* finalize role states
+  - callback structuren (partly done)
 
 * implement role handling
-  - start
-  - stop
-  - restart
-  - deploy
-  - decommission
-  - update
+  - start (on review)
+  - stop (on review)
+  - restart (DONE)
+  - deploy (package installation)
+  - decommission (async still needed)
+  - redeploy (outstanding)
 
 * implement package handling
-  - installPackages
+  - installPackages (outstanding)
 
 * implement service handling
-  - startServices
-  - restartServices
-  - stopServices
+  - systemd targets (outstanding)
+  - startServices (on review)
+  - restartServices (on review)
+  - stopServices (on review)
 
-* implement firewall handling
+* implement firewall handling (outstanding)
   - installFirewall
   - updateFirewall
   - uninstallFirewall
 
-* save old settings in case of changes
-  - for updateFirewall, the old firewall settings are needed to make sure only to remove firewall settings, that have been set before by installFirewall
-  - old settings are removed while using the updateFirewall call
+* handle role updates (outstanding, >F21)
+
+* documentation (outstanding)
+  - homepage
+  - rolectl
+  - roled
+  - rolekit.dbus
+  - rolekit.roles
+    - role API
+    - description
+    - user parameters
+  - rolekit
+
+* translations (outstanding)
+  - help text and man pages (?)
+
+  - create and upload pot file (to zalada?)
+  - adapt tx-pull target if needed
+  - get translations
+  - enable "%find_lang %{name} --all-name" and "%files -f %{name}.lang" in spec
+
+DONE
+
+* role instances DONE
+
+* finalize role states
 
 * rolectl
   - roled state
   - role handlling, state
   - instance handling, state
-
-* handle role updates
-
-* documentation
-  - rolectl
-  - roled
-  - rolekit.dbus
-  - rolekit.roles
-  - rolekit
-
-* translations
-  - create and upload pot file (to transifex?)
-  - adapt tx-pull target if needed
-  - get translations
-  - enable "%find_lang %{name} --all-name" and "%files -f %{name}.lang" in spec
