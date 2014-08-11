@@ -74,5 +74,17 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
-* Fri May 23 2014 Thomas Woerner <twoerner@redhat.com> 0.1-1
+* Mon Aug 11 2014 Thomas Woerner <twoerner@redhat.com> 0.0.2-1
+- new instance support
+- new rolectl command line tool
+- new redeploy feature for instances
+- new async support for deploy, start and stop D-Bus methods
+- finalized states
+- adapted D-Bus interface for instances
+- dbus activation and auto-termination after some inactivity time
+- dbus exception handling fixes
+- build fixes and cleanups (distcheck, po/Makefile.in.in, ..)
+- several fixes and cleanups
+
+* Fri May 23 2014 Thomas Woerner <twoerner@redhat.com> 0.0.1-1
 - initial package (proof of concept implementation)
