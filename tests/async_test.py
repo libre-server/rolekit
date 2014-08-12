@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import logging
+import os
+import signal
 import unittest
 
 from concurrent.futures import Future
@@ -169,6 +171,30 @@ class TestAsyncInfrastructure(unittest.TestCase):
     def test_not_a_coroutine_call_future(self):
         self.assertRaises(TypeError, async.call_future, self.__not_a_coroutine_pass())
         self.assertRaises(TypeError, async.call_future, self.__not_a_coroutine_int())
+
+    def __run_bash_commands_async(self, commands):
+        """Demonstrating/testing use of async.subprocess_future."""
+        args = ["/bin/bash", "-c", "; ".join(commands)]
+        logging.debug("subprocess: starting %s" % repr(args))
+        result = yield async.subprocess_future(args)
+        logging.debug("subprocess: done, got %s" % repr(result))
+        yield result
+
+    def test_async_subprocess(self):
+        commands = ["echo -n stdout1", "sleep %d" % DELAY,
+                    "echo stderr >&2", "sleep %d" % DELAY,
+                    "echo -n stdout2", "exit 42"]
+        result = self.__run_in_mainloop(lambda: self.__run_bash_commands_async(commands))
+        self.assert_(os.WIFEXITED(result.status) and os.WEXITSTATUS(result.status) == 42)
+        self.assertEqual(result.stdout, "stdout1stdout2")
+        self.assertEqual(result.stderr, "stderr\n")
+
+    def test_async_subprocess_signal(self):
+        commands = ["echo message >&2", "kill -TERM $$"]
+        result = self.__run_in_mainloop(lambda: self.__run_bash_commands_async(commands))
+        self.assert_(os.WIFSIGNALED(result.status) and os.WTERMSIG(result.status) == signal.SIGTERM)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "message\n")
 
 if __name__ == '__main__':
     #logging.basicConfig(level=logging.DEBUG)

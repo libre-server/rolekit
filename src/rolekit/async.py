@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from rolekit.logger import log
-from dbus.exceptions import DBusException
-
 """Helpers for writing asynchronous code in a more natural way.
 
 Instead of a callback hell, an asynchronous function can be linear
@@ -57,6 +54,9 @@ def do_something_async(param):
     # cause f.set_result() or f.set_exception() to be somehow called later
     result = yield f
 
+    # A blocking operation with a helper function to set up the future.
+    result = yield async.subprocess_future(["/bin/true"])
+
     # Asynchronous subroutine calls:
     yield async.call_future(subroutine_async(param))
 
@@ -64,9 +64,17 @@ def do_something_async(param):
     yield 42
 """
 
+import collections
+import fcntl
+import os
+import subprocess
 import types
 
 from concurrent.futures import Future
+from dbus.exceptions import DBusException
+from gi.repository import GLib
+
+from rolekit.logger import log
 
 
 # Always import the module and refer to functions with an async. prefix;
@@ -186,3 +194,95 @@ def call_future(generator):
         f.set_exception(exception)
     start_with_callbacks(generator, result_handler, error_handler)
     return f
+
+
+def _fd_output_future(fd):
+    """Return a future for all output on fd.
+
+    :param fd: A Python file object to collect output from and close.  The
+    caller should not touch it in any way after calling this function.
+    """
+    output_chunks = [] # A list of strings to avoid an O(N^2) behavior
+    future = Future()
+
+    def input_handler(unused_fd, condition, unused_data):
+        finished = True
+        if (condition & (GLib.IOCondition.ERR | GLib.IOCondition.NVAL)) != 0:
+            log.error("Unexpected input handler state %s" % condition)
+        else:
+            assert (condition & (GLib.IOCondition.IN | GLib.IOCondition.HUP)) != 0
+            # Note that HUP and IN can happen at the same time, so don’t
+            # explicitly test for HUP.
+            try:
+                chunk = fd.read()
+            except IOError, e:
+                log.error("Error reading subprocess output: %s" % e)
+            else:
+                if len(chunk) > 0:
+                    output_chunks.append(chunk)
+                    finished = False
+
+        if finished:
+            fd.close()
+            future.set_result("".join(output_chunks))
+            return False
+        return True
+
+    fcntl.fcntl(fd, fcntl.F_SETFL,
+                fcntl.fcntl(fd, fcntl.F_GETFL) | os.O_NONBLOCK)
+    condition = (GLib.IOCondition.IN | GLib.IOCondition.ERR |
+                 GLib.IOCondition.HUP | GLib.IOCondition.NVAL)
+    GLib.unix_fd_add_full(GLib.PRIORITY_DEFAULT, fd.fileno(), condition,
+                          input_handler, None)
+
+    return future
+
+# An internal type for the result of subprocess_future.  There’s no point in
+# exporting this name.
+_AsyncSubprocessResult = collections.namedtuple("_AsyncSubprocessResult",
+                                               ["status", "stdout", "stderr"])
+
+def subprocess_future(args):
+    """Start a subprocess and return a future used to wait for it to finish.
+
+    :param args: A sequence of program arguments (see subprocess.Popen())
+    :return: a future for an object with the members status, stdout and stderr,
+    representing waitpid()-like status, stdout output and stderr output,
+    respectively.
+    """
+    process = subprocess.Popen(args, close_fds=True,
+                               stdin=open("/dev/null", "r"),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    # The three partial results.
+    stdout_future = _fd_output_future(process.stdout)
+    stderr_future = _fd_output_future(process.stderr)
+    waitpid_future = Future()
+
+    def child_exited(unused_pid, status):
+        waitpid_future.set_result(status)
+        # GLib has retrieved the process status and freed the PID. Ask the
+        # subprocess.Popen object to wait for the process as well; we know this
+        # will fail, but it prevents the subprocess module from calling
+        # waitpid() on that freed PID in some indeterminate time in the future,
+        # where it might take over an unrelated process.  At this point we are
+        # technically calling waitpid() on an unallocated PID, which is
+        # generally racy, but we don’t have any concurrently running threads
+        # creating subprocesses under our hands, so we should be OK.
+        process.wait()
+    GLib.child_watch_add(GLib.PRIORITY_DEFAULT, process.pid, child_exited)
+
+    # Resolve the returned future when all partial results are resolved.
+    future = Future()
+    def check_if_done(unused_future):
+        if (waitpid_future.done() and stdout_future.done() and
+            stderr_future.done()):
+            r = _AsyncSubprocessResult(status=waitpid_future.result(),
+                                       stdout=stdout_future.result(),
+                                       stderr=stderr_future.result())
+            future.set_result(r)
+    for f in (waitpid_future, stdout_future, stderr_future):
+        f.add_done_callback(check_if_done)
+
+    return future
