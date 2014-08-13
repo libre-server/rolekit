@@ -35,7 +35,7 @@ gettext.install(domain=DOMAIN)
 DAEMON_NAME = 'rolekit'
 DATADIR = '/usr/share/' + DAEMON_NAME
 
-ROLEKIT_VERSION = 0
+ROLEKIT_VERSION = "@VERSION@"
 
 ETC_ROLEKIT = '/etc/rolekit'
 ETC_ROLEKIT_ROLES = ETC_ROLEKIT + '/roles'
