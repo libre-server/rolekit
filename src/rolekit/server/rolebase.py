@@ -345,7 +345,7 @@ class RoleBase(slip.dbus.service.Object):
     def assert_state(self, *args):
         if self._settings["state"] in args:
             return
-        raise RolekitError(INVALID_STATE, "%s not in allowed states '%s'" % (self._settings["state"], "','".join(args)))
+        raise RolekitError(INVALID_STATE, "Not in state '%s', but '%s'" % ("' or '".join(args), self._settings["state"]))
 
     def change_state(self, state, write=False):
         # change the state of the instance to state if it is valid and not in
