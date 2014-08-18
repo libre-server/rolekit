@@ -679,3 +679,17 @@ class RoleBase(slip.dbus.service.Object):
         # Continue only after successful update:
         # Change to deploying state
         self.change_state(READY_TO_START, write=True)
+
+
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_handle_exceptions
+    def resetError(self, sender=None):
+        """resets error state in a role"""
+        # Make sure we are in the proper state
+        self.assert_state(ERROR)
+
+        # Log
+        log.debug1("%s.resetError()", self._log_prefix)
+
+        # Change to state updating
+        self.change_state(READY_TO_START, write=True)

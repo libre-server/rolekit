@@ -168,6 +168,11 @@ grp_update.set_defaults(parser="update")
 grp_update.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
 
 
+grp_reset_error = subparsers.add_parser("reset-error", help="Reset error state in a role instance")
+grp_reset_error.set_defaults(parser="reset-error")
+grp_reset_error.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+
+
 grp_decommission = subparsers.add_parser("decommission", help="Decommission a role instance")
 grp_decommission.set_defaults(parser="decommission")
 grp_decommission.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
@@ -238,7 +243,7 @@ elif a.parser == "deploy":
 
 
 elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
-                   "decommission" ]:
+                   "reset-error", "decommission" ]:
 
     splits = a.instance.split("/")
     obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
@@ -273,6 +278,10 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
     elif a.parser == "update":
         obj.update()
 
+
+    # reset-error
+    elif a.parser == "reset-error":
+        obj.resetError()
 
     # decommission
     elif a.parser == "decommission":
