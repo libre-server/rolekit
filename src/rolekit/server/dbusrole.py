@@ -269,8 +269,8 @@ class DBusRole(slip.dbus.service.Object):
                reply_handler, error_handler,
                sender=None):
         """deploy role"""
-        async.start_async_with_dbus_callbacks(self.__deploy_async(name, values),
-                                              reply_handler, error_handler)
+        async.start_with_dbus_callbacks(self.__deploy_async(name, values),
+                                        reply_handler, error_handler)
 
     def __deploy_async(self, name, values):
         values = dbus_to_python(values)
@@ -317,5 +317,5 @@ class DBusRole(slip.dbus.service.Object):
         # TODO: unlock
 
         # deploy role, lock in role now
-        result = yield async.async_call(role.deploy_async(values))
+        result = yield async.call_future(role.deploy_async(values))
         yield result

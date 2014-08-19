@@ -67,7 +67,7 @@ class TestAsyncInfrastructure(unittest.TestCase):
         assert v == 1
 
         logging.debug("top: before yield to subroutine")
-        subroutine_result = yield async.async_call(subroutine(10))
+        subroutine_result = yield async.call_future(subroutine(10))
         logging.debug("top: after sub yield: %s", repr(v))
 
         f3 = Future()
@@ -107,7 +107,7 @@ class TestAsyncInfrastructure(unittest.TestCase):
         def init():
             logging.debug("Will start top async")
             try:
-                async.start_async_with_callbacks(callable(), reply_handler, error_handler)
+                async.start_with_callbacks(callable(), reply_handler, error_handler)
             except Exception as e:
                 logging.debug("Exception in init %s" % repr(e))
                 loop.quit()
@@ -135,7 +135,7 @@ class TestAsyncInfrastructure(unittest.TestCase):
 
     def __chained_return_top_async(self):
         """Demonstrating/testing chaining of async return values in the caller."""
-        v = yield async.async_call(self.__chained_return_sub_async())
+        v = yield async.call_future(self.__chained_return_sub_async())
         yield v
 
     def test_async_chained_return_in_mainloop(self):
@@ -166,9 +166,9 @@ class TestAsyncInfrastructure(unittest.TestCase):
         self.assertRaises(TypeError, self.__run_in_mainloop, lambda: self.__not_a_coroutine_pass())
         self.assertRaises(TypeError, self.__run_in_mainloop, lambda: self.__not_a_coroutine_int())
 
-    def test_not_a_coroutine_async_call(self):
-        self.assertRaises(TypeError, async.async_call, self.__not_a_coroutine_pass())
-        self.assertRaises(TypeError, async.async_call, self.__not_a_coroutine_int())
+    def test_not_a_coroutine_call_future(self):
+        self.assertRaises(TypeError, async.call_future, self.__not_a_coroutine_pass())
+        self.assertRaises(TypeError, async.call_future, self.__not_a_coroutine_int())
 
 if __name__ == '__main__':
     #logging.basicConfig(level=logging.DEBUG)

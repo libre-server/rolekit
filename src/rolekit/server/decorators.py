@@ -49,7 +49,7 @@ def dbus_handle_exceptions(func, *args, **kwargs):
 
     :Raises DBusException: on any exception raised by the decorated function.
     """
-    # Keep this in sync with async.start_async_with_dbus_callbacks()
+    # Keep this in sync with async.start_with_dbus_callbacks()
     try:
         return func(*args, **kwargs)
     except RolekitError as error:

@@ -30,7 +30,7 @@ code are:
   and that Future must be yielded from the asynchronous function.
 * An asynchronous function can call synchronous function (which will block)
   directly; calling other asynchronous functions needs to happen through
-  the async_call() helper.
+  the async.call_future() helper.
 * Instead of returning a value, the function must yield it.   (Falling off
   the end of a method, or a plain return without a value, is still equivalent
   to returning None, but your function does need to contain at least one
@@ -42,6 +42,9 @@ Due to use of generators, an asynchronous function can’t be directly called
 synchronously (the call of a generator function just creates a generator
 object); asynchronous methods will therefore be conventionally marked with an
 "_async" suffix.
+
+As a related convention, functions that _return_ (not yield) a future should
+have a "_future" suffix.
 
 Example asynchronous method:
 
@@ -55,7 +58,7 @@ def do_something_async(param):
     result = yield f
 
     # Asynchronous subroutine calls:
-    yield async.async_call(subroutine_async(param))
+    yield async.call_future(subroutine_async(param))
 
     # Return a value; also terminates execution of the async method
     yield 42
@@ -66,9 +69,11 @@ import types
 from concurrent.futures import Future
 
 
-__all__ = ("start_async_with_callbacks", "async_call")
+# Always import the module and refer to functions with an async. prefix;
+# “import *” and “from async import …” are discouraged.
+__all__ = ()
 
-def start_async_with_callbacks(generator, result_handler, error_handler):
+def start_with_callbacks(generator, result_handler, error_handler):
     """Set up generator as an async coroutine, calling a handler when done.
 
     :param generator: A generator object (result of calling a generator
@@ -130,7 +135,7 @@ def start_async_with_callbacks(generator, result_handler, error_handler):
 
     async_step(None)
 
-def start_async_with_dbus_callbacks(generator, result_handler, error_handler):
+def start_with_dbus_callbacks(generator, result_handler, error_handler):
     """Set up generator as an async D-Bus-responding coroutine, calling a handler when done.
 
     :param generator: A generator object (result of calling a generator
@@ -156,11 +161,11 @@ def start_async_with_dbus_callbacks(generator, result_handler, error_handler):
             e = DBusException(str(e))
         error_handler(e)
 
-    return start_async_with_callbacks(generator, result_handler,
-                                      error_handler_with_conversion)
+    return start_with_callbacks(generator, result_handler,
+                                error_handler_with_conversion)
 
 
-def async_call(generator):
+def call_future(generator):
     """Return a future used to record output of generator
 
     :param generator: A generator object (result of calling a generator
@@ -179,5 +184,5 @@ def async_call(generator):
         f.set_result(result)
     def error_handler(exception):
         f.set_exception(exception)
-    start_async_with_callbacks(generator, result_handler, error_handler)
+    start_with_callbacks(generator, result_handler, error_handler)
     return f

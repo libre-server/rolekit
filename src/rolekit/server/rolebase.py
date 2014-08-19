@@ -493,8 +493,8 @@ class RoleBase(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def start(self, reply_handler, error_handler, sender=None):
         """start role"""
-        async.start_async_with_dbus_callbacks(self.__start_async(sender),
-                                              reply_handler, error_handler)
+        async.start_with_dbus_callbacks(self.__start_async(sender),
+                                        reply_handler, error_handler)
 
     def __start_async(self, sender):
         self.assert_state(READY_TO_START)
@@ -502,7 +502,7 @@ class RoleBase(slip.dbus.service.Object):
 
         try:
             self.change_state(STARTING)
-            yield async.async_call(self.do_start_async(sender))
+            yield async.call_future(self.do_start_async(sender))
             self.change_state(RUNNING, write=True)
         except:
             self.change_state(READY_TO_START, write=True)
@@ -514,8 +514,8 @@ class RoleBase(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def stop(self, reply_handler, error_handler, sender=None):
         """stop role"""
-        async.start_async_with_dbus_callbacks(self.__stop_async(sender),
-                                              reply_handler, error_handler)
+        async.start_with_dbus_callbacks(self.__stop_async(sender),
+                                        reply_handler, error_handler)
 
     def __stop_async(self, sender):
         self.assert_state(RUNNING)
@@ -523,7 +523,7 @@ class RoleBase(slip.dbus.service.Object):
 
         try:
             self.change_state(STOPPING)
-            yield async.async_call(self.do_stop_async(sender))
+            yield async.call_future(self.do_stop_async(sender))
             self.change_state(READY_TO_START, write=True)
         except:
             self.change_state(ERROR, write=True)
@@ -569,7 +569,7 @@ class RoleBase(slip.dbus.service.Object):
             self.copy_defaults()
 
             # Call do_deploy
-            yield async.async_call(self.do_deploy_async(values, sender))
+            yield async.call_future(self.do_deploy_async(values, sender))
 
             # Continue only after successful deployment:
             # Apply values to self._settings
