@@ -51,7 +51,7 @@ def do_something_async(param):
 
     # The generic case of a blocking operation:
     f = Future()
-    # cause f.set_result() or f.set_exception to be somehow called later
+    # cause f.set_result() or f.set_exception() to be somehow called later
     result = yield f
 
     # Asynchronous subroutine calls:
