@@ -39,7 +39,7 @@ def handle_exceptions(func, *args, **kwargs):
     try:
         return func(*args, **kwargs)
     except RolekitError as error:
-        log.error(error)
+        log.error("{0}: {1}".format(type(error), str(error)))
     except Exception:
         log.exception()
 

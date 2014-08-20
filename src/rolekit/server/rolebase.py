@@ -377,6 +377,7 @@ class RoleBase(slip.dbus.service.Object):
                 # use _check_property method from derived or parent class
                 self._check_property(x, values[x])
             else:
+                log.error("Unknown property: %s" % x)
                 raise RolekitError(UNKNOWN_SETTING, x)
 
     # apply values
