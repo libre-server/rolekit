@@ -196,13 +196,19 @@ def call_future(generator):
     return f
 
 
-def _fd_output_future(fd):
+def _fd_output_future(fd, log_fn):
     """Return a future for all output on fd.
 
     :param fd: A Python file object to collect output from and close.  The
     caller should not touch it in any way after calling this function.
     """
     output_chunks = [] # A list of strings to avoid an O(N^2) behavior
+
+    # A string holding output data for logging
+    # Needs to be stored as a one-item array because strings
+    # are immutable and it would otherwise be overwritten by
+    # input_handler below
+    linebuf = ['']
     future = Future()
 
     def input_handler(unused_fd, condition, unused_data):
@@ -220,6 +226,14 @@ def _fd_output_future(fd):
             else:
                 if len(chunk) > 0:
                     output_chunks.append(chunk)
+
+                    # Log the input at the requested level
+                    lines = (linebuf[0] + chunk).split('\n')
+                    for line in lines[:-1]:
+                        log_fn(line)
+                    linebuf[0] = lines[-1];
+
+                    # Continue until there's no more data to be had
                     finished = False
 
         if finished:
@@ -250,14 +264,15 @@ def subprocess_future(args):
     representing waitpid()-like status, stdout output and stderr output,
     respectively.
     """
+    log.debug9("subprocess: {0}".format(args))
     process = subprocess.Popen(args, close_fds=True,
                                stdin=open("/dev/null", "r"),
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
 
     # The three partial results.
-    stdout_future = _fd_output_future(process.stdout)
-    stderr_future = _fd_output_future(process.stderr)
+    stdout_future = _fd_output_future(process.stdout, log.debug1)
+    stderr_future = _fd_output_future(process.stderr, log.error)
     waitpid_future = Future()
 
     def child_exited(unused_pid, status):
