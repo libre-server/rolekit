@@ -207,13 +207,14 @@ class DBusRole(slip.dbus.service.Object):
 
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Private methods
+    # Methods
 
-    @handle_exceptions
+    def get_name(self):
+        return self._name
+
     def get_instances(self):
         return self._instances
 
-    @handle_exceptions
     def remove_instance(self, instance):
         """Remove an instance from our list.
 
@@ -227,7 +228,7 @@ class DBusRole(slip.dbus.service.Object):
             self.InstanceRemoved(escaped_name)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # Public methods
+    # D-Bus methods
 
     @dbus_service_method(DBUS_INTERFACE_ROLE, in_signature='',
                          out_signature='ao')

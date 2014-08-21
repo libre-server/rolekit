@@ -235,7 +235,7 @@ class RoleD(slip.dbus.service.Object):
         name = dbus_to_python(name)
         log.debug1("getNamedRole('%s')", name)
         for obj in self._roles:
-            if obj.name == name:
+            if obj.get_name() == name:
                 return obj
         raise RolekitError(INVALID_ROLE, name)
 
