@@ -230,6 +230,10 @@ def _fd_output_future(fd, log_fn):
                     # Log the input at the requested level
                     lines = (linebuf[0] + chunk).split('\n')
                     for line in lines[:-1]:
+                        if line.find('\0'):
+                            # It's unsafe for us to try to handle
+                            # a line with a NULL-terminator in it.
+                            log_fn('<suppressed line with NUL>');
                         log_fn(line)
                     linebuf[0] = lines[-1];
 
