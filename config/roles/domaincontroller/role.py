@@ -22,6 +22,14 @@ import dbus
 import dbus.service
 import slip.dbus
 import slip.dbus.service
+import subprocess
+import socket
+import copy
+import string
+import os
+import random
+
+from concurrent.futures import Future
 
 from rolekit.config import *
 from rolekit.config.dbus import *
@@ -36,18 +44,73 @@ class Role(RoleBase):
     # Without overwrites or new settings, this can be omitted.
     _DEFAULTS = dict(RoleBase._DEFAULTS, **{
         "version": 1,
-        "services": [ "service1" ],
-        "packages": [ "package1", "@group1" ],
-        "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
-        "myownsetting": "something",
-        "failonthis": 123,
+        "services": [ "freeipa" ],
+        "packages": [ "@freeipa-server" ],
+        "firewall": { "ports": [ ],
+                     "services": [ "freeipa-ldap",
+                                   "freeipa-ldaps",
+                                   "dns" ] },
+        # Default domain name will be autodetected if not specified
+        "domain_name": None,
+
+        # do_deploy_async() will check whether this is set and make it
+        # the upper-case version of domain_name if not.
+        "realm_name": None,
+
+        # Must be supplied
+        "admin_password": None,
+
+        # If not supplied, do_deploy_async() will generate a
+        # random password
+        "dm_password": None,
+
+        # Starting ID value for the domain
+        # If unset, will be assigned randomly
+        "id_start": None,
+
+        # Maximum ID value in the domain
+        # This is an offset from id_start
+        "id_max": 199999,
+
+        # Path to a root CA certificate
+        # If not specified, one will be generated
+        "root_ca_file": None,
+
+        # Install DNS Server
+        "setup_dns": True,
+
+        # Set up the DNS reverse zone
+        "reverse_zone": None,
+
+        # Primary IP address of the machine
+        # This is necessary when setting up DNS
+        # to work around
+        # https://fedorahosted.org/freeipa/ticket/3575
+        "primary_ip": None,
+
+        # DNS Forwarders
+        # If unspecified, installation will default to root servers
+        # Otherwise, it should be a dictionary of lists of IP Addresses
+        # as below:
+        # "dns_forwarders": {"ipv4": [
+        #                            "198.41.0.4",  # a.root-servers.net
+        #                            "192.228.79.201",  # b.root-servers.net
+        #                            "192.33.4.12"],  # c.root-servers.net
+        #                   "ipv6": [
+        #                            "2001:500:2d::d",  # d.root-servers.net
+        #                            "2001:500:2f::f",  # f.root-servers.net
+        #                            "2001:500:1::803f:235",  # h.root-servers.net
+        #                           ]
+        #                  },
+        "dns_forwarders": None,
+
+        # TODO: There are many less-common options to ipa-server-install.
+        # The API should support them.
     })
 
     # Use _READONLY_SETTINGS from RoleBase and add new if needed.
     # Without new readonly settings, this can be omitted.
-    _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + [
-        "myownsetting"
-    ]
+    # _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + []
 
 
     # Initialize role
@@ -57,25 +120,98 @@ class Role(RoleBase):
 
     # Start code
     def do_start_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
-
+        yield async.call_future(self.start_services_async())
 
     # Stop code
     def do_stop_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
+        yield async.call_future(self.stop_services_async())
 
 
     # Deploy code
     def do_deploy_async(self, values, sender=None):
+        log.debug9("TRACE: do_deploy_async")
         # Do the magic
         #
         # In case of error raise an exception
+
+        # TODO: Much better input validation
+
+        # Ensure we have all the mandatory arguments
+        if 'admin_password' not in values:
+            raise RolekitError(INVALID_VALUE, "admin_password unset")
+
+        if 'domain_name' not in values:
+            values['domain_name'] = self._get_domain()
+
+        # If left unspecified, default the realm to the
+        # upper-case version of the domain name
+        if 'realm_name' not in values:
+            values['realm_name'] = values['domain_name'].upper()
+
+        # If left unspecified, assign a random password for
+        # the directory manager
+        if 'dm_password' not in values:
+            # Generate a random password
+            rpass = ''.join(random.choice(string.ascii_letters + string.digits)
+                             for _ in range(16))
+            values['dm_password'] = rpass
+
+        # Call ipa-server-install with the requested arguments
+        ipa_install_args = [
+            'ipa-server-install', '-U',
+                '-r', values['realm_name'],
+                '-d', values['domain_name'],
+                '-p', values['dm_password'],
+                '-a', values['admin_password'],
+            ]
+
+        # If the user has requested the DNS server, enable it
+        if 'setup_dns' not in values:
+            values['setup_dns'] = self._settings['setup_dns']
+
+        if values['setup_dns']:
+            ipa_install_args.append('--setup-dns')
+
+            # Pass the primary IP address
+            if 'primary_ip' not in values:
+                raise RolekitError(INVALID_VALUE, "No primary IP address set")
+
+            ipa_install_args.append('--ip-address=%s' % values['primary_ip'])
+
+            # if the user has requested DNS forwarders, add them
+            if 'dns_forwarders' in values:
+                [ipa_install_args.append("--forwarder=%s" % x)
+                     for x in values['dns_forwarders']['ipv4']]
+                [ipa_install_args.append("--forwarder=%s" % x)
+                     for x in values['dns_forwarders']['ipv6']]
+                pass
+            else:
+                ipa_install_args.append('--no-forwarders')
+
+            # If the user has requested the reverse zone add it
+            if 'reverse_zone' in values:
+                ipa_install_args.append('--reverse-zone=%s'
+                                        % values['reverse_zone'])
+            else:
+                ipa_install_args.append('--no-reverse')
+
+        # TODO: If the user has requested an ID range offset,
+        # set up the argument to ipa-server-install
+
+        # TODO: If the user has specified a root CA file,
+        # set up the argument to ipa-server-install
+
+        # Remove the admin_password from the values so
+        # it won't be saved to the settings
+        values.pop('admin_password', None)
+
+        result = yield async.subprocess_future(ipa_install_args)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED, "%d" % result.status)
+
+        # We're done!
         yield None
 
 
@@ -120,8 +256,8 @@ class Role(RoleBase):
         # parent class.
         if hasattr(x, "_settings") and prop in x._settings:
             return x._settings[prop]
-        if prop == "myownsetting":
-            return x._name
+
+        # TODO handle private settings
 
         return super(Role, x).get_property(x, prop)
 
@@ -141,6 +277,48 @@ class Role(RoleBase):
         # At first cover additional settings and return a proper dbus type.
         # Then return the result of the call to get_dbus_property of the
         # parent class.
-        if prop == "myownsetting":
+        if prop in [ "domain_name",
+                     "realm_name",
+                     "dm_password",
+                     "root_ca_file",
+                     "primary_ip",
+                     "reverse_zone" ]:
             return dbus.String(x.get_property(x, prop))
+        elif prop in [ "setup_dns" ]:
+            return dbus.Boolean(x.get_property(x, prop))
+        elif prop in [ "id_start",
+                       "id_max" ]:
+            return dbus.Int32(x.get_property(x, prop))
+        elif prop in [ "dns_forwarders" ]:
+            return dbus.Dictionary(x.get_property(x, prop), "sas")
+
+        # Do not export the admin_password as that is a user account
+        # and may have been changed.
+        # We have to export the dm_password as it may be the only
+        # way to recover it, if it was generated randomly.
+        elif prop in [ "admin_password" ]:
+            raise RolekitError(UNKNOWN_SETTING, prop)
+
         return super(Role, x).get_dbus_property(x, prop)
+
+
+    # Helper Routines
+    def _get_domain(self):
+        # First, look up this machine's FQDN
+        fqdn = socket.getfqdn()
+        # Get everything after the first dot as the domain
+        return fqdn[fqdn.find(".") + 1:]
+
+    # Check Domain Controller-specific properties
+    def _check_property(self, prop, value):
+        try:
+            super(Role, self)._check_property(prop, value)
+        except RolekitError as e:
+            if e.code == MISSING_CHECK:
+                log.debug1("Unvalidated property: %s" % prop)
+                pass
+            else:
+                log.debug1("Property %s did not validate" % prop)
+                raise
+
+        # TODO validate arguments
