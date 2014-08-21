@@ -80,7 +80,7 @@ class Role(RoleBase):
 
 
     # Decommission code
-    def do_decommission(self, sender=None):
+    def do_decommission_async(self, sender=None):
         # Do the magic
         #
         # In case of error raise an exception

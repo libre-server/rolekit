@@ -649,10 +649,15 @@ class RoleBase(slip.dbus.service.Object):
         self.change_state(READY_TO_START, write=True)
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def decommission(self, sender=None):
+    def decommission(self, reply_handler, error_handler, sender=None):
         """decommission role"""
+        async.start_with_dbus_callbacks(self.__decommission_async(sender),
+                                        reply_handler, error_handler)
+
+    def __decommission_async(self, sender):
         # Make sure we are in the proper state
         self.assert_state(READY_TO_START, ERROR)
 
@@ -664,7 +669,7 @@ class RoleBase(slip.dbus.service.Object):
 
         # Call do_decommission
         try:
-            self.do_decommission(sender)
+            yield async.call_future(self.do_decommission_async(sender))
         except:
             self.change_state(ERROR, write=True)
             raise
