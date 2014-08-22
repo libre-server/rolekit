@@ -225,9 +225,13 @@ class Role(RoleBase):
 
     # Decommission code
     def do_decommission_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
+        # We need to run the FreeIPA uninstallation
+        result = yield async.subprocess_future(['ipa-server-install',
+                                                '-U', '--uninstall'])
+        if result.status:
+            # Something went wrong with the uninstall
+            raise RolekitError(COMMAND_FAILED, "%d" % result.status)
+
         yield None
 
 
