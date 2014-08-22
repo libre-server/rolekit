@@ -74,6 +74,21 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Fri Aug 22 2014 Thomas Woerner <twoerner@redhat.com> 0.0.3-1
+- Domain Controller: Add decommission routine
+- Better trapping of non-ASCII output on subprocess
+- Domain Controller deployment
+- Make decommission asynchronous
+- Improve exception logging
+- DBusRole: New method get_name, using in RoleD.getNamedRole
+- Enable logging of subprocess output
+- Implement starting and stopping services, and use it in databaseserver
+- New async.async_subprocess_future helper
+- Changed async naming conventions
+- Convert exceptions in D-Bus methods in async methods
+- Added missing resetError message
+- Several fixes and cleanups
+
 * Mon Aug 11 2014 Thomas Woerner <twoerner@redhat.com> 0.0.2-1
 - new instance support
 - new rolectl command line tool
