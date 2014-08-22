@@ -37,6 +37,9 @@ from rolekit.server.io.rolesettings import RoleSettings
 from rolekit.dbus_utils import *
 from rolekit.errors import *
 
+from firewall.client import FirewallClient
+from firewall.functions import getPortRange
+
 ############################################################################
 #
 # class RoleBase
@@ -113,6 +116,32 @@ class RoleBase(slip.dbus.service.Object):
                 if x not in [ "ports", "services" ]:
                     raise RolekitError(INVALID_VALUE, x)
                 self._check_type_string_list(value[x])
+            if "ports" in value:
+                for x in value["ports"]:
+                    try:
+                        port, proto = x.split("/")
+                    except:
+                        raise RolekitError(INVALID_VALUE,
+                                           "Port %s is invalid" % x)
+
+                    p_range = getPortRange(port)
+                    if p_range == -2:
+                        raise RolekitError(INVALID_VALUE,
+                                           "Port '%s' is too big" % port)
+                    elif p_range == -1:
+                        raise RolekitError(INVALID_VALUE,
+                                           "Port range '%s' is invalid" % port)
+                    elif p_range == None:
+                        raise RolekitError(INVALID_VALUE,
+                                            "Port range '%s' is ambiguous" % port)
+                    elif len(p_range) == 2 and p_range[0] >= p_range[1]:
+                        raise RolekitError(INVALID_VALUE,
+                                           "Port range '%s' is invalid" % port)
+
+                    if proto not in [ "tcp", "udp" ]:
+                        raise RolekitError(INVALID_VALUE,
+                                           "Protocol '%s' not from {'tcp'|'udp'}" % proto)
+
         elif prop in [ "custom_firewall" ]:
             self._check_type_bool(value)
 
@@ -466,17 +495,126 @@ class RoleBase(slip.dbus.service.Object):
     def installFirewall(self):
         """install firewall"""
         log.debug1("%s.installFirewall()", self._log_prefix)
-        raise NotImplementedError()
+
+        # are there any firewall settings to apply?
+        if len(self._settings["firewall"]["services"]) + \
+           len(self._settings["firewall"]["ports"]) < 1:
+            return
+
+        # create firewall client
+        fw = FirewallClient()
+
+        # save changes to the firewall
+        if "firewall-changes" in self._settings:
+            fw_changes = self._settings["firewall-changes"]
+        else:
+            fw_changes = { }
+
+        zones = self._settings["firewall_zones"]
+        # if firewall_zones setting is empty, use default zone
+        if len(zones) < 1:
+            zones = [ fw.getDefaultZone() ]
+
+        for zone in zones:
+            # get permanent zone settings, run-time settings do not need a
+            # special treatment
+            z_perm = fw.config().getZoneByName(zone).getSettings()
+
+            for service in self._settings["firewall"]["services"]:
+                try:
+                    fw.addService(zone, service, 0)
+                except Exception as e:
+                    if not "ALREADY_ENABLED" in str(e):
+                        raise
+                else:
+                    fw_changes.setdefault(zone, {}).setdefault("services", {}).setdefault(service, []).append("runtime")
+
+                if not z_perm.queryService(service):
+                    z_perm.addService(service)
+                    fw_changes.setdefault(zone, {}).setdefault("services", {}).setdefault(service, []).append("permanent")
+
+            for port_proto in self._settings["firewall"]["ports"]:
+                port, proto = port_proto.split("/")
+
+                try:
+                    fw.addPort(zone, port, proto, 0)
+                except Exception as e:
+                    if not "ALREADY_ENABLED" in str(e):
+                        raise
+                else:
+                    fw_changes.setdefault(zone, {}).setdefault("ports", {}).setdefault(port_proto, []).append("runtime")
+
+                if not z_perm.queryPort(port, proto):
+                    z_perm.addPort(port, proto)
+                    fw_changes.setdefault(zone, {}).setdefault("ports", {}).setdefault(port_proto, []).append("permanent")
+
+            fw.config().getZoneByName(zone).update(z_perm)
+
+        self._settings["firewall-changes"] = fw_changes
+        self._settings.write()
 
     def updateFirewall(self):
         """update firewall"""
         log.debug1("%s.updateFirewall()", self._log_prefix)
-        raise NotImplementedError()
+
+        self.uninstallFirewall()
+        self.installFirewall()
 
     def uninstallFirewall(self):
         """uninstall firewall"""
         log.debug1("%s.uninstallFirewall()", self._log_prefix)
-        raise NotImplementedError()
+
+        # Removes the settings that have been added in the installFirewall call
+
+        # get applied changes from installFirewall call
+        if "firewall-changes" in self._settings:
+            fw_changes = self._settings["firewall-changes"]
+        else:
+            # fallback if there was a severe error in deploy before or while
+            # installing the firewall
+            fw_changes = { }
+
+        # only continue if there are any changes
+        if len(fw_changes) < 1:
+            return
+
+        # create firewall client
+        fw = FirewallClient()
+
+        # for all zones
+        for zone in fw_changes:
+            z_perm = fw.config().getZoneByName(zone).getSettings()
+
+            if "services" in fw_changes[zone]:
+                services = fw_changes[zone]["services"]
+                for service in services:
+                    if "runtime" in services[service]:
+                        try:
+                            fw.removeService(zone, service, 0)
+                        except:
+                            pass
+                    if "permanent" in services[service]:
+                        z_perm.removeService(service)
+
+            if "ports" in fw_changes[zone]:
+                ports = fw_changes[zone]["ports"]
+                for port_proto in ports:
+                    port, proto = port_proto.split("/")
+                    if "runtime" in ports[port_proto]:
+                        try:
+                            fw.removePort(zone, port, proto)
+                        except:
+                            pass
+                    if "permanent" in ports[port_proto]:
+                        z_perm.removePort(port, proto)
+
+            fw.config().getZoneByName(zone).update(z_perm)
+
+        # clear fw_changes and save it in _settings
+        fw_changes.clear()
+        self._settings["firewall-changes"] = fw_changes
+        self._settings.write()
+
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Public methods
@@ -600,6 +738,9 @@ class RoleBase(slip.dbus.service.Object):
             # Copy _DEFAULTS to self._settings
             self.copy_defaults()
 
+            # Install firewall
+            self.installFirewall()
+
             # Call do_deploy
             yield async.call_future(self.do_deploy_async(values, sender))
 
@@ -684,6 +825,9 @@ class RoleBase(slip.dbus.service.Object):
         except:
             self.change_state(ERROR, write=True)
             raise
+
+        # Uninstall firewall
+        self.uninstallFirewall()
 
         # Continue only after successful decommission:
         # Then clean up: remove settings file, remove from dbus
