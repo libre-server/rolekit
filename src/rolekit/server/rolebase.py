@@ -197,6 +197,17 @@ class RoleBase(slip.dbus.service.Object):
         elif prop in [ "custom_firewall" ]:
             return dbus.Boolean(x.get_property(x, prop))
 
+        if hasattr(self, "do_get_dbus_property"):
+            try:
+                return x.do_get_dbus_property(x, prop)
+            except RolekitError as e:
+                if e.get_code(e) == INVALID_PROPERTY and prop in self._DEFAULTS:
+                    raise dbus.exceptions.DBusException(
+                        "org.freedesktop.DBus.Error.AccessDenied: "
+                        "Property '%s' not covered in "
+                        "do_get_dbus_property method" % prop)
+                raise
+
         raise dbus.exceptions.DBusException(
             "org.freedesktop.DBus.Error.AccessDenied: "
             "Property '%s' isn't exported (or may not exist)" % prop)

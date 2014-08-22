@@ -40,7 +40,6 @@ class Role(RoleBase):
         "packages": [ "package1", "@group1" ],
         "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
         "myownsetting": "something",
-        "failonthis": 123,
     })
 
     # Use _READONLY_SETTINGS from RoleBase and add new if needed.
@@ -105,42 +104,26 @@ class Role(RoleBase):
 
     # Static method for use in roles and instances
     #
-    # Usage in roles: <class>.get_property(<class>, key)
-    #   Returns values from _DEFAULTS as dbus types
-    #
-    # Usage in instances: role.get_property(role, key)
-    #   Returns values from instance _settings if set, otherwise from _DEFAULTS
-    #
-    # This method needs to be extended for new role settings.
-    # Without additional properties, this can be omitted.
-    @staticmethod
-    def get_property(x, prop):
-        # At first cover additional settings.
-        # Then return the result of the call to get_property of the
-        # parent class.
-        if hasattr(x, "_settings") and prop in x._settings:
-            return x._settings[prop]
-        if prop == "myownsetting":
-            return x._name
-
-        return super(Role, x).get_property(x, prop)
-
-
-    # Static method for use in roles and instances
-    #
-    # Usage in roles: <class>.get_dbus_property(<class>, key)
+    # Usage in roles: <class>.do_get_dbus_property(<class>, key)
     #   Returns settings as dbus types
     #
-    # Usage in instances: role.get_dbus_property(role, key)
+    # Usage in instances: role.do_get_dbus_property(role, key)
     #   Uses role.get_property(role, key)
     #
-    # This method needs to be extended for new role settings.
     # Without additional properties, this can be omitted.
     @staticmethod
-    def get_dbus_property(x, prop):
-        # At first cover additional settings and return a proper dbus type.
-        # Then return the result of the call to get_dbus_property of the
-        # parent class.
+    def do_get_dbus_property(x, prop):
+        # Cover additional settings and return a proper dbus type.
         if prop == "myownsetting":
             return dbus.String(x.get_property(x, prop))
-        return super(Role, x).get_dbus_property(x, prop)
+        raise RolekitError(INVALID_PROPERTY, prop)
+
+
+    # D-Bus Property handling
+    if hasattr(dbus.service, "property"):
+        # property support in dbus.service
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def myownsetting(self):
+            return self.get_dbus_property(self, "myownsetting")
