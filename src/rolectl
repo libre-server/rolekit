@@ -223,7 +223,7 @@ elif a.parser == "settings":
         obj = rk.getNamedRoleObj(a.what)
 
     if a.key:
-        __print_and_exit(obj.get_property(key))
+        __print_and_exit(obj.get_property(a.key))
 
     if "/" in a.what:
         props = obj.get_properties()
