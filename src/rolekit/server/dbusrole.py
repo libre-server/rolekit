@@ -106,17 +106,18 @@ class DBusRole(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Property handling
 
-    if hasattr(dbus.service, "property"):
-    # property support in dbus.service
+    def get_property(self, prop):
+        if prop == "name":
+            return self._name
+        elif prop == "DEFAULTS":
+            return self._role._DEFAULTS
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
-        @dbus_handle_exceptions
-        def name(self):
-            return dbus.String(self._name)
+        raise RolekitError(UNKNOWN_SETTING, prop)
 
-        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sv}')
-        @dbus_handle_exceptions
-        def DEFAULTS(self):
+    def get_dbus_property(self, prop):
+        if prop == "name":
+            return dbus.String(self.get_property(prop))
+        elif prop == "DEFAULTS":
             ret = dbus.Dictionary(signature = "sv")
             for x in self._role._DEFAULTS:
                 try:
@@ -125,6 +126,26 @@ class DBusRole(slip.dbus.service.Object):
                     log.error("role.%s.DEFAULTS(): Failed to get/convert property '%s'", self._escaped_name, x)
                     pass
             return ret
+
+        raise dbus.exceptions.DBusException(
+            "org.freedesktop.DBus.Error.AccessDenied: "
+            "Property '%s' isn't exported (or may not exist)" % prop)
+
+
+    # property methods
+
+    if hasattr(dbus.service, "property"):
+        # property support in dbus.service
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='s')
+        @dbus_handle_exceptions
+        def name(self):
+            return self.get_dbus_property("name")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE, signature='a{sv}')
+        @dbus_handle_exceptions
+        def DEFAULTS(self):
+            return self.get_dbus_property("DEFAULTS")
 
     else:
         # no property support in dbus.service
@@ -143,7 +164,7 @@ class DBusRole(slip.dbus.service.Object):
                     "org.freedesktop.DBus.Error.UnknownInterface: "
                     "RolekitD does not implement %s" % interface_name)
 
-            return self._role.get_dbus_property(self._role, property_name)
+            return self.get_dbus_property(property_name)
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
                              out_signature='a{sv}')
@@ -158,12 +179,8 @@ class DBusRole(slip.dbus.service.Object):
                     "RolekitD does not implement %s" % interface_name)
 
             ret = dbus.Dictionary(signature = "sv")
-            for x in self._role._DEFAULTS:
-                try:
-                    ret[x] = self._role.get_dbus_property(self._role, x)
-                except Exception as e:
-                    log.error("role.%s.DEFAULTS(): Failed to get/convert property '%s'", self._escaped_name, x)
-                    pass
+            for x in [ "name", "DEFAULTS" ]:
+                ret[x] = self.get_dbus_property(x)
             return ret
 
         @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
