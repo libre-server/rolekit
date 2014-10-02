@@ -96,6 +96,11 @@ class Role(RoleBase):
         raise NotImplementedError()
 
 
+    # Check own properties
+    def do_check_property(self, prop, value):
+        return False
+
+
     # Static method for use in roles and instances
     #
     # Usage in roles: <class>.do_get_dbus_property(<class>, key)

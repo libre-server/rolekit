@@ -101,21 +101,60 @@ class RoleBase(slip.dbus.service.Object):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # property check methods
 
+    # Check own properties
+    def do_check_property(self, prop, value):
+        """
+        Check values of role specific properties
+
+        Steps for checking:
+          1) Check value for property prop.
+          2) Raise RolekitError(INVALID_VALUE, prop) in case of error.
+          3) Return True for the completed check.
+          4) Return False otherwise.
+
+        Use one of the alredy defined check_type_X methods:
+          check_type_int(self, value)
+          check_type_string(self, value)
+          check_type_bool(self, value)
+          check_type_dict(self, value)
+          check_type_list(self, value)
+          check_type_string_list(self, value)
+          These methods return True for a passed test and raise in case of
+          failure.
+        Or write a new one if needed (see RoleBase class).
+
+        Example for int type checking:
+          if prop == "myownprop":
+            return self.check_type_int(value)
+          return False
+
+        Example for dict { string: [ string ] } checking:
+          if prop == "myownprop":
+            self.check_type_dict(value)
+            for x in value.keys():
+              if x not in [ "key1", "key2", "key3" ]:
+                raise RolekitError(INVALID_VALUE, x)
+              self.check_type_string_list(value[x])
+            return True
+          return False
+        """
+        return False
+
     # check property method
 
     def _check_property(self, prop, value):
         if prop in [ "name", "type", "state", "lasterror" ]:
-            self._check_type_string(value)
+            return self.check_type_string(value)
         elif prop in [ "packages", "services", "firewall_zones" ]: # "backup_paths"
-            self._check_type_string_list(value)
+            return self.check_type_string_list(value)
         elif prop in [ "version" ]:
-            self._check_type_int(value)
+            return self.check_type_int(value)
         elif prop in [ "firewall" ]:
-            self._check_type_dict(value)
+            self.check_type_dict(value)
             for x in value.keys():
                 if x not in [ "ports", "services" ]:
-                    raise RolekitError(INVALID_VALUE, x)
-                self._check_type_string_list(value[x])
+                    raise RolekitError(INVALID_VALUE, "wrong key '%s'" % x)
+                self.check_type_string_list(value[x])
             if "ports" in value:
                 for x in value["ports"]:
                     try:
@@ -143,37 +182,81 @@ class RoleBase(slip.dbus.service.Object):
                                            "Protocol '%s' not from {'tcp'|'udp'}" % proto)
 
         elif prop in [ "custom_firewall" ]:
-            self._check_type_bool(value)
+            return self.check_type_bool(value)
 
-        else:
-            raise RolekitError(MISSING_CHECK, prop)
+        elif hasattr(self, "do_check_property"):
+            if self.do_check_property(prop, value):
+                return True
+        raise RolekitError(MISSING_CHECK, prop)
 
     # common type checking methods
 
-    def _check_type_int(self, new_value):
-        if type(new_value) is not int:
-            raise RolekitError(INVALID_VALUE, "%s is not a int" % new_value)
+    def check_type_int(self, value):
+        """
+        Checks if is of type int.
 
-    def _check_type_string(self, new_value):
-        if type(new_value) is not str:
-            raise RolekitError(INVALID_VALUE, "%s is not a string" % new_value)
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        if type(value) is not int:
+            raise RolekitError(INVALID_VALUE, "%s is not a int" % value)
+        return True
 
-    def _check_type_string_list(self, new_value):
-        self._check_type_list(new_value)
-        for x in new_value:
-            self._check_type_string(x)
+    def check_type_string(self, value):
+        """
+        Checks if value is of type string.
 
-    def _check_type_bool(self, new_value):
-        if type(new_value) is not bool:
-            raise RolekitError(INVALID_VALUE, "%s is not bool." % new_value)
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        if type(value) is not str:
+            raise RolekitError(INVALID_VALUE, "%s is not a string" % value)
+        return True
 
-    def _check_type_dict(self, new_value):
-        if type(new_value) is not dict:
-            raise RolekitError(INVALID_VALUE, "%s is not a dict" % new_value)
+    def check_type_string_list(self, value):
+        """
+        Checks if value is of type list and containing strings.
 
-    def _check_type_list(self, new_value):
-        if type(new_value) is not list:
-            raise RolekitError(INVALID_VALUE, "%s is not a list" % new_value)
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        self.check_type_list(value)
+        for x in value:
+            self.check_type_string(x)
+        return True
+
+    def check_type_bool(self, value):
+        """
+        Checks if value is of type bool.
+
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        if type(value) is not bool:
+            raise RolekitError(INVALID_VALUE, "%s is not bool." % value)
+        return True
+
+    def check_type_dict(self, value):
+        """
+        Checks if value is of type dict.
+
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        if type(value) is not dict:
+            raise RolekitError(INVALID_VALUE, "%s is not a dict" % value)
+        return True
+
+    def check_type_list(self, value):
+        """
+        Checks if value is of type list.
+
+        Raises INVALID_VALUE error if the values is not matching,
+        returns True otherwise.
+        """
+        if type(value) is not list:
+            raise RolekitError(INVALID_VALUE, "%s is not a list" % value)
+        return True
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Property handling

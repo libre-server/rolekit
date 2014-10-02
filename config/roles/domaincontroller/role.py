@@ -243,6 +243,30 @@ class Role(RoleBase):
         pass
 
 
+    # Check own properties
+    def do_check_property(self, prop, value):
+        if prop in [ "domain_name",
+                     "realm_name",
+                     "dm_password",
+                     "root_ca_file",
+                     "primary_ip",
+                     "reverse_zone",
+                     "admin_password"]:
+            return self.check_type_string(value)
+        elif prop in [ "setup_dns" ]:
+            return self.check_type_book(value)
+        elif prop in [ "id_start",
+                       "id_max" ]:
+            return self.check_type_int(value)
+        elif prop in [ "dns_forwarders" ]:
+            self.check_type_dict(value)
+            for x in value.keys():
+                self.check_type_string(x)
+                self.check_type_string_list(value[x])
+            return True
+        return False
+
+
     # Static method for use in roles and instances
     #
     # Usage in roles: <class>.do_get_dbus_property(<class>, key)
