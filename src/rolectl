@@ -76,20 +76,16 @@ def instance_type(arg):
         raise ValueError("Not a valid instance, use <role/instance>")
     return arg
 
-def create_settings(_list):
-    settings = { }
-    if _list:
-        for x in _list:
-            if not "=" in x:
-                __print_and_exit("Error: %s is not a valid key/value pair" % x)
-            splits = x.split("=", 1)
-            value = splits[1].strip()
+def create_settings_from_file(filename):
+    try:
+        with open(filename, "r") as f:
             try:
-                json_value = json.loads(value)
+                settings = json.load(f)
             except Exception as e:
-                __print_and_exit("Error: %s is not a valid value: %s" % (value, e))
-            settings[splits[0].strip()] = json_value
-    return settings
+                __print_and_exit("Error: '%s' is not a valid json settings file: %s" % (filename, e))
+        return settings
+    except IOError as e:
+        __print_and_exit("Error: Failed to open file '%s'" % filename)
 
 parser = argparse.ArgumentParser(description="Rolekit command line control utility")
 subparsers = parser.add_subparsers(help="Commands")
@@ -122,8 +118,6 @@ grp_list_instances.add_argument("--state", metavar="<state>")
 grp_list_instances.add_argument("--object-path", action="store_true")
 
 
-
-
 grp_settings = subparsers.add_parser("settings", help="Settings for roles or instances")
 grp_settings.set_defaults(parser="settings")
 grp_settings.add_argument("what", type=str, metavar="<role>|<role/instance>")
@@ -134,13 +128,13 @@ grp_deploy = subparsers.add_parser("deploy", help="Deploy a role to create a rol
 grp_deploy.set_defaults(parser="deploy")
 grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
 grp_deploy.add_argument("--name", metavar="<name>", default="")
-grp_deploy.add_argument("--set", metavar="<key>='<value>'", nargs='*')
+grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>")
 
 
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
 grp_redeploy.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
-grp_redeploy.add_argument("--set", metavar="<key>='<value>'", nargs='*')
+grp_redeploy.add_argument("--settings-file", type=str, metavar="<json settings file>")
 
 
 grp_status = subparsers.add_parser("status", help="Get status for role/instance")
@@ -239,7 +233,8 @@ elif a.parser == "settings":
 # deploy
 elif a.parser == "deploy":
     obj = rk.getNamedRoleObj(a.role)
-    obj.deploy(a.name, create_settings(a.set))
+    if a.settings_file:
+        obj.deploy(a.name, create_settings_from_file(a.settings_file))
 
 
 elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
@@ -251,7 +246,8 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
 
     # redeploy
     if a.parser == "redeploy":
-        obj.redeploy(create_settings(a.set))
+        if a.settings_file:
+            obj.redeploy(create_settings_from_file(a.settings_file))
 
 
     # status
