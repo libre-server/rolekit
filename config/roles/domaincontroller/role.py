@@ -254,7 +254,7 @@ class Role(RoleBase):
                      "admin_password"]:
             return self.check_type_string(value)
         elif prop in [ "setup_dns" ]:
-            return self.check_type_book(value)
+            return self.check_type_bool(value)
         elif prop in [ "id_start",
                        "id_max" ]:
             return self.check_type_int(value)
