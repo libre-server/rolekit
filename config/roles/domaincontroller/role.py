@@ -211,8 +211,16 @@ class Role(RoleBase):
             # If the subprocess returned non-zero, raise an exception
             raise RolekitError(COMMAND_FAILED, "%d" % result.status)
 
+        # Create the systemd target definition
+        target = {'Role': 'domaincontroller',
+                  'Instance': self.get_name(),
+                  'Description': "Domain Controller Role - %s" %
+                                 self.get_name(),
+                  'Wants': ['ipa.service'],
+                  'After': ['syslog.target', 'network.target']}
+
         # We're done!
-        yield None
+        yield target
 
 
     # Redeploy code

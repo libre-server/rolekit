@@ -49,6 +49,12 @@ AC_ARG_WITH([systemd-unitdir],
        [SYSTEMD_UNITDIR=$withval], [SYSTEMD_UNITDIR="$(pkg-config systemd --variable=systemdsystemunitdir)"])
 AC_SUBST(SYSTEMD_UNITDIR)
 
+AC_ARG_WITH([systemd-confunitdir],
+       AS_HELP_STRING([--with-systemd-confunitdir], [Directory for local edits to systemd service files]),
+       [SYSTEMD_CONFUNITDIR=$withval], [SYSTEMD_CONFUNITDIR="$(pkg-config systemd --variable=systemdsystemconfdir)"])
+AC_SUBST(SYSTEMD_CONFUNITDIR)
+
+
 AC_ARG_WITH([system-bus-services-dir],
        AS_HELP_STRING([--with-system-bus-services-dir], [Directory for system services files]),
        [SYSTEM_BUS_SERVICES_DIR=$withval], [SYSTEM_BUS_SERVICES_DIR="$(pkg-config dbus-1 --variable=system_bus_services_dir)"])

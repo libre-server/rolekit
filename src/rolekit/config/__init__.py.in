@@ -47,6 +47,16 @@ ROLEKIT_LOGFILE = '/var/log/rolekit'
 
 MAX_INSTANCES = 1
 
+# systemd paths
+SYSTEMD_UNITS = "@SYSTEMD_CONFUNITDIR@"
+# Supported systemd dependency types
+SYSTEMD_DEPS = ['Wants', 'Requires', 'Before', 'After',
+                'Requisite', 'BindsTo', 'Conflicts']
+
+# dbus-send
+# FIXME: make this a configure.ac check
+DBUS_SEND = '/usr/bin/dbus-send'
+
 # persistent states
 NASCENT = "nascent"
 READY_TO_START = "ready-to-start"

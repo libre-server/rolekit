@@ -21,6 +21,7 @@
 # force use of pygobject3 in python-slip
 from gi.repository import GObject
 import sys
+from rolekit.server.io.systemd import SystemdExtensionUnits
 sys.modules['gobject'] = GObject
 
 import dbus
@@ -34,6 +35,9 @@ from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.io.rolesettings import RoleSettings
+from rolekit.server.io.systemd import SystemdTargetUnit
+from rolekit.server.io.systemd import SystemdFailureUnit
+from rolekit.server.io.systemd import SystemdExtensionUnits
 from rolekit.dbus_utils import *
 from rolekit.errors import *
 
@@ -837,11 +841,14 @@ class RoleBase(slip.dbus.service.Object):
             self.installFirewall()
 
             # Call do_deploy
-            yield async.call_future(self.do_deploy_async(values, sender))
+            target = yield async.call_future(self.do_deploy_async(values, sender))
 
             # Continue only after successful deployment:
             # Apply values to self._settings
             self.apply_values(values)
+
+            # Set up systemd target files
+            self.create_target(target)
 
             # Change to ready to start state
             self.change_state(READY_TO_START, write=True)
@@ -849,6 +856,37 @@ class RoleBase(slip.dbus.service.Object):
             # Something failed, set state to error
             self.change_state(ERROR, write=True)
             raise
+
+
+    def create_target(self, target):
+        target['targetname'] = \
+            'role-%s-%s.target' % (target['Role'],
+                                   target['Instance'])
+        log.debug9("Creating target file {0}".format(target['targetname']))
+
+        target['failurename'] = \
+            'role-fail-%s-%s.target' % (target['Role'],
+                                        target['Instance'])
+        log.debug9("Creating failure file {0}".format(target['failurename']))
+
+        # Create target unit
+        target['extensions'] = SystemdTargetUnit(target).write()
+
+        # Create failure notification unit
+        SystemdFailureUnit(target).write()
+
+        # Create extension units for required components
+        extunits = SystemdExtensionUnits(target)
+        for dep in SYSTEMD_DEPS:
+            if dep in target:
+                for unit in target[dep]:
+                    log.debug9("Creating extension unit for {0}".format(unit))
+                    extunits.write(unit)
+
+        # Tell systemd to reload the daemon configuration
+        log.debug9("Reloading systemd units\n")
+        with SystemdJobHandler() as job_handler:
+            job_handler.manager.Reload()
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
