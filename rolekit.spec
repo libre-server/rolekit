@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.0.5
+Version: 0.0.4
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
