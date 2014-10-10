@@ -17,6 +17,10 @@ Requires: python-futures
 Requires: python-slip-dbus
 Requires: python-decorator
 Requires: pygobject3-base
+Requires: firewalld
+Requires: systemd
+Requires: NetworkManager
+Requires: yum
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
