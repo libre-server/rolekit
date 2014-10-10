@@ -128,8 +128,7 @@ grp_deploy = subparsers.add_parser("deploy", help="Deploy a role to create a rol
 grp_deploy.set_defaults(parser="deploy")
 grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
 grp_deploy.add_argument("--name", metavar="<name>", default="")
-grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>")
-
+grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>", help="Not using a settings file will result in attempting to deploy without custom settings. This will fail if the role has mandatory settings.")
 
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
@@ -235,7 +234,8 @@ elif a.parser == "deploy":
     obj = rk.getNamedRoleObj(a.role)
     if a.settings_file:
         obj.deploy(a.name, create_settings_from_file(a.settings_file))
-
+    else:
+        obj.deploy(a.name, { })
 
 elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
                    "reset-error", "decommission" ]:
