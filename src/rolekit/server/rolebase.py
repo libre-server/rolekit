@@ -299,7 +299,13 @@ class RoleBase(slip.dbus.service.Object):
     @staticmethod
     def get_dbus_property(x, prop):
         if prop in [ "name", "type", "state", "lasterror" ]:
-            return dbus.String(x.get_property(x, prop))
+            val = x.get_property(x, prop)
+            if val is None:
+                # Return the special string u'_NULL__' indicating
+                # the NoneType
+                return dbus.String(u'__NULL__')
+            else:
+                return dbus.String(x.get_property(x, prop))
         elif prop in [ "packages", "services", "firewall_zones" ]: # "backup_paths"
             return dbus.Array(x.get_property(x, prop), "s")
         elif prop in [ "version" ]:
@@ -312,6 +318,12 @@ class RoleBase(slip.dbus.service.Object):
         if hasattr(x, "do_get_dbus_property"):
             try:
                 return x.do_get_dbus_property(x, prop)
+            except TypeError:
+                # If we get a TypeError here, it's because we couldn't
+                # convert a NoneType to a D-BUS type. Return a special
+                # string indicating this.
+                return dbus.String(u'__NULL__')
+
             except RolekitError as e:
                 if e.get_code(e) == INVALID_PROPERTY and prop in x._DEFAULTS:
                     raise dbus.exceptions.DBusException(
