@@ -118,15 +118,6 @@ class Role(RoleBase):
         super(Role, self).__init__(name, directory, *args, **kwargs)
 
 
-    # Start code
-    def do_start_async(self, sender=None):
-        yield async.call_future(self.start_services_async())
-
-    # Stop code
-    def do_stop_async(self, sender=None):
-        yield async.call_future(self.stop_services_async())
-
-
     # Deploy code
     def do_deploy_async(self, values, sender=None):
         log.debug9("TRACE: do_deploy_async")

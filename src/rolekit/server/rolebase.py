@@ -561,9 +561,9 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.start_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            for service in self._settings["services"]:
-                job_path = job_handler.manager.StartUnit(service, "replace")
-                job_handler.register_job(job_path)
+            target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+            job_path = job_handler.manager.StartUnit(target_unit, "replace")
+            job_handler.register_job(job_path)
 
             job_results = yield job_handler.all_jobs_done_future()
 
@@ -581,9 +581,9 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.stop_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            for service in self._settings["services"]:
-                job_path = job_handler.manager.StopUnit(service, "replace")
-                job_handler.register_job(job_path)
+            target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+            job_path = job_handler.manager.StopUnit(target_unit, "replace")
+            job_handler.register_job(job_path)
 
             job_results = yield job_handler.all_jobs_done_future()
 
@@ -720,13 +720,11 @@ class RoleBase(slip.dbus.service.Object):
 
     # Start code
     def do_start_async(self, sender=None):
-        # NOT IMPLEMENTED
-        raise NotImplementedError()
+        yield async.call_future(self.start_services_async())
 
     # Stop code
     def do_stop_async(self, sender=None):
-        # NOT IMPLEMENTED
-        raise NotImplementedError()
+        yield async.call_future(self.stop_services_async())
 
     # Deploy code
     def do_deploy_async(self, values, sender=None):

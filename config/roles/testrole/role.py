@@ -54,22 +54,6 @@ class Role(RoleBase):
         super(Role, self).__init__(name, directory, *args, **kwargs)
 
 
-    # Start code
-    def do_start_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
-
-
-    # Stop code
-    def do_stop_async(self, sender=None):
-        # Do the magic
-        #
-        # In case of error raise an exception
-        yield None
-
-
     # Deploy code
     def do_deploy_async(self, values, sender=None):
         # Do the magic
