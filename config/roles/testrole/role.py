@@ -38,7 +38,7 @@ class Role(RoleBase):
         "version": 1,
         "services": [ "service1" ],
         "packages": [ "package1", "@group1" ],
-        "firewall": { "ports": [ "69/tcp" ], "services": [ "service1" ] },
+        "firewall": { "ports": [ "69/tcp" ], "services": [ "tftp" ] },
         "myownsetting": "something",
     })
 
@@ -75,7 +75,13 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        yield None
+        target = {'Role': 'testrole',
+                  'Instance': self.get_name(),
+                  'Description': "Test Role - %s" %
+                                 self.get_name(),
+                  'Wants': ['rolekit.socket'],
+                  'After': ['syslog.target', 'network.target']}
+        yield target
 
 
     # Redeploy code
