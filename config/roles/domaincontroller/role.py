@@ -77,7 +77,7 @@ class Role(RoleBase):
         "root_ca_file": None,
 
         # Install DNS Server
-        "setup_dns": True,
+        "serve_dns": True,
 
         # Set up the DNS reverse zone
         "reverse_zone": None,
@@ -166,10 +166,10 @@ class Role(RoleBase):
             ]
 
         # If the user has requested the DNS server, enable it
-        if 'setup_dns' not in values:
-            values['setup_dns'] = self._settings['setup_dns']
+        if 'serve_dns' not in values:
+            values['serve_dns'] = self._settings['serve_dns']
 
-        if values['setup_dns']:
+        if values['serve_dns']:
             ipa_install_args.append('--setup-dns')
 
             # Pass the primary IP address
@@ -253,7 +253,7 @@ class Role(RoleBase):
                      "reverse_zone",
                      "admin_password"]:
             return self.check_type_string(value)
-        elif prop in [ "setup_dns" ]:
+        elif prop in [ "serve_dns" ]:
             return self.check_type_bool(value)
         elif prop in [ "id_start",
                        "id_max" ]:
@@ -287,7 +287,7 @@ class Role(RoleBase):
                      "primary_ip",
                      "reverse_zone" ]:
             return dbus.String(x.get_property(x, prop))
-        elif prop in [ "setup_dns" ]:
+        elif prop in [ "serve_dns" ]:
             return dbus.Boolean(x.get_property(x, prop))
         elif prop in [ "id_start",
                        "id_max" ]:
@@ -328,10 +328,70 @@ class Role(RoleBase):
 
 
     # D-Bus Property handling
-#    if hasattr(dbus.service, "property"):
-#        # property support in dbus.service
-#
-#        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-#        @dbus_handle_exceptions
-#        def domain_name(self):
-#            return self.get_dbus_property(self, "domain_name")
+    if hasattr(dbus.service, "property"):
+        # property support in dbus.service
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def domain_name(self):
+            return self.get_dbus_property(self, "domain_name")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def realm_name(self):
+            return self.get_dbus_property(self, "realm_name")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def dm_password(self):
+            return self.get_dbus_property(self, "dm_password")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def id_start(self):
+            return self.get_dbus_property(self, "id_start")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def id_max(self):
+            return self.get_dbus_property(self, "id_max")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def root_ca_file(self):
+            return self.get_dbus_property(self, "root_ca_file")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def serve_dns(self):
+            return self.get_dbus_property(self, "serve_dns")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def reverse_zone(self):
+            return self.get_dbus_property(self, "reverse_zone")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def reverse_zone(self):
+            return self.get_dbus_property(self, "reverse_zone")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def primary_ip(self):
+            return self.get_dbus_property(self, "primary_ip")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def dns_forwarders(self):
+            return self.get_dbus_property(self, "dns_forwarders")
