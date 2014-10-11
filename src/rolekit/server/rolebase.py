@@ -554,7 +554,22 @@ class RoleBase(slip.dbus.service.Object):
     def installPackages(self):
         """install packages"""
         log.debug1("%s.installPackages()", self._log_prefix)
-        raise NotImplementedError()
+
+        # are there any groups or packages to install?
+        if len(self._settings["packages"]) < 1:
+            log.debug1("No groups or packages to install")
+            yield None
+            return
+
+        yum_install = [ "yum", "-y", "install" ] + self._settings["packages"]
+        result = yield async.subprocess_future(yum_install)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED, "%d" % result.status)
+
+        # Completed successfully
+        yield None
 
     def start_services_async(self):
         """Start services defined by self._settings["services"]"""
@@ -834,6 +849,9 @@ class RoleBase(slip.dbus.service.Object):
 
             # Copy _DEFAULTS to self._settings
             self.copy_defaults()
+
+            # Install package groups and packages
+            yield async.call_future(self.installPackages())
 
             # Install firewall
             self.installFirewall()

@@ -37,7 +37,7 @@ class Role(RoleBase):
     _DEFAULTS = dict(RoleBase._DEFAULTS, **{
         "version": 1,
         "services": [ "service1" ],
-        "packages": [ "package1", "@group1" ],
+        "packages": [ "tftp-server", "@c-development" ],
         "firewall": { "ports": [ "69/tcp" ], "services": [ "tftp" ] },
         "myownsetting": "something",
     })
