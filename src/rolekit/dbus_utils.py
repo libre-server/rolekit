@@ -33,6 +33,7 @@ PY2 = sys.version < '3'
 SYSTEMD_MANAGER_INTERFACE = "org.freedesktop.systemd1.Manager"
 SYSTEMD_MANAGER_NAME = "org.freedesktop.systemd1"
 SYSTEMD_MANAGER_PATH = "/org/freedesktop/systemd1"
+SYSTEMD_UNIT_INTERFACE = "org.freedesktop.systemd1.Unit"
 
 def command_of_pid(pid):
     """ Get command for pid from /proc """

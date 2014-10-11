@@ -100,6 +100,38 @@ class RoleBase(slip.dbus.service.Object):
         if not "state" in self._settings:
             self._settings["state"] = NASCENT
 
+        # Check role instance state if role instance is in READY_TO_START or
+        # RUNNING state
+        if self._settings["state"] in [ READY_TO_START, RUNNING ]:
+            with SystemdJobHandler() as job_handler:
+                target_unit = "role-%s-%s.target" % (self._type,
+                                                     self.get_name())
+                job_path = job_handler.manager.GetUnit(target_unit)
+                bus = slip.dbus.SystemBus()
+                obj = bus.get_object(SYSTEMD_MANAGER_NAME, job_path)
+                props = dbus.Interface(
+                    obj, dbus_interface='org.freedesktop.DBus.Properties')
+                state = dbus_to_python(props.Get(SYSTEMD_UNIT_INTERFACE,
+                                                 "ActiveState"))
+
+                # Update state:
+                #
+                #  Old instance   | systemd unit | New instance
+                #  state          | target state | state
+                # ----------------+--------------+----------------
+                #  RUNNING        | inactive     | READY_TO_START
+                #  READY_TO_START | active       | RUNNING
+
+                if state == "inactive" and self._settings["state"] == RUNNING:
+                    log.warning("'%s' is inactive, moving to %s state.",
+                                target_unit, READY_TO_START)
+                    self.change_state(READY_TO_START, write=True)
+                elif state == "active" and \
+                     self._settings["state"] == READY_TO_START:
+                    log.warning("'%s' is active, moving to %s state.",
+                                target_unit, RUNNING)
+                    self.change_state(RUNNING, write=True)
+
         self.timeout_restart()
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
