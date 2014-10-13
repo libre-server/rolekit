@@ -238,3 +238,14 @@ class SystemdJobHandler(object):
         """
         assert self.__signal_match is not None and len(self.__pending_jobs) != 0
         return self.__future
+
+def target_unit_state(target_unit):
+    with SystemdJobHandler() as job_handler:
+        job_path = job_handler.manager.GetUnit(target_unit)
+        bus = slip.dbus.SystemBus()
+        obj = bus.get_object(SYSTEMD_MANAGER_NAME, job_path)
+        props = dbus.Interface(
+            obj, dbus_interface='org.freedesktop.DBus.Properties')
+        return dbus_to_python(props.Get(SYSTEMD_UNIT_INTERFACE,
+                                        "ActiveState"))
+    return None

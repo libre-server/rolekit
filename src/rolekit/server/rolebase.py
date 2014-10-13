@@ -95,6 +95,8 @@ class RoleBase(slip.dbus.service.Object):
                                            self._escaped_name)
         self._directory = directory
         self._settings = settings
+        # TODO: place target_unit in settings
+        self.target_unit = "role-%s-%s.target" % (self._type, self.get_name())
 
         # No loaded self._settings, set state to NASCENT
         if not "state" in self._settings:
@@ -103,17 +105,11 @@ class RoleBase(slip.dbus.service.Object):
         # Check role instance state if role instance is in READY_TO_START or
         # RUNNING state
         if self._settings["state"] in [ READY_TO_START, RUNNING ]:
-            with SystemdJobHandler() as job_handler:
-                target_unit = "role-%s-%s.target" % (self._type,
-                                                     self.get_name())
-                job_path = job_handler.manager.GetUnit(target_unit)
-                bus = slip.dbus.SystemBus()
-                obj = bus.get_object(SYSTEMD_MANAGER_NAME, job_path)
-                props = dbus.Interface(
-                    obj, dbus_interface='org.freedesktop.DBus.Properties')
-                state = dbus_to_python(props.Get(SYSTEMD_UNIT_INTERFACE,
-                                                 "ActiveState"))
-
+            try:
+                state = target_unit_state(self.target_unit)
+            except Exception as e:
+                log.error("Getting information about the unit target failed: %s", e)
+            else:
                 # Update state:
                 #
                 #  Old instance   | systemd unit | New instance
@@ -124,12 +120,12 @@ class RoleBase(slip.dbus.service.Object):
 
                 if state == "inactive" and self._settings["state"] == RUNNING:
                     log.warning("'%s' is inactive, moving to %s state.",
-                                target_unit, READY_TO_START)
+                                self.target_unit, READY_TO_START)
                     self.change_state(READY_TO_START, write=True)
                 elif state == "active" and \
                      self._settings["state"] == READY_TO_START:
                     log.warning("'%s' is active, moving to %s state.",
-                                target_unit, RUNNING)
+                                self.target_unit, RUNNING)
                     self.change_state(RUNNING, write=True)
 
         self.timeout_restart()
@@ -760,7 +756,6 @@ class RoleBase(slip.dbus.service.Object):
         fw_changes.clear()
         self._settings["firewall-changes"] = fw_changes
         self._settings.write()
-
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # Public methods

@@ -61,6 +61,48 @@ class RoleD(slip.dbus.service.Object):
         self.start()
         self.timeout_restart()
 
+        try:
+            bus = slip.dbus.SystemBus()
+        except:
+            bus = dbus.SystemBus()
+
+        bus.add_signal_receiver(self._signal_receiver,
+                                dbus_interface=DBUS_INTERFACE,
+                                interface_keyword='interface',
+                                member_keyword='member',
+                                path_keyword='path')
+
+    @handle_exceptions
+    def _signal_receiver(self, *args, **kwargs):
+        _args = [ ]
+        for arg in args:
+            _args.append(dbus_to_python(arg))
+        args = _args
+        if not "member" in kwargs:
+            return
+        signal = kwargs["member"]
+        interface = kwargs["interface"]
+
+        if interface != DBUS_INTERFACE or signal != "NotifyUnitFailed" or \
+           len(args) != 2:
+            return
+
+        log.debug1("NotifyUnitFailed('%s', '%s')", args[0], args[1]);
+
+        for obj in self._roles:
+            if obj.get_name() != args[0]:
+                continue
+            instances = obj.get_instances()
+            for instance_name in instances:
+                if instance_name != args[1]:
+                    continue
+                instance = instances[instance_name]
+                if instance._settings["state"] == RUNNING:
+                    state = target_unit_state(instance.target_unit)
+                    if state != "active":
+                        instance.change_state(ERROR, write=True)
+
+
     def __del__(self):
         self.stop()
 

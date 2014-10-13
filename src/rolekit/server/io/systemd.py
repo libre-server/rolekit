@@ -104,7 +104,7 @@ class SystemdFailureUnit(dict):
 
     def write(self):
         # First construct the dbus-send command
-        dsend = "{DBUS_SEND} --dest={DBUS_INTERFACE} " \
+        dsend = "{DBUS_SEND} --system --dest={DBUS_INTERFACE} " \
                 "{DBUS_PATH} {DBUS_INTERFACE}.{FAIL_METHOD} " \
                 "string:'{ROLE}' string:'{INSTANCE}'".format(
                 DBUS_SEND=DBUS_SEND,
