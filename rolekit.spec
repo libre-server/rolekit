@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.0.4
+Version: 0.1.0
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
@@ -78,6 +78,19 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Mon Oct 13 2014 Thomas Woerner <twoerner@redhat.com> 0.1.0-1
+- Update role instance state on roled wakup.
+- New package and group installation during role deployment
+- RoleBase: Use systemd targets for start() and stop()
+- New support for systemd targets
+- RoleBase: Handle NULL types
+- Domain Controller: Export properties
+- Added missing requires for firewalld, systemd, NetworkManager and yum
+- New --settings-file option for rolectl, replaces --set option
+- New firewall handling
+- Property fixes, new property checks
+- Bug fixes
+
 * Fri Aug 22 2014 Thomas Woerner <twoerner@redhat.com> 0.0.3-1
 - Domain Controller: Add decommission routine
 - Better trapping of non-ASCII output on subprocess
