@@ -240,8 +240,8 @@ class DBusRole(slip.dbus.service.Object):
         name = instance.get_name()
         escaped_name = dbus_label_escape(name)
 
-        if name in self._instances:
-            del self._instances[name]
+        if escaped_name in self._instances:
+            del self._instances[escaped_name]
             self.InstanceRemoved(escaped_name)
 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -263,8 +263,9 @@ class DBusRole(slip.dbus.service.Object):
         """ return the role with the name, otherwise raise error """
         name = dbus_to_python(name)
         log.debug1("role.%s.getNamedInstance('%s')", self._escaped_name, name)
-        if name in self._instances:
-            return self._instances[name]
+        instance_escaped_name = dbus_label_escape(name)
+        if instance_escaped_name in self._instances:
+            return self._instances[instance_escaped_name]
         raise RolekitError(INVALID_ROLE, name)
 
     @dbus.service.signal(DBUS_INTERFACE_ROLE, signature='s')
