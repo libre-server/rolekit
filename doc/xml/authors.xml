@@ -35,4 +35,11 @@
     <surname>Gallagher</surname>
     <email>sgallagh@redhat.com</email>
   </author>
+
+  <author>
+    <contrib>Developer</contrib>
+    <firstname>Miloslav</firstname>
+    <surname>Trmač</surname>
+    <email>mitr@redhat.com</email>
+  </author>
 </authorgroup>
