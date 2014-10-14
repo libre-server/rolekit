@@ -94,7 +94,6 @@ subparsers = parser.add_subparsers(help="Commands")
 
 grp_output = parser.add_mutually_exclusive_group()
 grp_output.add_argument("-v", "--verbose", action="store_true")
-grp_output.add_argument("-V", "--version", action="store_true")
 grp_output.add_argument("-q", "--quiet", action="store_true")
 
 
