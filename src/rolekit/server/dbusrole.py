@@ -157,7 +157,7 @@ class DBusRole(slip.dbus.service.Object):
             # get a property
             interface_name = dbus_to_python(interface_name)
             property_name = dbus_to_python(property_name)
-            log.debug1("config.Get('%s', '%s')", interface_name, property_name)
+            log.debug1("Get('%s', '%s')", interface_name, property_name)
 
             if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
@@ -171,7 +171,7 @@ class DBusRole(slip.dbus.service.Object):
         @dbus_handle_exceptions
         def GetAll(self, interface_name, sender=None):
             interface_name = dbus_to_python(interface_name)
-            log.debug1("config.GetAll('%s')", interface_name)
+            log.debug1("GetAll('%s')", interface_name)
 
             if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
@@ -189,7 +189,7 @@ class DBusRole(slip.dbus.service.Object):
             interface_name = dbus_to_python(interface_name)
             property_name = dbus_to_python(property_name)
             new_value = dbus_to_python(new_value)
-            log.debug1("config.Set('%s', '%s', '%s')", interface_name,
+            log.debug1("Set('%s', '%s', '%s')", interface_name,
                        property_name, new_value)
 
             if interface_name != DBUS_INTERFACE_ROLE:
@@ -218,7 +218,7 @@ class DBusRole(slip.dbus.service.Object):
         @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
         def PropertiesChanged(self, interface_name, changed_properties,
                               invalidated_properties):
-            log.debug1("config.PropertiesChanged('%s', '%s', '%s')",
+            log.debug1("PropertiesChanged('%s', '%s', '%s')",
                        interface_name, changed_properties,
                        invalidated_properties)
 
