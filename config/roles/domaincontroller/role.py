@@ -66,11 +66,14 @@ class Role(RoleBase):
 
         # Starting ID value for the domain
         # If unset, will be assigned randomly
+        # If set, id_max must also be set
         "id_start": None,
 
-        # Maximum ID value in the domain
-        # This is an offset from id_start
-        "id_max": 199999,
+        # Highest ID value for the domain
+        # If unset, the domain will have space
+        # for 200,000 IDs (FreeIPA default).
+        # If set, id_start must also be set
+        "id_max": None,
 
         # Path to a root CA certificate
         # If not specified, one will be generated
@@ -186,8 +189,23 @@ class Role(RoleBase):
             else:
                 ipa_install_args.append('--no-reverse')
 
-        # TODO: If the user has requested an ID range offset,
+        # If the user has requested a specified ID range,
         # set up the argument to ipa-server-install
+        if 'id_start' in values or 'id_max' in values:
+            if ('id_start' not in values or
+                'id_max' not in values or
+                not values['id_start'] or
+                not values['id_max']):
+
+                raise RolekitError(INVALID_VALUE,
+                                   "Must specify id_start and id_max together")
+
+            if (values['id_start'] and values['id_max'] <= values['id_start']):
+                raise RolekitError(INVALID_VALUE,
+                                   "id_max must be greater than id_start")
+
+            ipa_install_args.append('--idstart=%d' % values['id_start'])
+            ipa_install_args.append('--idmax=%d' % values['id_max'])
 
         # TODO: If the user has specified a root CA file,
         # set up the argument to ipa-server-install
