@@ -918,7 +918,7 @@ class RoleBase(slip.dbus.service.Object):
         log.debug9("Creating target file {0}".format(target['targetname']))
 
         target['failurename'] = \
-            'role-fail-%s-%s.target' % (target['Role'],
+            'role-fail-%s-%s.service' % (target['Role'],
                                         target['Instance'])
         log.debug9("Creating failure file {0}".format(target['failurename']))
 
