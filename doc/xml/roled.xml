@@ -55,18 +55,73 @@
   <refsect1 id="description">
     <title>Description</title>
     <para>
-      roled is the server daemon for rolekit.
+      roled is a daemon for Linux systems providing a stable D-BUS interface to manage the deployment of Server Roles.
     </para>
   </refsect1>
 
   <refsect1 id="options">
     <title>Options</title>
     <para>
-      <command>roled</command> ...
+      These are the command line options:
     </para>
-    <para>
-      The following options are supported:
-    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>
+            Prints a short help text and exits.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--debug</option><optional>=<replaceable>level</replaceable></optional></term>
+        <listitem>
+          <para>
+            Set the debug level for roled to <replaceable>level</replaceable>. The range of the debug level is 1 (lowest level) to 10 (highest level). The debug output will be written to the roled log file <filename class="directory">/var/log/rolekit</filename>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--debug-gc</option></term>
+        <listitem>
+          <para>
+            Turn on garbage collector leak information. The collector runs every 10 seconds and if there are leaks, it prints information about the leaks.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--nofork</option></term>
+        <listitem>
+          <para>
+            Turn off daemon forking. Force roled to run as a foreground process instead of as a daemon in the background.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--nopid</option></term>
+        <listitem>
+          <para>
+            Disable writing pid file. By default the program will write a pid file. If the program is invoked with this option it will not check for an existing server process.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--persistent</option></term>
+        <listitem>
+          <para>
+            Turns on persistent mode. roled will not be auto-terminated after inactivity.
+          </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
 
   </refsect1>
 
