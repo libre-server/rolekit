@@ -30,6 +30,7 @@
     <member><citerefentry><refentrytitle>roled</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
     <member><citerefentry><refentrytitle>rolekit.dbus</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
     <member><citerefentry><refentrytitle>rolekit.roles</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
+    <member><citerefentry><refentrytitle>rolekit.roles.domaincontroller</refentrytitle><manvolnum>5</manvolnum></citerefentry></member>
   </simplelist>
 
 </refsect1>
