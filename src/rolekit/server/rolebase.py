@@ -732,11 +732,16 @@ class RoleBase(slip.dbus.service.Object):
                 for service in services:
                     if "runtime" in services[service]:
                         try:
-                            fw.removeService(zone, service, 0)
-                        except:
-                            pass
+                            fw.removeService(zone, service)
+                        except Exception as e:
+                            if not "NOT_ENABLED" in str(e):
+                                raise
                     if "permanent" in services[service]:
-                        z_perm.removeService(service)
+                        try:
+                            z_perm.removeService(service)
+                        except Exception as e:
+                            if not "NOT_ENABLED" in str(e):
+                                raise
 
             if "ports" in fw_changes[zone]:
                 ports = fw_changes[zone]["ports"]
@@ -745,10 +750,15 @@ class RoleBase(slip.dbus.service.Object):
                     if "runtime" in ports[port_proto]:
                         try:
                             fw.removePort(zone, port, proto)
-                        except:
-                            pass
+                        except Exception as e:
+                            if not "NOT_ENABLED" in str(e):
+                                raise
                     if "permanent" in ports[port_proto]:
-                        z_perm.removePort(port, proto)
+                        try:
+                            z_perm.removePort(port, proto)
+                        except Exception as e:
+                            if not "NOT_ENABLED" in str(e):
+                                raise
 
             fw.config().getZoneByName(zone).update(z_perm)
 
