@@ -247,6 +247,8 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
     if a.parser == "redeploy":
         if a.settings_file:
             obj.redeploy(create_settings_from_file(a.settings_file))
+        else:
+            obj.redeploy({ })
 
 
     # status
