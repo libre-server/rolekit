@@ -48,27 +48,371 @@
 
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>rolectl</command> <arg choice="opt" rep="repeat">OPTIONS</arg>
+      <command>rolectl</command> <arg choice="plain">COMMAND</arg> <arg choice="opt" rep="repeat">OPTIONS</arg> <arg choice="opt" rep="repeat">ARGS</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1 id="description">
     <title>Description</title>
     <para>
-      rolectl is the command line tool for rolekit.
+      rolectl is the command line tool for rolekit, which provids an interface to manage the deployment of Server Roles.
     </para>
   </refsect1>
 
   <refsect1 id="options">
     <title>Options</title>
     <para>
-      <command>rolectl</command> ...
-    </para>
-    <para>
       The following options are supported:
     </para>
 
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>
+	    Prints additional help information for a command if used with a command. Otherwise prints a short help text and exits.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option></term>
+        <term><option>--verbose</option></term>
+        <listitem>
+          <para>
+            Enables verbose information.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-q</option></term>
+        <term><option>--quiet</option></term>
+        <listitem>
+          <para>
+	    Disables the output of status messages for use in scripts for example.
+          </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
   </refsect1>
+
+  <refsect1 id="commands">
+    <title>Commands</title>
+    <para>
+      The following commands are supported:
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><command>version</command></term>
+        <listitem>
+          <para>
+            Prints rolekit version and exits.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>list roles</command></term>
+        <listitem>
+          <para>
+            Lists all roles that are available in rolekit.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>list instances</command></term>
+        <listitem>
+          <para>
+            Lists all instances in rolekit. Instances are deployed roles.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>settings <replaceable>ROLE</replaceable> <optional>--key <replaceable>KEY</replaceable></optional></command></term>
+        <listitem>
+          <para>
+            Lists all default settings of the role with the name <replaceable>ROLE</replaceable> with the optional key in key-value pairs.
+	  </para>
+	  <para>
+	    These are the default settings of a role. Usually these contain <replaceable>custom_firewall</replaceable>, <replaceable>firewall</replaceable>, <replaceable>firewall_zones</replaceable>, <replaceable>version</replaceable>, <replaceable>services</replaceable> and <replaceable>packages</replaceable>. Additionally also role specific settings.
+          </para>
+	  <para>
+	    With using the key option, the output can be limited to the this key only.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>settings <replaceable>ROLE</replaceable>/<replaceable>INSTANCE</replaceable> <optional>--key <replaceable>KEY</replaceable></optional></command></term>
+        <listitem>
+          <para>
+            Lists all settings of the instance <replaceable>INSTANCE</replaceable> of the role <replaceable>ROLE</replaceable> in key-value pairs.
+          </para>
+          <para>
+	    Additionally to the role settings these are usually <replaceable>name</replaceable>, <replaceable>state</replaceable>, <replaceable>lasterror</replaceable> and <replaceable>type.</replaceable>
+          </para>
+	  <para>
+	    With using the key option, the output can be limited to the this key only.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>deploy <replaceable>ROLE</replaceable> <optional>--name <replaceable>NAME</replaceable></optional> <optional>--settings-file <replaceable>FILE</replaceable></optional></command></term>
+        <listitem>
+          <para>
+            Deploys the role <replaceable>ROLE</replaceable> with the optional name <replaceable>NAME</replaceable> and the optional settings file <replaceable>FILE</replaceable> to an instance.
+          </para>
+          <para>
+	    If no name is specified for the instance, rolekit will use the next lowest unused instance number starting by 1 as the name. The first not named instance will be <replaceable>1</replaceable>, the second <replaceable>2</replaceable> and so on. The number of instances per role are currently limited to one.
+          </para>
+          <para>
+	    The settings file can be used to apply values to settings. The settings file needs to be a vaild json file. If no settings file is used, the default settings of the role are used for the instance.
+          </para>
+	  <para>
+	    Not all settings can be set in the settings file. The role defines which settings are read only and can therefore not be set within the settings file. The readonly default settings are: <replaceable>lasterror</replaceable>, <replaceable>version</replaceable>, <replaceable>services</replaceable>, <replaceable>packages</replaceable> and <replaceable>firewall</replaceable>.
+	  </para>
+	  <para>
+	    Please have a look at the documentation of the role to get further information about mandatory, optional and read only settings of the role.
+	  </para>
+	  <para>
+	    After deploy the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while deploying, else in the <replaceable>error</replaceable> state.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>redeploy <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable> <optional>--settings-file <replaceable>FILE</replaceable></optional></command></term>
+        <listitem>
+          <para>
+            Redeploys the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable> with the optional settings file <replaceable>FILE</replaceable> to an instance.
+          </para>
+          <para>
+	    A redeploy is only possible for an instance that is in the <replaceable>ready-to-start</replaceable> or <replaceable>error</replaceable> state.
+          </para>
+          <para>
+	    The settings file can be used to apply values to settings. The settings file needs to be a vaild json file. If no settings file is used, the default settings of the role are used for the instance.
+          </para>
+	  <para>
+	    Not all settings can be set in the settings file. The role defines which settings are read only and can therefore not be set within the settings file. The readonly default settings are: <replaceable>lasterror</replaceable>, <replaceable>version</replaceable>, <replaceable>services</replaceable>, <replaceable>packages</replaceable> and <replaceable>firewall</replaceable>.
+	  </para>
+	  <para>
+	    Please have a look at the documentation of the role to get further information about mandatory, optional and read only settings of the role.
+	  </para>
+	  <para>
+	    After redeploy the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while deploying, else in the <replaceable>error</replaceable> state.
+	  </para>
+	  <para>
+	    Not functional yet.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>status <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Prints the state of the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+          <para>
+	    The state can be on of the persistent states or of the transitional states, while the state of an role instances is about to change to another persistent state.
+	  </para>
+	  <para>
+	    Persistent States:
+
+	    <variablelist>
+              <varlistentry>
+		<term><replaceable>nascent</replaceable></term>
+		<listitem>
+		  <para>
+		    A generic role is in this state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>ready-to-start</replaceable></term>
+		<listitem>
+		  <para>
+		    Initial instance state. Reached by deploying a role, redeploying or stopping an instance.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>running</replaceable></term>
+		<listitem>
+		  <para>
+		    Running instance state. Reached by starting an instance.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>error</replaceable></term>
+		<listitem>
+		  <para>
+		    Instance error state. Reached by all errors in transitional states and also from the running state if an error has been detected in a process related to the role.
+		  </para>
+		</listitem>
+              </varlistentry>
+	    </variablelist>
+
+	  </para>
+	  <para>
+	    Transitional States:
+
+	    <variablelist>
+              <varlistentry>
+		<term><replaceable>deploying</replaceable></term>
+		<listitem>
+		  <para>
+		    State while deploying a role to create an instance. Can only be reached from the <replaceable>nascent</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>redeploying</replaceable></term>
+		<listitem>
+		  <para>
+		    State while redeploying an instance. Can only be reached from the <replaceable>ready-to-start</replaceable> or <replaceable>error</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>decommissioning</replaceable></term>
+		<listitem>
+		  <para>
+		    State while decommissioning an instance. Can only be reached from the <replaceable>ready-to-start</replaceable> or <replaceable>error</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>starting</replaceable></term>
+		<listitem>
+		  <para>
+		    State while starting an instance. Can only be reached from the <replaceable>ready-to-start</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>stopping</replaceable></term>
+		<listitem>
+		  <para>
+		    State while stopping an instance. Can only be reached from the <replaceable>running</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+
+              <varlistentry>
+		<term><replaceable>updating</replaceable></term>
+		<listitem>
+		  <para>
+		    State while updating an instance. Can only be reached from the <replaceable>ready-to-start</replaceable> state.
+		  </para>
+		</listitem>
+              </varlistentry>
+	    </variablelist>
+
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>start <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Starts the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    After starting the instance will be in the <replaceable>running</replaceable> state if there was no error while starting, else in the <replaceable>error</replaceable> state.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>stop <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Stops the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    After stopping the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while starting, else in the <replaceable>error</replaceable> state.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>restart <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Stops and restarts the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    After restarting the instance will be in the <replaceable>running</replaceable> state if there was no error while starting, else in the <replaceable>error</replaceable> state.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>update <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Updates the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    After starting the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while starting, else in the <replaceable>error</replaceable> state.
+	  </para>
+	  <para>
+	    Not functional yet.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><command>reset-error <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Resets the error state of the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    Only functional if the instance is in <replaceable>error</replaceable> state.
+          </para>
+	  <para>
+	    After resetting the error state the instance will be in the <replaceable>ready-to-start</replaceable> state.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+        <term><command>decommission <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <listitem>
+          <para>
+	    Decommissions the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
+          </para>
+	  <para>
+	    After decommissioning the instance will be destroyed or in <replaceable>error</replaceable> state in case of error while decommissioning.
+	  </para>
+        </listitem>
+      </varlistentry>
+
+    </variablelist>
+
+  </refsect1>
+
+
+
 
   &seealso;
 
