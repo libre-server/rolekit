@@ -231,6 +231,11 @@ elif a.parser == "settings":
 # deploy
 elif a.parser == "deploy":
     obj = rk.getNamedRoleObj(a.role)
+
+    # TODO: Implement progress meter
+    __print("Deployment can take a long time. To monitor the progress, run \n"
+            "journalctl -ef -u rolekit")
+
     if a.settings_file:
         obj.deploy(a.name, create_settings_from_file(a.settings_file))
     else:
@@ -282,6 +287,10 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
 
     # decommission
     elif a.parser == "decommission":
+        # TODO: Implement progress meter
+        __print("Decommissioning can take a long time. To monitor the "
+                "progress, run \n"
+                "journalctl -ef -u rolekit")
         obj.decommission()
 
 
