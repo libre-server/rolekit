@@ -142,32 +142,32 @@ grp_status.add_argument("instance", type=instance_type, metavar="<role/instance>
 
 grp_start = subparsers.add_parser("start", help="Start a role instance")
 grp_start.set_defaults(parser="start")
-grp_start.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_start.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 grp_stop = subparsers.add_parser("stop", help="Stop a role instance")
 grp_stop.set_defaults(parser="stop")
-grp_stop.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_stop.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 grp_restart = subparsers.add_parser("restart", help="Restart a role instance")
 grp_restart.set_defaults(parser="restart")
-grp_restart.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_restart.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 grp_update = subparsers.add_parser("update", help="Update a role instance")
 grp_update.set_defaults(parser="update")
-grp_update.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_update.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 grp_reset_error = subparsers.add_parser("reset-error", help="Reset error state in a role instance")
 grp_reset_error.set_defaults(parser="reset-error")
-grp_reset_error.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_reset_error.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 grp_decommission = subparsers.add_parser("decommission", help="Decommission a role instance")
 grp_decommission.set_defaults(parser="decommission")
-grp_decommission.add_argument("instance", type=instance_type, action="store", metavar="<instance>")
+grp_decommission.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
 a = parser.parse_args()
