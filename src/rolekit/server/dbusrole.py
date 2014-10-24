@@ -266,7 +266,7 @@ class DBusRole(slip.dbus.service.Object):
         instance_escaped_name = dbus_label_escape(name)
         if instance_escaped_name in self._instances:
             return self._instances[instance_escaped_name]
-        raise RolekitError(INVALID_ROLE, name)
+        raise RolekitError(INVALID_INSTANCE, name)
 
     @dbus.service.signal(DBUS_INTERFACE_ROLE, signature='s')
     @dbus_handle_exceptions
