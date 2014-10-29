@@ -396,13 +396,16 @@
 
 
       <varlistentry>
-        <term><command>decommission <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable></command></term>
+        <term><command>decommission <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable> <optional>--force</optional></command></term>
         <listitem>
           <para>
 	    Decommissions the role instance <replaceable>ROLE</replaceable>/<replaceable>NAME</replaceable>.
           </para>
 	  <para>
 	    After decommissioning the instance will be destroyed or in <replaceable>error</replaceable> state in case of error while decommissioning.
+	  </para>
+	  <para>
+	    If the force option is given, the decommission of the instance will continue even in an error case.
 	  </para>
         </listitem>
       </varlistentry>

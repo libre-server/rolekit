@@ -241,7 +241,7 @@ class Role(RoleBase):
 
 
     # Decommission code
-    def do_decommission_async(self, sender=None):
+    def do_decommission_async(self, force=False, sender=None):
         # We need to run the FreeIPA uninstallation
         result = yield async.subprocess_future(['ipa-server-install',
                                                 '-U', '--uninstall'])

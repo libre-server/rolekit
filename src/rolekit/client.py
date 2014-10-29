@@ -170,8 +170,8 @@ class RolekitClientRoleInstance(object):
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions
-    def decommission(self):
-        self.instance.decommission()
+    def decommission(self, force=False):
+        self.instance.decommission(force)
 
     @slip.dbus.polkit.enable_proxy
     @handle_exceptions

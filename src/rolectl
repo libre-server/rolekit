@@ -168,6 +168,7 @@ grp_reset_error.add_argument("instance", type=instance_type, action="store", met
 grp_decommission = subparsers.add_parser("decommission", help="Decommission a role instance")
 grp_decommission.set_defaults(parser="decommission")
 grp_decommission.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
+grp_decommission.add_argument("--force", action="store_true")
 
 
 a = parser.parse_args()
@@ -291,7 +292,7 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
         __print("Decommissioning can take a long time. To monitor the "
                 "progress, run \n"
                 "journalctl -ef -u rolekit")
-        obj.decommission()
+        obj.decommission(a.force)
 
 
 else:

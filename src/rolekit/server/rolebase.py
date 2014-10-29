@@ -789,7 +789,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
     # Decommission code
-    def do_decommission(self, sender=None):
+    def do_decommission(self, force=False, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -986,31 +986,35 @@ class RoleBase(slip.dbus.service.Object):
         # Change to ready to start state
         self.change_state(READY_TO_START, write=True)
 
-
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='',
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='b',
+                         out_signature='',
                          async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def decommission(self, reply_handler, error_handler, sender=None):
+    def decommission(self, force, reply_handler, error_handler, sender=None):
         """decommission role"""
-        async.start_with_dbus_callbacks(self.__decommission_async(sender),
+        force = dbus_to_python(force)
+        async.start_with_dbus_callbacks(self.__decommission_async(force,
+                                                                  sender),
                                         reply_handler, error_handler)
 
-    def __decommission_async(self, sender):
+    def __decommission_async(self, force, sender):
         # Make sure we are in the proper state
         self.assert_state(READY_TO_START, ERROR)
 
         # Log
-        log.debug1("%s.decommission()", self._log_prefix)
+        log.debug1("%s.decommission(%s)", self._log_prefix, force)
 
         # Change state to decommissioning
         self.change_state(DECOMMISSIONING)
 
         # Call do_decommission
         try:
-            yield async.call_future(self.do_decommission_async(sender))
+            yield async.call_future(self.do_decommission_async(force=force,
+                                                               sender=sender))
         except:
             self.change_state(ERROR, write=True)
-            raise
+            if not force:
+                raise
 
         # Uninstall firewall
         self.uninstallFirewall()
