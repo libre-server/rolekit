@@ -216,7 +216,14 @@ elif a.parser == "settings":
         obj = rk.getNamedRoleObj(a.what)
 
     if a.key:
-        __print_and_exit(obj.get_property(a.key))
+        if "/" in a.what:
+            __print_and_exit(obj.get_property(a.key))
+        else:
+            props = obj.get_properties()["DEFAULTS"]
+            if a.key not in props:
+                __print_and_exit("Error: No property '%s' in role '%s'" % \
+                                 (a.key, a.what))
+            __print_and_exit(props[a.key])
 
     if "/" in a.what:
         props = obj.get_properties()
