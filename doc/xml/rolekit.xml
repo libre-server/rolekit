@@ -43,16 +43,104 @@
 
   <refnamediv>
     <refname>rolekit</refname>
-    <refpurpose>rolekit documentation</refpurpose>
+    <refpurpose>server role management toolkit</refpurpose>
   </refnamediv>
-
-  <refsynopsisdiv>
-  </refsynopsisdiv>
 
   <refsect1 id="description">
     <title>Description</title>
     <para>
-      rolekit is ...
+      rolekit is a server role deployment and management toolkit. A server role could be seen as a service or a use case that is providing several services. A deployed role is a (role) instance.
+    </para>
+    <para>
+      A plugin interface is used for simple role creation. Each role is a plugin to rolekit and can therefore be easily created. A D-Bus interface and also a command line client is available for role management.
+    </para>
+  </refsect1>
+
+  <refsect1 id="concept">
+    <title>Concept</title>
+    <para>
+      A role plugin describes the receipt to get to the configured and running role. For this a plugin provides a predefined set of methods and role settings (properties).
+    </para>
+    <para>
+      Roles are loaded from the <filename><config.rolekit_roles/></filename> directory. Each role owns a directory named after the role itself. The directory contains role.py, that is inherited from RoleBase and implementing the role.
+    </para>
+    <para>
+      Each role instance owns a sub directory in <filename><config.etc_rolekit_roles/></filename>, named after the role. The directory contains JSON settings files using the name of the instances as the filename with the JSON extension.
+    </para>
+
+    <para>
+      While deploying a role, these steps are done internally:
+
+      <orderedlist>
+        <listitem>
+	  <para>
+	    <replaceable>DBusRole.deploy</replaceable> is called.
+	    <orderedlist>
+              <listitem>
+		<para>
+		  Checks that the name is valid and that there is no conflict with another instance of that role.
+		</para>
+	      </listitem>
+
+              <listitem>
+		<para>
+		  Creates the role instance from <replaceable>RoleBase</replaceable>.
+		</para>
+	      </listitem>
+
+              <listitem>
+		<para>
+		  Calls <replaceable>RoleBase.deploy_async</replaceable> method in the instance.
+		</para>
+	      </listitem>
+
+	    </orderedlist>
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Checks settings supplied by the user.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Sets the instance into the <replaceable>deploying</replaceable> state.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Installs groups and packages defined in the packages setting.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Installs firewall settings.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Calls <replaceable>Role.do_deploy_async</replaceable> method.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Creates the systemd target.
+	  </para>
+	</listitem>
+
+        <listitem>
+	  <para>
+	    Sets the instance into the <replaceable>ready-to-start</replaceable> state.
+	  </para>
+	</listitem>
+
+      </orderedlist>
     </para>
   </refsect1>
 

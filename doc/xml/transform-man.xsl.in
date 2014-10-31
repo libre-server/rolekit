@@ -25,6 +25,16 @@
     <xsl:text>@PREFIX@</xsl:text>
   </xsl:template>
 
+  <!-- etc_rolekit_roles -->
+  <xsl:template match="config.etc_rolekit_roles">
+    <xsl:text>@SYSCONFDIR@/rolekit/roles</xsl:text>
+  </xsl:template>
+
+  <!-- rolekit_roles -->
+  <xsl:template match="config.rolekit_roles">
+    <xsl:text>@PREFIX@/rolekit/roles</xsl:text>
+  </xsl:template>
+
   <!-- italic filenames -->
   <xsl:template match="//filename">
     <xsl:text>\fI</xsl:text><xsl:apply-templates/><xsl:text>\fR</xsl:text>
