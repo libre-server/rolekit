@@ -43,16 +43,158 @@
 
   <refnamediv>
     <refname>rolekit.roles</refname>
-    <refpurpose>rolekit role documentation</refpurpose>
+    <refpurpose>rolekit role descripion</refpurpose>
   </refnamediv>
 
-  <refsynopsisdiv>
-  </refsynopsisdiv>
-
-  <refsect1 id="description">
-    <title>Description</title>
+  <refsect1 id="role_structure">
+    <title>Role Structure</title>
     <para>
-      rolekit is ...
+      The basic structure of a role:
+    </para>
+    <programlisting>
+import dbus
+import dbus.service
+import slip.dbus
+import slip.dbus.service
+
+from rolekit.config import *
+from rolekit.config.dbus import *
+from rolekit.logger import log
+from rolekit.server.decorators import *
+from rolekit.server.rolebase import *
+from rolekit.dbus_utils import *
+from rolekit.errors import *
+
+class Role(RoleBase):
+<comment>    # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
+    # Without overwrites or new settings, this can be omitted.</comment>
+    _DEFAULTS = dict(RoleBase._DEFAULTS, **{
+        "version": 1,
+        "services": [ "service1" ],
+        "packages": [ "package1", "@group1" ],
+        "firewall": { "ports": [ "815/tcp" ],
+                      "services": [ "service1" ] },
+    })
+
+<comment>    # Initialize role</comment>
+    def __init__(self, name, directory, *args, **kwargs):
+        super(Role, self).__init__(name, directory, *args, **kwargs)
+
+<comment>    # Deploy code</comment>
+    def do_deploy_async(self, values, sender=None):
+<comment>        # Do the work here
+        # In case of error raise an exception</comment>
+
+        target = {'Role': 'testrole',
+                  'Instance': self.get_name(),
+                  'Description': "Test Role - %s" % self.get_name(),
+                  'Wants': ['rolekit.socket'],
+                  'After': ['syslog.target', 'network.target']}
+        yield target
+
+<comment>    # Decommission code</comment>
+    def do_decommission_async(self, force=False, sender=None):
+<comment>        # Do the work here
+        # In case of error raise an exception</comment>
+
+        yield None
+
+        pass
+    </programlisting>
+
+    <para>
+      To add role specific settings (properties), add the setting definition to <replaceable>_DEFAULTS</replaceable>:
+    </para>
+    <programlisting>
+        "myownsetting": "something",
+    </programlisting>
+
+    <para>
+      Also add a check method:
+    </para>
+    <programlisting>
+<comment>    # Check own properties</comment>
+    def do_check_property(self, prop, value):
+        if prop == "myownsetting":
+            return self.check_type_string(value)
+        return False
+    </programlisting>
+
+    <para>
+      Add dbus methods to be able to make the property availabe on D-Bus:
+    </para>
+    <programlisting>
+<comment>    # Static method for use in roles and instances
+    #
+    # Usage in roles: &lt;class&gt;.do_get_dbus_property(&lt;class&gt;, key)
+    #   Returns settings as dbus types
+    #
+    # Usage in instances: role.do_get_dbus_property(role, key)
+    #   Uses role.get_property(role, key)
+    #
+    # Without additional properties, this can be omitted.</comment>
+    @staticmethod
+    def do_get_dbus_property(x, prop):
+<comment>        # Cover additional settings and return a proper dbus type.</comment>
+        if prop == "myownsetting":
+            return dbus.String(x.get_property(x, prop))
+        raise RolekitError(INVALID_PROPERTY, prop)
+
+<comment>    # D-Bus Property handling</comment>
+    if hasattr(dbus.service, "property"):
+<comment>        # property support in dbus.service</comment>
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def myownsetting(self):
+            return self.get_dbus_property(self, "myownsetting")
+    </programlisting>
+
+    <para>
+      To mark a settings as read-only:
+    </para>
+    <programlisting>
+<comment>    # Use _READONLY_SETTINGS from RoleBase and add new if needed.
+    # Without new readonly settings, this can be omitted.</comment>
+    _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + [
+        "myownsetting"
+    ]
+    </programlisting>
+
+    <para>
+      There are no <replaceable>do_</replaceable> methods for <replaceable>start</replaceable>, <replaceable>stop</replaceable>, <replaceable>restart</replaceable> and <replaceable>reset-error</replaceable> in role instances. This is handled by rolekit using the <replaceable>systemd</replaceable> target.
+    </para>
+
+    <para>
+      The <replaceable>do_redeploy</replaceable> and <replaceable>do_update</replaceable> methods can be omitted in rolekit version <replaceable>0.1</replaceable>, they are not functional yet.
+    </para>
+
+    <para>
+      For more information about <replaceable>RoleBase</replaceable> and it's structures, please have a look at the output of <command>pydoc rolekit.server.rolebase</command>.
+    </para>
+
+  </refsect1>
+
+  <refsect1 id="error_codes">
+    <title>Error Codes</title>
+    <para>
+      These are the error codes that are known to rolekit:
+
+      <informaltable frame="all">
+        <tgroup cols="2" colsep="1" rowsep="1">
+          <colspec align="left"/>
+          <colspec align="right"/>
+          <thead>
+            <row>
+              <entry>String</entry>
+              <entry>Code</entry>
+            </row>
+          </thead>
+          <tbody>
+            &errorcodes;
+          </tbody>
+        </tgroup>
+      </informaltable>
     </para>
   </refsect1>
 
