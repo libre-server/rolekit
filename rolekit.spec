@@ -44,6 +44,9 @@ make install DESTDIR=%{buildroot}
 %{__mv} $RPM_BUILD_ROOT/%{_prefix}/lib/rolekit/roles/testrole \
         $RPM_BUILD_ROOT/%{_docdir}/examples/
 
+# Until it is complete, remove the database server role
+%{__rm} -Rf $RPM_BUILD_ROOT/%{_prefix}/lib/rolekit/roles/databaseserver
+
 #%find_lang %{name} --all-name
 
 %post
@@ -67,7 +70,6 @@ make install DESTDIR=%{buildroot}
 %dir %{_prefix}/lib/rolekit
 %dir %{_prefix}/lib/rolekit/roles
 %{_prefix}/lib/rolekit/roles/domaincontroller/*.py*
-%{_prefix}/lib/rolekit/roles/databaseserver/*.py*
 
 %config(noreplace) %{_sysconfdir}/sysconfig/rolekit
 %{_unitdir}/rolekit.service
