@@ -37,10 +37,10 @@ clean:
 
 ../html/rolekitctl.html: errorcodes.xml
 
-../man/man1/%.1: %.xml authors.xml notes.xml seealso.xml transform-man.xsl
+../man/man1/%.1: %.xml authors.xml errorcodes.xml notes.xml seealso.xml transform-man.xsl
 	$(XSLTPROC) -o $@ $(XSLTPROC_MAN_FLAGS) $<
 
-../man/man5/%.5: %.xml authors.xml notes.xml seealso.xml transform-man.xsl
+../man/man5/%.5: %.xml authors.xml errorcodes.xml notes.xml seealso.xml transform-man.xsl
 	$(XSLTPROC) -o $@ $(XSLTPROC_MAN_FLAGS) $<
 
 ../html/%.html: %.xml authors.xml notes.xml seealso.xml transform-html.xsl
