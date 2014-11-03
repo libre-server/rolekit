@@ -28,6 +28,7 @@ Requires(postun): systemd
 %description
 rolekit is a server daemon that provides a D-Bus interface and server roles.
 
+
 %prep
 %setup -q
 
@@ -35,8 +36,13 @@ rolekit is a server daemon that provides a D-Bus interface and server roles.
 %configure
 
 %install
-mkdir -p $RPM_BUILD_ROOT%{_datadir}/bash-completion/completions
+%{__mkdir_p} $RPM_BUILD_ROOT/%{_datadir}/bash-completion/completions
 make install DESTDIR=%{buildroot}
+
+# Move the testrole into documentation instead of the live system
+%{__mkdir_p} $RPM_BUILD_ROOT/%{_docdir}/examples/
+%{__mv} $RPM_BUILD_ROOT/%{_prefix}/lib/rolekit/roles/testrole \
+        $RPM_BUILD_ROOT/%{_docdir}/examples/
 
 #%find_lang %{name} --all-name
 
@@ -47,7 +53,7 @@ make install DESTDIR=%{buildroot}
 %systemd_preun rolekit.service
 
 %postun
-%systemd_postun_with_restart rolekit.service 
+%systemd_postun_with_restart rolekit.service
 
 
 #%files -f %{name}.lang
@@ -60,7 +66,9 @@ make install DESTDIR=%{buildroot}
 %dir %{_sysconfdir}/rolekit/roles
 %dir %{_prefix}/lib/rolekit
 %dir %{_prefix}/lib/rolekit/roles
-%{_prefix}/lib/rolekit/roles/*/*.py*
+%{_prefix}/lib/rolekit/roles/domaincontroller/*.py*
+%{_prefix}/lib/rolekit/roles/databaseserver/*.py*
+
 %config(noreplace) %{_sysconfdir}/sysconfig/rolekit
 %{_unitdir}/rolekit.service
 %config(noreplace) %{_sysconfdir}/dbus-1/system.d/rolekit1.conf
@@ -76,6 +84,7 @@ make install DESTDIR=%{buildroot}
 %{python_sitelib}/rolekit/server/io/*.py*
 %{_mandir}/man1/role*.1*
 %{_mandir}/man5/role*.5*
+%{_docdir}/examples/
 
 %dir %{_datadir}/bash-completion/completions
 %{_datadir}/bash-completion/completions/rolectl
