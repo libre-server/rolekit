@@ -35,6 +35,7 @@ rolekit is a server daemon that provides a D-Bus interface and server roles.
 %configure
 
 %install
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/bash-completion/completions
 make install DESTDIR=%{buildroot}
 
 #%find_lang %{name} --all-name
@@ -75,6 +76,9 @@ make install DESTDIR=%{buildroot}
 %{python_sitelib}/rolekit/server/io/*.py*
 %{_mandir}/man1/role*.1*
 %{_mandir}/man5/role*.5*
+
+%dir %{_datadir}/bash-completion/completions
+%{_datadir}/bash-completion/completions/rolectl
 
 
 %changelog
