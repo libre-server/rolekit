@@ -167,10 +167,9 @@ class Role(RoleBase):
             ipa_install_args.append('--setup-dns')
 
             # Pass the primary IP address
-            if 'primary_ip' not in values:
-                raise RolekitError(INVALID_VALUE, "No primary IP address set")
-
-            ipa_install_args.append('--ip-address=%s' % values['primary_ip'])
+            if 'primary_ip' in values:
+                ipa_install_args.append('--ip-address=%s' %
+                                        values['primary_ip'])
 
             # if the user has requested DNS forwarders, add them
             if 'dns_forwarders' in values:
