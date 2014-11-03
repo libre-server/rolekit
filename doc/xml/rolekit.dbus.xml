@@ -43,17 +43,420 @@
 
   <refnamediv>
     <refname>rolekit.dbus</refname>
-    <refpurpose>rolekit D-Bus documentation</refpurpose>
+    <refpurpose>rolekit D-Bus interface description</refpurpose>
   </refnamediv>
 
-  <refsynopsisdiv>
-  </refsynopsisdiv>
-
-  <refsect1 id="description">
-    <title>Description</title>
+  <refsect1 id="object-paths">
+    <title>Object Paths</title>
     <para>
-      rolekit is ...
+      This is the basic rolekit object path structure. The used interfaces are explained below in <xref linkend="interfaces"/>.
     </para>
+
+    <programlisting>
+<replaceable>/org/fedoraproject/rolekit1</replaceable>
+  Interfaces
+    <link linkend="rolekit1">org.fedoraproject.rolekit1</link>
+    org.freedesktop.DBus.Introspectable
+    org.freedesktop.DBus.Properties
+
+<replaceable>/org/fedoraproject/rolekit1/roles/$r</replaceable>
+  Interfaces
+    <link linkend="rolekit1.role">org.fedoraproject.rolekit1.role</link>
+    org.freedesktop.DBus.Introspectable
+    org.freedesktop.DBus.Properties
+
+<replaceable>/org/fedoraproject/rolekit1/roles/$r/$i</replaceable>
+  Interfaces
+    <link linkend="rolekit1.role.instance">org.fedoraproject.rolekit1.role.instance</link>
+    org.freedesktop.DBus.Introspectable
+    org.freedesktop.DBus.Properties
+    </programlisting>
+    <para>
+      Where <replaceable>$r</replaceable> is the escaped name of the role and <replaceable>$i</replaceable> is the escaped name of the instance.
+    </para>
+  </refsect1>
+
+  <refsect1 id="interfaces">
+    <title>Interfaces</title>
+
+    <para>
+    </para>
+
+    <refsect2 id="rolekit1">
+      <title>org.fedoraproject.rolekit1</title>
+      <para>
+        This interface contains general operations, like getting roles and interfaces.
+      </para>
+
+      <refsect3 id="rolekit1.Methods">
+        <title>Methods</title>
+        <variablelist>
+          <varlistentry>
+            <term><methodname>getAllRoleInstances</methodname>() &rarr; <literal>ao</literal></term>
+            <listitem>
+              <para>
+		Return array of object paths <literal>o</literal> of all role instances. An instance object path is of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r/$i</replaceable>. The returning array is empty if there are no role instances.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>getAllRoleInstancesByState</methodname>(<literal>s</literal>: <parameter>state</parameter>) &rarr; <literal>ao</literal></term>
+            <listitem>
+              <para>
+		Return array of object paths <literal>o</literal> of all role instances that are in state <parameter>state</parameter>. An instance object path is of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r/$i</replaceable>. The returning array is empty if there are no role instances.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>getNamedRole</methodname>(<literal>s</literal>: <parameter>name</parameter>) &rarr; <literal>o</literal></term>
+            <listitem>
+              <para>
+		Return object path <literal>o</literal> of the role with the name <parameter>name</parameter>. The name can also be the excaped name. The role object path is  of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r</replaceable>.
+              </para>
+	      <para>
+		Possible errors: INVALID_ROLE
+	      </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsect3>
+
+      <refsect3 id="rolekit1.Properties">
+        <title>Properties</title>
+        <variablelist>
+          <varlistentry id="rolekit1.Properties.roles">
+            <term><parameter>roles</parameter> - <literal>ao</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Array of object paths <literal>o</literal> of all roles. A role object path is of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r</replaceable>.  The array is empty if there are no roles.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.version">
+            <term><parameter>version</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		The rolekit version string.
+	      </para>
+	    </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsect3>
+    </refsect2>
+
+    <refsect2 id="rolekit1.role">
+      <title>org.fedoraproject.rolekit1.role</title>
+      <para>
+        This interface provides methods to deploy a role and also to get instances of the role.
+      </para>
+
+      <refsect3 id="rolekit1.role.Methods">
+        <title>Methods</title>
+        <variablelist>
+          <varlistentry>
+            <term><methodname>deploy</methodname>(<literal>s</literal>: <parameter>name</parameter>, <literal>{sv}</literal>: <parameter>settings</parameter>) &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Deploy the role and create an instance at <link linkend="rolekit1.role.instance">org.fedoraproject.rolekit1.role.instance</link> with name <parameter>name</parameter> and <parameter>settings</parameter>.
+              </para>
+	      <para>
+		If the name is empty, rolekit will use the next lowest unused instance number starting by 1 as the name. The first not named instance will be 1, the second 2 and so on. The name needs to be unique for all instances of a role.
+	      </para>
+	      <para>
+		Settings are key value pairs. There are mandatory, optional and read only settings. Please have a look at the documentation of the role to get further information about settings in the role.
+	      </para>
+	      <para>
+		Possible errors: NAME_CONFLICT, TOO_MANY_INSTANCES
+	      </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>getInstances</methodname>() &rarr; <literal>ao</literal></term>
+            <listitem>
+              <para>
+		Return array of object paths <literal>o</literal> of instances of this role. An instance object path is of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r/$i</replaceable>.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>getNamedInstance</methodname>(<literal>s</literal>: <parameter>name</parameter>) &rarr; <literal>o</literal></term>
+            <listitem>
+              <para>
+		Return object path <literal>o</literal> of the instance with the name <parameter>name</parameter> if it exists. An instance object path is of the form <replaceable>/org/fedoraproject/rolekit1/roles/$r/$i</replaceable>.
+              </para>
+	      <para>
+		Possible errors: INVALID_INSTANCE
+	      </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsect3>
+
+      <refsect3 id="rolekit1.role.Properties">
+        <title>Properties</title>
+        <variablelist>
+          <varlistentry id="rolekit1.Properties.role.DEFAULTS">
+            <term><parameter>DEFAULTS</parameter> - <literal>{sv}</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Dict of key value pairs of the default role settings. These are <parameter>version</parameter>, <parameter>services</parameter>, <parameter>packages</parameter>, <parameter>firewall</parameter>, <parameter>firewall_zones</parameter> and <parameter>custom_firewall</parameter>. It also contains role specific settings. Please have a look at <citerefentry><refentrytitle>rolekit.roles</refentrytitle><manvolnum>5</manvolnum></citerefentry> for descriptions of the generic role settings and also at the documentation of the role <citerefentry><refentrytitle>rolekit.roles.$rolename</refentrytitle><manvolnum>5</manvolnum></citerefentry> to get information about role specific settings.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.name">
+            <term><parameter>name</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		The rolekit version in string format.
+	      </para>
+	    </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsect3>
+
+      <refsect3 id="rolekit1.role.Signals">
+        <title>Signals</title>
+        <variablelist>
+          <varlistentry>
+            <term><methodname>InstanceAdded</methodname>(<literal>s</literal>: <parameter>name</parameter>)</term>
+            <listitem>
+              <para>
+		Inform about a newly added instance with the name <parameter>name</parameter>.
+	      </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>InstanceRemoved</methodname>(<literal>s</literal>: <parameter>name</parameter>)</term>
+            <listitem>
+              <para>
+		Inform about the removal of the instance with the name <parameter>name</parameter>.
+	      </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </refsect3>
+    </refsect2>
+
+    <refsect2 id="rolekit1.role.instance">
+      <title>org.fedoraproject.rolekit1.role.instance</title>
+      <para>
+        This interface provides methods for decommission, redeploy, start, stop, restart and update and to reset the error state of a role and also to get instances of the role.
+      </para>
+
+      <refsect3 id="rolekit1.role.instance.Methods">
+        <title>Methods</title>
+        <variablelist>
+          <varlistentry>
+            <term><methodname>decommission</methodname>(<literal>b</literal>: <parameter>force</parameter>) &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Decommission the instance and remove the D-Bus interface. If the <parameter>force</parameter> parameter <literal>b</literal> is <replaceable>True</replaceable>, the decommision will be forced even in the error case.q
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>ready-to-start</replaceable> or <replaceable>error</replaceable> state.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>redeploy</methodname>(<literal>{sv}</literal>: <parameter>settings</parameter>) &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Redeploy the instance.
+              </para>
+              <para>
+		A redeploy is only possible for an instance that is in the <replaceable>ready-to-start</replaceable> or <replaceable>error</replaceable> state.
+              </para>
+	      <para>
+		Settings are key value pairs. There are mandatory, optional and read only settings. Please have a look at the documentation of the role to get further information about settings in the role.
+	      </para>
+	      <para>
+		After redeploy the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while deploying, else in the <replaceable>error</replaceable> state.
+	      </para>
+	      <para>
+		Not functional yet.
+	      </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>resetError</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Reset the error state of the instance.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>error</replaceable> state.
+              </para>
+	      <para>
+		After resetting the error state the instance will be in the <replaceable>ready-to-start</replaceable> state.
+	      </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>restart</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Stop and start the instance again if no error occured in stopping the instance.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>running</replaceable> state.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>start</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Start the instance.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>ready-to-start</replaceable> state.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>stop</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Stop the instance.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>running</replaceable> state.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term><methodname>update</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Update the instance.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>ready-to-start</replaceable> state.
+              </para>
+	      <para>
+		Not functional yet.
+	      </para>
+            </listitem>
+          </varlistentry>
+
+        </variablelist>
+      </refsect3>
+
+      <refsect3 id="rolekit1.role.instance.Properties">
+        <title>Properties</title>
+        <variablelist>
+          <varlistentry id="rolekit1.Properties.role.instance.firewall_zones">
+            <term><parameter>firewall_zones</parameter> - <literal>as</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Array of firewall zones <literal>s</literal>.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.packages">
+            <term><parameter>packages</parameter> - <literal>as</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Array of packages <literal>s</literal>.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.services">
+            <term><parameter>services</parameter> - <literal>as</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Array of services <literal>s</literal>.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.custom_firewall">
+            <term><parameter>custom_firewall</parameter> - <literal>b</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Bool custom_firewall.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.firewall">
+            <term><parameter>firewall</parameter> - <literal>{sas}</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Dict of firewall.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.version">
+            <term><parameter>version</parameter> - <literal>i</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Role version.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.lasterror">
+            <term><parameter>lasterror</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Last occured error in the instance.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.name">
+            <term><parameter>name</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Instance name.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.state">
+            <term><parameter>state</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Instance state.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+          <varlistentry id="rolekit1.Properties.role.instance.type">
+            <term><parameter>type</parameter> - <literal>s</literal> - (ro)</term>
+            <listitem>
+	      <para>
+		Instance type and role name.
+	      </para>
+	    </listitem>
+          </varlistentry>
+
+        </variablelist>
+
+	<para>
+	  Additional properties for role specific settings.
+	</para>
+
+      </refsect3>
+    </refsect2>
+
   </refsect1>
 
   &seealso;
