@@ -1,4 +1,4 @@
-SUBDIRS = config doc po src
+SUBDIRS = config doc po src shell-completion
 
 DISTCHECK_CONFIGURE_FLAGS = \
 	--with-system-bus-services-dir="$$dc_install_base"/$(datadir)//dbus-1/system-services \

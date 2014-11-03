@@ -60,6 +60,12 @@ AC_ARG_WITH([system-bus-services-dir],
        [SYSTEM_BUS_SERVICES_DIR=$withval], [SYSTEM_BUS_SERVICES_DIR="$(pkg-config dbus-1 --variable=system_bus_services_dir)"])
 AC_SUBST(SYSTEM_BUS_SERVICES_DIR)
 
+AC_ARG_WITH([bashcompletiondir],
+       AS_HELP_STRING([--with-bashcompletiondir=DIR], [Bash completions director
+y]),
+       [BASHCOMPLETIONDIR=$withval], [BASHCOMPLETIONDIR="${datadir}/bash-completion/completions"])
+AC_SUBST(BASHCOMPLETIONDIR)
+
 #############################################################
 
 AC_SUBST([GETTEXT_PACKAGE], '[PKG_NAME]')
@@ -79,6 +85,7 @@ AC_CONFIG_FILES([Makefile
 		 doc/xml/Makefile
 		 doc/graphics/Makefile
 		 po/Makefile.in
+		 shell-completion/Makefile
 		 src/rolekit/config/__init__.py
 		 src/Makefile])
 AC_OUTPUT
