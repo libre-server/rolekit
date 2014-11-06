@@ -154,9 +154,17 @@
             <listitem>
               <para>
                 If this option is set, the DNS server will also manage the
-                reverse zone specified by the argument in the form
+                reverse zone specified by the arguments in the form
                 122.168.192.in-addr.arpa.
               </para>
+              <para>
+                This option accepts multiple values. This must be in the form
+                of an array:
+              </para>
+              <programlisting>
+"reverse_zone": ["122.168.192.in-addr.arpa.",
+                 "0.0.10.in-addr.arpa."]
+              </programlisting>
               <para>
                 Default: unset. Do not serve the reverse zone
               </para>

@@ -183,8 +183,8 @@ class Role(RoleBase):
 
             # If the user has requested the reverse zone add it
             if 'reverse_zone' in values:
-                ipa_install_args.append('--reverse-zone=%s'
-                                        % values['reverse_zone'])
+                for zone in values['reverse_zone']:
+                    ipa_install_args.append('--reverse-zone=%s' % zone)
             else:
                 ipa_install_args.append('--no-reverse')
 
@@ -266,9 +266,10 @@ class Role(RoleBase):
                      "dm_password",
                      "root_ca_file",
                      "primary_ip",
-                     "reverse_zone",
                      "admin_password"]:
             return self.check_type_string(value)
+        if prop in [ "reverse_zone" ]:
+            return self.check_type_string_list(value)
         elif prop in [ "serve_dns" ]:
             return self.check_type_bool(value)
         elif prop in [ "id_start",
@@ -300,9 +301,10 @@ class Role(RoleBase):
                      "realm_name",
                      "dm_password",
                      "root_ca_file",
-                     "primary_ip",
-                     "reverse_zone" ]:
+                     "primary_ip" ]:
             return dbus.String(x.get_property(x, prop))
+        elif prop in [ "reverse_zone" ]:
+            return dbus.Array(x.get_property(x, prop), "s")
         elif prop in [ "serve_dns" ]:
             return dbus.Boolean(x.get_property(x, prop))
         elif prop in [ "id_start",
