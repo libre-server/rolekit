@@ -38,6 +38,7 @@ from rolekit.server.decorators import *
 from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
+from IPy import IP
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
@@ -127,8 +128,6 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-
-        # TODO: Much better input validation
 
         # Ensure we have all the mandatory arguments
         if 'admin_password' not in values:
@@ -262,25 +261,72 @@ class Role(RoleBase):
     # Check own properties
     def do_check_property(self, prop, value):
         if prop in [ "domain_name",
-                     "realm_name",
-                     "dm_password",
-                     "root_ca_file",
-                     "primary_ip",
-                     "admin_password"]:
+                     "realm_name"]:
             return self.check_type_string(value)
+
+        elif prop in [ "admin_password",
+                       "dm_password" ]:
+            self.check_type_string(value)
+
+            if len(value) < 8:
+                raise RolekitError(INVALID_VALUE,
+                                   "{0} must be at least eight characters"
+                                   .format(prop))
+            return True
+
+        elif prop in [ "root_ca_file" ]:
+            self.check_type_string(value)
+
+            if not os.path.isfile(value):
+                raise RolekitError(INVALID_VALUE,
+                                   "{0} is not a valid CA file"
+                                   .format(value))
+            return True
+
         if prop in [ "reverse_zone" ]:
+            # TODO: properly parse reverse zones here
+            # Getting this right is very complex and
+            # FreeIPA already does it internally.
             return self.check_type_string_list(value)
+
         elif prop in [ "serve_dns" ]:
             return self.check_type_bool(value)
+
         elif prop in [ "id_start",
                        "id_max" ]:
             return self.check_type_int(value)
+
         elif prop in [ "dns_forwarders" ]:
             self.check_type_dict(value)
-            for x in value.keys():
-                self.check_type_string(x)
-                self.check_type_string_list(value[x])
+            for family in value.keys():
+                self.check_type_string(family)
+
+                if family not in [ "ipv4", "ipv6" ]:
+                    raise RolekitError(INVALID_VALUE,
+                                       "{0} is not a supported IP family"
+                                       .format(family))
+
+                self.check_type_string_list(value[family])
+
+                for address in value[family]:
+                    try:
+                        IP(address)
+                    except ValueError as ve:
+                        raise RolekitError(INVALID_VALUE,
+                                           "{0} is not a valid IP address"
+                                           .format(address))
             return True
+
+        elif prop in [ "primary_ip" ]:
+            try:
+                IP(value)
+            except ValueError as ve:
+                raise RolekitError(INVALID_VALUE,
+                                   "{0} is not a valid IP address"
+                                   .format(value))
+            return True
+
+        # We didn't recognize this argument
         return False
 
 
@@ -341,8 +387,6 @@ class Role(RoleBase):
             else:
                 log.debug1("Property %s did not validate" % prop)
                 raise
-
-        # TODO validate arguments
 
 
     # D-Bus Property handling

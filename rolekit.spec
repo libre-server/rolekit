@@ -16,6 +16,7 @@ Requires: dbus-python
 Requires: python-futures
 Requires: python-slip-dbus
 Requires: python-decorator
+Requires: python-IPy
 Requires: pygobject3-base
 Requires: firewalld
 Requires: systemd
