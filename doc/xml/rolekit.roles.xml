@@ -173,6 +173,14 @@ class Role(RoleBase):
       For more information about <replaceable>RoleBase</replaceable> and it's structures, please have a look at the output of <command>pydoc rolekit.server.rolebase</command>.
     </para>
 
+    <programlisting>
+<comment>    # maximum number of instances of this role</comment>
+    _MAX_INSTANCES = 1
+    </programlisting>
+
+    <para>
+      To allow to have more than one instance of this role, set <replaceable>_MAX_INSTANCES</replaceable> to a useful maximum number. The default is <replaceable>1</replaceable> and will be automatically be inherited from <replaceable>RoleBase</replaceable>. The number should only be increased if it is really possible to have more than one instance of this role.
+    </para>
   </refsect1>
 
   <refsect1 id="error_codes">

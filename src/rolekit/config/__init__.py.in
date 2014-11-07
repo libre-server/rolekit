@@ -45,8 +45,6 @@ ROLEKIT_ROLES = USR_LIB_ROLEKIT + '/roles'
 
 ROLEKIT_LOGFILE = '/var/log/rolekit'
 
-MAX_INSTANCES = 1
-
 # systemd paths
 SYSTEMD_UNITS = "@SYSTEMD_CONFUNITDIR@"
 # Supported systemd dependency types

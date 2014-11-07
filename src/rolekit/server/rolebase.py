@@ -70,6 +70,9 @@ class RoleBase(slip.dbus.service.Object):
         "services", "packages", "firewall",
     ]
 
+    # maximum number of instances of this role
+    _MAX_INSTANCES = 1
+
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 

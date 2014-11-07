@@ -116,6 +116,9 @@ class Role(RoleBase):
     # Without new readonly settings, this can be omitted.
     # _READONLY_SETTINGS = RoleBase._READONLY_SETTINGS + []
 
+    # maximum number of instances of this role
+    _MAX_INSTANCES = 1
+
 
     # Initialize role
     def __init__(self, name, directory, *args, **kwargs):

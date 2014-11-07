@@ -296,9 +296,10 @@ class DBusRole(slip.dbus.service.Object):
         name = dbus_to_python(name)
         log.debug1("role.%s.deploy('%s', %s)", self._escaped_name, name, values)
 
-        # limit role instances to 1 for now
-        if len(self._instances) >= MAX_INSTANCES:
-            raise RolekitError(TOO_MANY_INSTANCES, "> 1")
+        # limit role instances to max instances per role
+        if len(self._instances) >= self._role._MAX_INSTANCES:
+            raise RolekitError(TOO_MANY_INSTANCES, "> %d" % \
+                               self._role._MAX_INSTANCES)
 
         # TODO: lock
 

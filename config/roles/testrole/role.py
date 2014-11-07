@@ -48,6 +48,9 @@ class Role(RoleBase):
         "myownsetting"
     ]
 
+    # maximum number of instances of this role
+    _MAX_INSTANCES = 5
+
 
     # Initialize role
     def __init__(self, name, directory, *args, **kwargs):
