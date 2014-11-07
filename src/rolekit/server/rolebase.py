@@ -880,7 +880,19 @@ class RoleBase(slip.dbus.service.Object):
         # Check values
         try:
             self.check_values(values)
+        except:
+            # Check values failed, remove the instance again if verification
+            # failed, set state to error, save it (will be visible in the
+            # .old backup file).
+            self.change_state(ERROR, write=True)
 
+            # cleanup
+            self._settings.remove()
+            self.remove_from_connection()
+            self._parent.remove_instance(self)
+            raise
+
+        try:
             # Change to deploying state
             self.change_state(DEPLOYING)
 
