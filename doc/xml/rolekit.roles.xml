@@ -121,6 +121,63 @@ class Role(RoleBase):
     </programlisting>
 
     <para>
+      Steps to check values of role specific properties:
+      <orderedlist>
+	<listitem>
+          <para>
+            Check value for property "prop".
+	  </para>
+	</listitem>
+	<listitem>
+          <para>
+            Raise <replaceable>RolekitError</replaceable>(<replaceable>INVALID_VALUE</replaceable>, prop) in case of error.
+	  </para>
+	</listitem>
+	<listitem>
+          <para>
+            Return True if a check has been done for this property.
+	  </para>
+	</listitem>
+	<listitem>
+          <para>
+            Return False otherwise (no check for this property).
+	  </para>
+	</listitem>
+      </orderedlist>
+
+      You can use one of the already defined check_type_X methods:
+      <programlisting>
+check_type_int(self, value)
+check_type_string(self, value)
+check_type_bool(self, value)
+check_type_dict(self, value)
+check_type_list(self, value)
+check_type_string_list(self, value)
+      </programlisting>
+      These methods return True for a passed test and raise in case of
+      failure. Or write a new one if needed (see <replaceable>RoleBase</replaceable> class).
+
+      Example for int type checking:
+      <programlisting>
+if prop == "myownprop":
+  return self.check_type_int(value)
+return False
+      </programlisting>
+
+      Example for dict { string: [ string ] } checking:
+      <programlisting>
+if prop == "myownprop":
+  self.check_type_dict(value)
+  for x in value.keys():
+    if x not in [ "key1", "key2", "key3" ]:
+      raise RolekitError(INVALID_VALUE, x)
+    self.check_type_string_list(value[x])
+  return True
+return False
+      </programlisting>
+    </para>
+
+    <para>
       Add dbus methods to be able to make the property availabe on D-Bus:
     </para>
     <programlisting>
