@@ -94,6 +94,17 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Mon Nov 17 2014 Stephen Gallagher <sgallagh@redhat.com> 0.1.2-1
+- More documentation updates
+- Allow roles to override MAX_INSTANCES
+- Remove the instance if settings-verification fails
+
+* Mon Nov 17 2014 Stephen Gallagher <sgallagh@redhat.com> 0.1.1-1
+- Improve documentation
+- Remove incomplete database server role
+- Add bash-completion file
+- Bug-fixes
+
 * Mon Oct 13 2014 Thomas Woerner <twoerner@redhat.com> 0.1.0-1
 - Update role instance state on roled wakup.
 - New package and group installation during role deployment
