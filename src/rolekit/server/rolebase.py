@@ -852,9 +852,10 @@ class RoleBase(slip.dbus.service.Object):
             raise
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def restart(self, sender=None):
+    def restart(self, reply_handler, error_handler, sender=None):
         """restart role"""
         # Make sure we are in the proper state
         self.assert_state(RUNNING)
@@ -863,11 +864,11 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.restart()", self._log_prefix)
 
         # Stop
-        self.stop()
+        self.stop(reply_handler, error_handler, sender)
 
         # Start if state is ready to start
         self.assert_state(READY_TO_START)
-        self.start()
+        self.start(reply_handler, error_handler, sender)
 
 
     def deploy_async(self, values, sender=None):
