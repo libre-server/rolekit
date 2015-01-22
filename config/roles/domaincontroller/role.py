@@ -38,6 +38,7 @@ from rolekit.server.decorators import *
 from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
+from rolekit.util import generate_password
 from IPy import IP
 
 class Role(RoleBase):
@@ -148,9 +149,7 @@ class Role(RoleBase):
         # the directory manager
         if 'dm_password' not in values:
             # Generate a random password
-            rpass = ''.join(random.choice(string.ascii_letters + string.digits)
-                             for _ in range(16))
-            values['dm_password'] = rpass
+            values['dm_password'] = generate_password()
 
         # Call ipa-server-install with the requested arguments
         ipa_install_args = [
