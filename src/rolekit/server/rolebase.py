@@ -921,6 +921,13 @@ class RoleBase(slip.dbus.service.Object):
 
             # Change to ready to start state
             self.change_state(READY_TO_START, write=True)
+
+            # Attempt to start the newly-deployed role
+            # We do this because many role-installers will conclude by
+            # starting anyway and we want to ensure that our role mechanism
+            # is in sync with them.
+            yield async.call_future(self.__start_async(sender))
+
         except:
             # Something failed, set state to error
             self.change_state(ERROR, write=True)
