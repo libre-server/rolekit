@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 """Helpers for writing asynchronous code in a more natural way.
 
 Instead of a callback hell, an asynchronous function can be linear
@@ -67,14 +68,17 @@ def do_something_async(param):
 import collections
 import fcntl
 import os
+import errno
 import subprocess
 import types
+import pwd
 
 from concurrent.futures import Future
 from dbus.exceptions import DBusException
 from gi.repository import GLib
 
 from rolekit.logger import log
+from rolekit.errors import RolekitError, INVALID_SETTING
 
 
 # Always import the module and refer to functions with an async. prefix;
@@ -262,19 +266,66 @@ def _fd_output_future(fd, log_fn):
 _AsyncSubprocessResult = collections.namedtuple("_AsyncSubprocessResult",
                                                ["status", "stdout", "stderr"])
 
-def subprocess_future(args):
+def subprocess_future(args, uid=None, gid=None):
     """Start a subprocess and return a future used to wait for it to finish.
 
     :param args: A sequence of program arguments (see subprocess.Popen())
+    :param uid: If specified, this must be a numerical UID that the subprocess
+    will run under. If it is used, gid must also be specified.
+    :param gid: If specified, this must be a numerical UID that the subprocess
+    will run under. If it is used, uid must also be specified.
     :return: a future for an object with the members status, stdout and stderr,
     representing waitpid()-like status, stdout output and stderr output,
     respectively.
     """
     log.debug9("subprocess: {0}".format(args))
-    process = subprocess.Popen(args, close_fds=True,
-                               stdin=open("/dev/null", "r"),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+
+    def demote(user_uid, user_gid):
+        """
+        Pass the function 'set_ids' to preexec_fn, rather than just calling
+        setuid and setgid. This will change the ids for that subprocess only.
+        We have to contstruct a callable that requires no arguments in order
+        to pass it to preexec_fn.
+        """
+
+        # Look up the username for an initgroups call
+        # This is not a perfect solution, as it is
+        # possible (though not recommended) that the UID
+        # may match more than one username (such as aliases)
+        # This approach will use only whichever name the
+        # system deems is canonical for this UID.
+        username = pwd.getpwuid(user_uid).pw_name
+
+        def set_ids():
+            os.setregid(user_gid, user_gid)
+            os.initgroups(username, user_gid)
+            os.setreuid(user_uid, user_uid)
+        return set_ids
+
+    if (uid is None) != (gid is None):
+        # If one or the other is specified, but not both,
+        # throw an error.
+        raise RolekitError(INVALID_SETTING)
+
+    if (uid is not None):
+        # The UID and GID are both set
+        # Impersonate this UID and GID in the subprocess
+        preexec_fn = demote(uid, gid)
+    else:
+        preexec_fn = None
+
+    try:
+        process = subprocess.Popen(args, close_fds=True,
+                                   stdin=open("/dev/null", "r"),
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   preexec_fn=preexec_fn)
+    except OSError, e:
+        if e.errno is errno.EPERM:
+            # Could not change users prior to executing the subprocess
+            log.error("Insufficient privileges to impersonate UID/GID %s/%s" %
+                      (uid, gid))
+        raise
 
     # The three partial results.
     stdout_future = _fd_output_future(process.stdout, log.debug1)
