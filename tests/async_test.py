@@ -196,6 +196,20 @@ class TestAsyncInfrastructure(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "message\n")
 
+    def __run_bash_commands_stdin_async(self, commands):
+        """Demonstrating/testing use of async.subprocess_future."""
+        args = ["/bin/bash", "-c", "; ".join(commands)]
+        logging.debug("subprocess: starting %s" % repr(args))
+        result = yield async.subprocess_future(args, stdin="stdin1")
+        logging.debug("subprocess: done, got %s" % repr(result))
+        yield result
+
+    def test_async_subprocess_stdin(self):
+        commands = ["tee"]
+        result = self.__run_in_mainloop(lambda: self.__run_bash_commands_stdin_async(commands))
+        self.assert_(os.WIFEXITED(result.status) and os.WEXITSTATUS(result.status) == 0)
+        self.assertEqual(result.stdout, "stdin1")
+
 if __name__ == '__main__':
     #logging.basicConfig(level=logging.DEBUG)
     unittest.main()

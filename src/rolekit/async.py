@@ -266,10 +266,12 @@ def _fd_output_future(fd, log_fn):
 _AsyncSubprocessResult = collections.namedtuple("_AsyncSubprocessResult",
                                                ["status", "stdout", "stderr"])
 
-def subprocess_future(args, uid=None, gid=None):
+def subprocess_future(args, stdin=None, uid=None, gid=None):
     """Start a subprocess and return a future used to wait for it to finish.
 
     :param args: A sequence of program arguments (see subprocess.Popen())
+    :param stdin: A string containing one or more lines of stdin input to
+    pass to the child process.
     :param uid: If specified, this must be a numerical UID that the subprocess
     will run under. If it is used, gid must also be specified.
     :param gid: If specified, this must be a numerical UID that the subprocess
@@ -316,7 +318,7 @@ def subprocess_future(args, uid=None, gid=None):
 
     try:
         process = subprocess.Popen(args, close_fds=True,
-                                   stdin=open("/dev/null", "r"),
+                                   stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    preexec_fn=preexec_fn)
@@ -326,6 +328,11 @@ def subprocess_future(args, uid=None, gid=None):
             log.error("Insufficient privileges to impersonate UID/GID %s/%s" %
                       (uid, gid))
         raise
+
+    # Send the input data if needed.
+    if stdin:
+        process.stdin.write(stdin)
+    process.stdin.close()
 
     # The three partial results.
     stdout_future = _fd_output_future(process.stdout, log.debug1)
