@@ -1,5 +1,6 @@
 sconfdir = $(sysconfdir)/rolekit
 prefixlibdir = ${prefix}/lib/rolekit
+rklibexecdir = $(libexecdir)/rolekit
 
 polkit1_action_FILES = org.fedoraproject.rolekit1.policy.in
 polkit1_actiondir = $(datadir)/polkit-1/actions
@@ -32,7 +33,8 @@ EXTRA_DIST = \
 	rolekit.sysconfig \
 	roles/testrole/role.py \
 	roles/domaincontroller/role.py \
-	roles/databaseserver/role.py
+	roles/databaseserver/role.py \
+	roles/databaseserver/tools/rk_db_setpwd.py
 
 INSTALL_TARGETS = install-config
 UNINSTALL_TARGETS = uninstall-config

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014 Red Hat, Inc.
+# Copyright (C) 2014-2015 Red Hat, Inc.
 #
 # Authors:
 # Thomas Woerner <twoerner@redhat.com>
+# Stephen Gallagher <sgallagh@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,14 +23,17 @@ import dbus
 import dbus.service
 import slip.dbus
 import slip.dbus.service
+import pwd
+import grp
 
-from rolekit.config import *
+from rolekit.config import ROLEKIT_ROLES
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
+from rolekit.util import generate_password
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
@@ -37,9 +41,20 @@ class Role(RoleBase):
     _DEFAULTS = dict(RoleBase._DEFAULTS, **{
         "version": 1,
         "services": [ "postgresql.service" ],
-        "packages": [ "postgresql-server", "postgresql-contrib" ],
-        "firewall": { "ports": [], "services": [ "postgresql" ] },
-#        "myownsetting": "something",
+        "packages": [ "postgresql-server",
+                      "postgresql-contrib",
+                      "python-psycopg2" ], # Needed for role deployment
+        "firewall": { "ports": [],
+                      "services": [ "postgresql" ] },
+
+        # Database to create
+        "database": None, # Mandatory
+
+        # Name of the database owner
+        "owner": None, # Mandatory
+
+        # Password for the database owner
+        "password": None, # Auto-generated if unspecified
     })
 
     # Use _READONLY_SETTINGS from RoleBase and add new if needed.
@@ -65,12 +80,110 @@ class Role(RoleBase):
 
     # Deploy code
     def do_deploy_async(self, values, sender=None):
+        log.debug9("TRACE do_deploy_async(databaseserver)")
         # Do the magic
         #
         # In case of error raise an exception
-        # FIXME: install packages, run initdb, enable services
-        raise NotImplementedError()
 
+        # TODO: handle cases where more than one database is
+        # running on this system. For now, we'll assume a
+        # pristine environment.
+
+        # First, check for all mandatory arguments
+        if 'database' not in values:
+            raise RolekitError(INVALID_VALUE, "Database name unset")
+
+        if 'owner' not in values:
+            raise RolekitError(INVALID_VALUE, "Database owner unset")
+
+        if 'password' not in values:
+            values['password'] = generate_password()
+
+        # Get the UID and GID of the 'postgres' user
+        self.pg_uid = pwd.getpwnam('postgres').pw_uid
+        self.pg_gid = grp.getgrnam('postgres').gr_gid
+
+        # Initialize the database on the filesystem
+        initdb_args = ["/usr/bin/postgresql-setup", "initdb"]
+
+        result = yield async.subprocess_future(initdb_args)
+        if result.status:
+            # If this fails, it may be just that the filesystem
+            # has already been initialized. We'll log the message
+            # and continue.
+            log.debug1("INITDB: %s" % result.stdout)
+
+        # Now we have to start the service to set everything else up
+        with SystemdJobHandler() as job_handler:
+            job_path = job_handler.manager.StartUnit("postgresql.service", "replace")
+            job_handler.register_job(job_path)
+
+            job_results = yield job_handler.all_jobs_done_future()
+            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
+
+
+        # Next we create the owner
+        createuser_args = ["/usr/bin/createuser", values['owner']]
+        result = yield async.subprocess_future(createuser_args,
+                                               uid=self.pg_uid,
+                                               gid=self.pg_gid)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Creating user failed: %d" % result.status)
+
+
+        createdb_args = ["/usr/bin/createdb", values['database'],
+                         "-O", values['owner']]
+        result = yield async.subprocess_future(createdb_args,
+                                               uid=self.pg_uid,
+                                               gid=self.pg_gid)
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Creating database failed: %d" % result.status)
+
+        # Next, set the password on the owner
+        pwd_args = [ROLEKIT_ROLES + "/databaseserver/tools/rk_db_setpwd.py",
+                    "--database", values['database'],
+                    "--user", values['owner']]
+        result = yield async.subprocess_future(pwd_args,
+                                               stdin=values['password'],
+                                               uid=self.pg_uid,
+                                               gid=self.pg_gid)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Setting owner password failed: %d" %
+                               result.status)
+
+        # Remove the password from the values so
+        # it won't be saved to the settings
+        values.pop("password")
+
+        # Then update the server configuration to accept network
+        # connections.
+        # TODO: edit postgresql.conf to add listen_addresses = '*'
+
+        # Edit pg_hba.conf to allow 'md5' auth on IPv4 and
+        # IPv6 interfaces.
+
+        # Restart the postgresql server to accept the new configuration
+        # TODO
+
+        # Create the systemd target definition
+        target = {'Role': 'databaseserver',
+                  'Instance': self.get_name(),
+                  'Description': "Database Server Role - %s" %
+                                 self.get_name(),
+                  'Wants': ['postgresql.service'],
+                  'After': ['syslog.target', 'network.target']}
+
+        yield target
 
     # Redeploy code
     def do_redeploy(self, values, sender=None):
@@ -101,6 +214,19 @@ class Role(RoleBase):
 
     # Check own properties
     def do_check_property(self, prop, value):
+        if prop in [ "database",
+                     "owner"]:
+            return self.check_type_string(value)
+
+        elif prop in [ "password" ]:
+            self.check_type_string(value)
+
+            if len(value) < 8:
+                raise RolekitError(INVALID_VALUE,
+                                   "{0} must be at least eight characters"
+                                   .format(prop))
+            return True
+
         return False
 
 
@@ -114,19 +240,33 @@ class Role(RoleBase):
     #
     # This method needs to be extended for new role settings.
     # Without additional properties, this can be omitted.
-#   @staticmethod
-#   def do_get_dbus_property(x, prop):
-#       # Cover additional settings and return a proper dbus type.
-#       if prop == "myownsetting":
-#           return dbus.String(x.get_property(x, prop))
-#       raise RolekitError(INVALID_PROPERTY, prop)
+    @staticmethod
+    def do_get_dbus_property(x, prop):
+        # Cover additional settings and return a proper dbus type.
+        if prop in [ "database",
+                     "owner" ]:
+            return dbus.String(x.get_property(x, prop))
+
+        # Do not export the admin_password as that is a user account
+        # and may have been changed.
+        # We have to export the dm_password as it may be the only
+        # way to recover it, if it was generated randomly.
+        elif prop in [ "password" ]:
+            raise RolekitError(UNKNOWN_SETTING, prop)
+
+        raise RolekitError(INVALID_PROPERTY, prop)
 
 
     # D-Bus Property handling
-#    if hasattr(dbus.service, "property"):
-#        # property support in dbus.service
-#
-#        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-#        @dbus_handle_exceptions
-#        def myownsetting(self):
-#            return self.get_dbus_property(self, "myownsetting")
+    if hasattr(dbus.service, "property"):
+        # property support in dbus.service
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def database(self):
+            return self.get_dbus_property(self, "database")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def owner(self):
+            return self.get_dbus_property(self, "owner")
