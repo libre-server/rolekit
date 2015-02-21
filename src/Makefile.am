@@ -10,6 +10,7 @@ nobase_dist_python_DATA = \
 	rolekit/errors.py \
 	rolekit/functions.py \
 	rolekit/logger.py \
+	rolekit/util.py \
 	rolekit/__init__.py \
 	rolekit/config/dbus.py \
 	rolekit/config/__init__.py \
