@@ -207,7 +207,14 @@ class Role(RoleBase):
                                (values['pg_hba_conf'], result.status))
 
         # Restart the postgresql server to accept the new configuration
-        # TODO
+        with SystemdJobHandler() as job_handler:
+            job_path = job_handler.manager.RestartUnit("postgresql.service", "replace")
+            job_handler.register_job(job_path)
+
+            job_results = yield job_handler.all_jobs_done_future()
+            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                raise RolekitError(COMMAND_FAILED, "Restarting service failed: %s" % details)
 
         # Create the systemd target definition
         target = {'Role': 'databaseserver',
