@@ -42,7 +42,7 @@
   </refmeta>
 
   <refnamediv>
-    <refname>rolekit.roles.databasesserver</refname>
+    <refname>rolekit.roles.databaseserver</refname>
     <refpurpose>rolekit Database Server Role Documentation</refpurpose>
   </refnamediv>
 
