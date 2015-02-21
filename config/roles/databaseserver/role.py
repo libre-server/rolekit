@@ -25,6 +25,7 @@ import slip.dbus
 import slip.dbus.service
 import pwd
 import grp
+import os
 
 from rolekit.config import ROLEKIT_ROLES
 from rolekit.config.dbus import *
@@ -55,6 +56,10 @@ class Role(RoleBase):
 
         # Password for the database owner
         "password": None, # Auto-generated if unspecified
+
+        # Paths to configuration files
+        "postgresql_conf": "/var/lib/pgsql/data/postgresql.conf",
+        "pg_hba_conf": "/var/lib/pgsql/data/pg_hba.conf"
     })
 
     # Use _READONLY_SETTINGS from RoleBase and add new if needed.
@@ -98,6 +103,12 @@ class Role(RoleBase):
 
         if 'password' not in values:
             values['password'] = generate_password()
+
+        if 'postgresql_conf' not in values:
+            values['postgresql_conf'] = self._settings['postgresql_conf']
+
+        if 'pg_hba_conf' not in values:
+            values['pg_hba_conf'] = self._settings['pg_hba_conf']
 
         # Get the UID and GID of the 'postgres' user
         self.pg_uid = pwd.getpwnam('postgres').pw_uid
@@ -167,10 +178,33 @@ class Role(RoleBase):
 
         # Then update the server configuration to accept network
         # connections.
-        # TODO: edit postgresql.conf to add listen_addresses = '*'
+        # edit postgresql.conf to add listen_addresses = '*'
+        sed_args = [ "/bin/sed",
+                     "-e", "s@^[#]listen_addresses\W*=\W*'.*'@listen_addresses = '\*'@",
+                     "-i.rksave", values['postgresql_conf'] ]
+        result = yield async.subprocess_future(sed_args)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Changing listen_addresses in '%s' failed: %d" %
+                               (values['postgresql_conf'], result.status))
 
         # Edit pg_hba.conf to allow 'md5' auth on IPv4 and
         # IPv6 interfaces.
+        sed_args = [ "/bin/sed",
+                     "-e", "s@^host@#host@",
+                     "-e", '/^local/a # Use md5 method for all connections',
+                     "-e", '/^local/a host    all             all             all                     md5',
+                     "-i.rksave", values['pg_hba_conf'] ]
+
+        result = yield async.subprocess_future(sed_args)
+
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Changing all connections to use md5 method in '%s' failed: %d" %
+                               (values['pg_hba_conf'], result.status))
 
         # Restart the postgresql server to accept the new configuration
         # TODO
@@ -227,6 +261,16 @@ class Role(RoleBase):
                                    .format(prop))
             return True
 
+        elif prop in [ "postgresql_conf",
+                       "pg_hba_conf" ]:
+            self.check_type_string(value)
+
+            if not os.path.isfile(value):
+                raise RolekitError(INVALID_VALUE,
+                                   "{0} is not a valid configuration file"
+                                   .format(value))
+            return True
+
         return False
 
 
@@ -244,13 +288,13 @@ class Role(RoleBase):
     def do_get_dbus_property(x, prop):
         # Cover additional settings and return a proper dbus type.
         if prop in [ "database",
-                     "owner" ]:
+                     "owner",
+                     "postgresql_conf",
+                     "pg_hba_conf" ]:
             return dbus.String(x.get_property(x, prop))
 
-        # Do not export the admin_password as that is a user account
+        # Do not export the password as that is a user account
         # and may have been changed.
-        # We have to export the dm_password as it may be the only
-        # way to recover it, if it was generated randomly.
         elif prop in [ "password" ]:
             raise RolekitError(UNKNOWN_SETTING, prop)
 
@@ -270,3 +314,13 @@ class Role(RoleBase):
         @dbus_handle_exceptions
         def owner(self):
             return self.get_dbus_property(self, "owner")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def postgresql_conf(self):
+            return self.get_dbus_property(self, "postgresql_conf")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def pg_hba_conf(self):
+            return self.get_dbus_property(self, "pg_hba_conf")
