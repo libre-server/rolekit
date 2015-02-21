@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[
+<!ENTITY authors SYSTEM "authors.xml">
+<!ENTITY seealso SYSTEM "seealso.xml">
+<!ENTITY notes SYSTEM "notes.xml">
+<!ENTITY errorcodes SYSTEM "errorcodes.xml">
+]>
+
+<!--
+  This file is part of rolekit.
+
+  Copyright (C) 2014 Red Hat, Inc.
+  Authors:
+  Stephen Gallagher <sgallagh@redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<refentry id="rolekit.roles.databaseserver">
+
+  <refentryinfo>
+    <title>rolekit.roles.databaseserver</title>
+    <productname>rolekit</productname>
+    &authors;
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>rolekit.roles.databaseserver</refentrytitle>
+    <manvolnum>5</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>rolekit.roles.databasesserver</refname>
+    <refpurpose>rolekit Database Server Role Documentation</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>
+      The Database Server role provides a scalable database powered by the
+      PostgreSQL project.
+    </para>
+  </refsect1>
+
+  <refsect1 id="deployment">
+    <title>DEPLOYMENT</title>
+    <para>
+      The Database Server role can be deployed using the
+      <replaceable>rolectl</replaceable> command-line utility or through the
+      rolekit D-BUS API. When using the <replaceable>rolectl</replaceable>
+      tool, a settings file must be created in the JSON  format.
+    </para>
+    <refsect2 id="mandatory-settings">
+      <title>Mandatory Settings</title>
+      <para>
+        These settings must always be present or the deployment will be unable
+        to complete.
+      </para>
+      <para>
+        <variablelist>
+          <varlistentry>
+            <term><command>database</command></term>
+            <listitem>
+              <para>
+                Specify the name of the database to be created
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term><command>owner</command></term>
+            <listitem>
+              <para>
+                Specify the name of the user to be created to own this
+                database.
+              </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </para>
+    </refsect2>
+    <refsect2 id="other-settings">
+      <title>Optional Settings</title>
+      <para>
+        This section provides a list of optional settings for deployment.
+      </para>
+      <para>
+        <variablelist>
+          <varlistentry>
+            <term><command>password</command></term>
+            <listitem>
+              <para>
+                The password for the owner of the database.
+              </para>
+              <para>
+                Default: unset. If not specified, a random password will be
+                generated and retrievable later via the D-BUS API.
+              </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1 id="examples">
+    <title>Example settings.json</title>
+    <programlisting>
+{
+    "database": "example_db",
+    "owner": "example_owner"
+}
+    </programlisting>
+  </refsect1>
+
+  &seealso;
+
+  &notes;
+
+</refentry>
