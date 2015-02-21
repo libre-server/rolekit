@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.1.2
+Version: 0.2.0
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
@@ -95,6 +95,10 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Thu Jan 22 2015 Stephen Gallagher <sgallagh@redhat.com> 0.2.0-1
+- New Database Server Role
+- Enhancements to async.py for impersonation and passing stdin
+
 * Mon Nov 17 2014 Stephen Gallagher <sgallagh@redhat.com> 0.1.2-1
 - More documentation updates
 - Allow roles to override MAX_INSTANCES
