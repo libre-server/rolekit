@@ -172,10 +172,6 @@ class Role(RoleBase):
                                "Setting owner password failed: %d" %
                                result.status)
 
-        # Remove the password from the values so
-        # it won't be saved to the settings
-        values.pop("password")
-
         # Then update the server configuration to accept network
         # connections.
         # edit postgresql.conf to add listen_addresses = '*'
@@ -296,14 +292,10 @@ class Role(RoleBase):
         # Cover additional settings and return a proper dbus type.
         if prop in [ "database",
                      "owner",
+                     "password",
                      "postgresql_conf",
                      "pg_hba_conf" ]:
             return dbus.String(x.get_property(x, prop))
-
-        # Do not export the password as that is a user account
-        # and may have been changed.
-        elif prop in [ "password" ]:
-            raise RolekitError(UNKNOWN_SETTING, prop)
 
         raise RolekitError(INVALID_PROPERTY, prop)
 
@@ -331,3 +323,8 @@ class Role(RoleBase):
         @dbus_handle_exceptions
         def pg_hba_conf(self):
             return self.get_dbus_property(self, "pg_hba_conf")
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def password(self):
+            return self.get_dbus_property(self, "password")
