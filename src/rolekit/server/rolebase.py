@@ -592,8 +592,8 @@ class RoleBase(slip.dbus.service.Object):
             yield None
             return
 
-        yum_install = [ "yum", "-y", "install" ] + self._settings["packages"]
-        result = yield async.subprocess_future(yum_install)
+        dnf_install = [ "dnf", "-y", "install" ] + self._settings["packages"]
+        result = yield async.subprocess_future(dnf_install)
 
         if result.status:
             # If the subprocess returned non-zero, raise an exception

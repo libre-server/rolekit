@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.2.1
+Version: 0.2.2
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
@@ -21,7 +21,7 @@ Requires: pygobject3-base
 Requires: firewalld
 Requires: systemd
 Requires: NetworkManager
-Requires: yum
+Requires: dnf
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -95,6 +95,9 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Mon Feb 23 2015  0.2.2-1
+- Switch to DNF as the package manager
+
 * Thu Jan 22 2015 Stephen Gallagher <sgallagh@redhat.com> 0.2.0-1
 - New Database Server Role
 - Enhancements to async.py for impersonation and passing stdin
