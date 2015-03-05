@@ -122,8 +122,11 @@
               </para>
               <para>
                 Default: unset. If not specified, a random password will be generated
-                and retrievable later via the D-BUS API.
+                and retrievable later through the D-BUS API via:
               </para>
+              <programlisting>
+rolectl settings domaincontroller/&lt;instance&gt;
+              </programlisting>
             </listitem>
           </varlistentry>
           <varlistentry>
