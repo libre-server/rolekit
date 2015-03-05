@@ -130,11 +130,11 @@
             <term><command>serve_dns</command></term>
             <listitem>
               <para>
-                If this option is set to True, the Domain Controller will also
+                If this option is set to true, the Domain Controller will also
                 function as a DNS server.
               </para>
               <para>
-                Default: True
+                Default: true
               </para>
             </listitem>
           </varlistentry>
@@ -145,7 +145,7 @@
                 The IP address of the public ethernet interface on the system.
               </para>
               <para>
-                This option is mandatory if serve_dns is True (default).
+                This option is mandatory if serve_dns is true (default).
               </para>
             </listitem>
           </varlistentry>
@@ -189,7 +189,7 @@
                   }
               </programlisting>
               <para>
-                This option is only used if serve_dns is True.
+                This option is only used if serve_dns is true.
               </para>
               <para>
                 Default: unset. If not specified, the DNS forwarders will default to
@@ -247,7 +247,7 @@
     <programlisting>
 {
   "admin_password": "rolekitrules!",
-  "serve_dns": True,
+  "serve_dns": true,
   "primary_ip": "192.168.122.2",
   "id_start": 200000,
   "id_max": 400000
