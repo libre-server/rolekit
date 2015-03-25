@@ -195,7 +195,8 @@ elif a.parser == "list":
     elif a.list == "instances":
         if a.state:
             instances = rk.getAllRoleInstancesByState(a.state)
-        instances = rk.getAllRoleInstances()
+        else:
+            instances = rk.getAllRoleInstances()
 
         if a.object_path:
             __print_and_exit("\n".join(instances))
