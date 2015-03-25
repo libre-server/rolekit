@@ -115,6 +115,7 @@ grp_list_instances = grp_list_subparsers.add_parser("instances", help="List inst
 grp_list_instances.set_defaults(list="instances")
 grp_list_instances.add_argument("--state", metavar="<state>")
 grp_list_instances.add_argument("--object-path", action="store_true")
+grp_list_instances.add_argument("--verbose", action='store_const', const=True)
 
 
 grp_settings = subparsers.add_parser("settings", help="Settings for roles or instances")
@@ -204,8 +205,13 @@ elif a.parser == "list":
         names = [ ]
         for i in instances:
             o = rk.getRoleInstanceObj(i)
-            names.append("%s/%s" % (o.get_property("type"),
-                                    o.get_property("name")))
+            if a.verbose:
+                names.append("%s/%s: %s" % (o.get_property("type"),
+                                            o.get_property("name"),
+                                            o.get_property("state")))
+            else:
+                names.append("%s/%s" % (o.get_property("type"),
+                                        o.get_property("name")))
         __print_and_exit("\n".join(names))
 
 # settings
