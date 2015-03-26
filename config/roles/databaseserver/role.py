@@ -52,7 +52,7 @@ class Role(RoleBase):
         "database": None, # Mandatory
 
         # Name of the database owner
-        "owner": None, # Mandatory
+        "owner": None,  # Defaults to db_owner
 
         # Password for the database owner
         "password": None, # Auto-generated if unspecified
@@ -105,10 +105,18 @@ class Role(RoleBase):
             raise RolekitError(INVALID_VALUE, "Database name unset")
 
         if 'owner' not in values:
-            raise RolekitError(INVALID_VALUE, "Database owner unset")
+            # We'll default to db_owner
+            values['owner'] = "db_owner"
 
-        if 'password' not in values:
-            values['password'] = generate_password()
+        # We will assume the owner is new until adding them fails
+        new_owner = True
+
+        # Determine if a password was passed in, so we know whether to
+        # suppress it from the settings list later.
+        if 'password' in values:
+            password_provided = True
+        else:
+            password_provided = False
 
         if 'postgresql_conf' not in values:
             values['postgresql_conf'] = self._settings['postgresql_conf']
@@ -160,10 +168,24 @@ class Role(RoleBase):
                                                gid=self.pg_gid)
 
         if result.status:
-            # If the subprocess returned non-zero, raise an exception
-            raise RolekitError(COMMAND_FAILED,
-                               "Creating user failed: %d. Must be unique." % result.status)
+            # If the subprocess returned non-zero, the user probably already exists
+            # (such as when we're using db_owner). If the caller was trying to set
+            # a password, they probably didn't realize this, so we need to throw
+            # an exception.
+            log.info1("User {} already exists in the database".format(
+                      values['owner']))
 
+            if password_provided:
+                raise RolekitError(INVALID_SETTING,
+                                   "Cannot set password on pre-existing user")
+
+            # If no password was specified, we'll continue
+            new_owner = False
+
+
+        # If no password was requested, generate a random one here
+        if not password_provided:
+            values['password'] = generate_password()
 
         createdb_args = ["/usr/bin/createdb", values['database'],
                          "-O", values['owner']]
@@ -176,19 +198,30 @@ class Role(RoleBase):
                                "Creating database failed: %d" % result.status)
 
         # Next, set the password on the owner
-        pwd_args = [ROLEKIT_ROLES + "/databaseserver/tools/rk_db_setpwd.py",
-                    "--database", values['database'],
-                    "--user", values['owner']]
-        result = yield async.subprocess_future(pwd_args,
-                                               stdin=values['password'],
-                                               uid=self.pg_uid,
-                                               gid=self.pg_gid)
+        # We'll skip this phase if the the user already existed
+        if new_owner:
+            pwd_args = [ROLEKIT_ROLES + "/databaseserver/tools/rk_db_setpwd.py",
+                        "--database", values['database'],
+                        "--user", values['owner']]
+            result = yield async.subprocess_future(pwd_args,
+                                                   stdin=values['password'],
+                                                   uid=self.pg_uid,
+                                                   gid=self.pg_gid)
 
-        if result.status:
-            # If the subprocess returned non-zero, raise an exception
-            raise RolekitError(COMMAND_FAILED,
-                               "Setting owner password failed: %d" %
-                               result.status)
+            if result.status:
+                # If the subprocess returned non-zero, raise an exception
+                raise RolekitError(COMMAND_FAILED,
+                                   "Setting owner password failed: %d" %
+                                   result.status)
+
+            # If this password was provided by the user, don't save it to
+            # the settings for later retrieval. That could be a security
+            # issue
+            if password_provided:
+                values.pop("password", None)
+        else: # Not a new owner
+            # Never save the password to settings for an existing owner
+            values.pop("password", None)
 
         if first_instance:
             # Then update the server configuration to accept network
