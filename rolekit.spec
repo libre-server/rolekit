@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.2.2
+Version: 0.3.0
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
@@ -95,6 +95,11 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Thu Mar 26 2015 Stephen Gallagher <sgallagh@redhat.com> 0.3.0-1
+- Support for the Database Server Role
+- New verbose option for 'rolectl list instances'
+- Manpage cleanups
+
 * Mon Feb 23 2015  0.2.2-1
 - Switch to DNF as the package manager
 
