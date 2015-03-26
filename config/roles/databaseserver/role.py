@@ -301,9 +301,88 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        # FIXME: disable services
-        raise NotImplementedError() # FIXME: what about the data?
 
+        # Get the UID and GID of the 'postgres' user
+        try:
+            self.pg_uid = pwd.getpwnam('postgres').pw_uid
+        except KeyError:
+            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgress user")
+
+        try:
+            self.pg_gid = grp.getgrnam('postgres').gr_gid
+        except KeyError:
+            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgress group")
+
+        # Check whether this is the last instance of the database
+        last_instance = True
+        for value in self._parent.get_instances().values():
+            # Check if there are any other instances of databaseserver
+            # We have to exclude our own instance name since it hasn't
+            # been removed yet.
+            if 'databaseserver' == value._type and self._name != value._name:
+                last_instance = False
+                break
+
+        # The postgresql service must be running to remove
+        # the database and owner
+        with SystemdJobHandler() as job_handler:
+            job_path = job_handler.manager.StartUnit("postgresql.service", "replace")
+            job_handler.register_job(job_path)
+
+            job_results = yield job_handler.all_jobs_done_future()
+            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
+
+        # Drop the database
+        dropdb_args = ["/usr/bin/dropdb",
+                       "-w", "--if-exists",
+                       self._settings['database']]
+        result = yield async.subprocess_future(dropdb_args,
+                                               uid=self.pg_uid,
+                                               gid=self.pg_gid)
+        if result.status:
+            # If the subprocess returned non-zero, raise an exception
+            raise RolekitError(COMMAND_FAILED,
+                               "Dropping database failed: %d" % result.status)
+
+        # Drop the owner
+        dropuser_args = ["/usr/bin/dropuser",
+                         "-w", "--if-exists",
+                         self._settings['owner']]
+        result = yield async.subprocess_future(dropuser_args,
+                                               uid=self.pg_uid,
+                                               gid=self.pg_gid)
+        if result.status:
+            # If the subprocess returned non-zero, the user may
+            # still be there. This is probably due to the owner
+            # having privileges on other instances. This is non-fatal.
+            log.error("Dropping owner failed: %d" % result.status)
+
+        # If this is the last instance, restore the configuration
+        if last_instance:
+            try:
+                os.rename("%s.rksave" % self._settings['pg_hba_conf'],
+                          self._settings['pg_hba_conf'])
+                os.rename("%s.rksave" % self._settings['postgresql_conf'],
+                          self._settings['postgresql_conf'])
+            except:
+                log.error("Could not restore pg_hba.conf and/or postgresql.conf. "
+                          "Manual intervention required")
+                # Not worth stopping here.
+
+            # Since this is the last instance, turn off the postgresql service
+            with SystemdJobHandler() as job_handler:
+                job_path = job_handler.manager.StopUnit("postgresql.service", "replace")
+                job_handler.register_job(job_path)
+
+                job_results = yield job_handler.all_jobs_done_future()
+                if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+                    details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                    raise RolekitError(COMMAND_FAILED, "Stopping services failed: %s" % details)
+
+        # Decommissioning complete
+        yield None
 
     # Update code
     def do_update(self, sender=None):
