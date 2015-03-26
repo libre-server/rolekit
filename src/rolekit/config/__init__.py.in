@@ -49,7 +49,8 @@ ROLEKIT_LOGFILE = '/var/log/rolekit'
 SYSTEMD_UNITS = "@SYSTEMD_CONFUNITDIR@"
 # Supported systemd dependency types
 SYSTEMD_DEPS = ['Wants', 'Requires', 'Before', 'After',
-                'Requisite', 'BindsTo', 'Conflicts']
+                'RequiredBy', 'Requisite', 'BindsTo',
+                'Conflicts']
 
 # dbus-send
 # FIXME: make this a configure.ac check

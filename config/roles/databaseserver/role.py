@@ -69,7 +69,9 @@ class Role(RoleBase):
 #    ]
 
     # maximum number of instances of this role
-    _MAX_INSTANCES = 1
+    # We'll pick an arbitrarily large number. It's
+    # unlikely that any system will ever have so many
+    _MAX_INSTANCES = 1000
 
 
     # Initialize role
@@ -90,9 +92,13 @@ class Role(RoleBase):
         #
         # In case of error raise an exception
 
-        # TODO: handle cases where more than one database is
-        # running on this system. For now, we'll assume a
-        # pristine environment.
+        first_instance = True
+
+        # Check whether this is the first instance of the database
+        for value in self._parent.get_instances().values():
+            if 'databaseserver' == value._type and self._name != value._name:
+                first_instance = False
+                break
 
         # First, check for all mandatory arguments
         if 'database' not in values:
@@ -111,20 +117,32 @@ class Role(RoleBase):
             values['pg_hba_conf'] = self._settings['pg_hba_conf']
 
         # Get the UID and GID of the 'postgres' user
-        self.pg_uid = pwd.getpwnam('postgres').pw_uid
-        self.pg_gid = grp.getgrnam('postgres').gr_gid
+        try:
+            self.pg_uid = pwd.getpwnam('postgres').pw_uid
+        except KeyError:
+            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgress user")
 
-        # Initialize the database on the filesystem
-        initdb_args = ["/usr/bin/postgresql-setup", "initdb"]
+        try:
+            self.pg_gid = grp.getgrnam('postgres').gr_gid
+        except KeyError:
+            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgress group")
 
-        result = yield async.subprocess_future(initdb_args)
-        if result.status:
-            # If this fails, it may be just that the filesystem
-            # has already been initialized. We'll log the message
-            # and continue.
-            log.debug1("INITDB: %s" % result.stdout)
+        if first_instance:
+            # Initialize the database on the filesystem
+            initdb_args = ["/usr/bin/postgresql-setup", "--initdb",
+                           "--unit", "postgresql"]
+
+            result = yield async.subprocess_future(initdb_args)
+            if result.status:
+                # If this fails, it may be just that the filesystem
+                # has already been initialized. We'll log the message
+                # and continue.
+                log.debug1("INITDB: %s" % result.stdout)
 
         # Now we have to start the service to set everything else up
+        # It's safe to start an already-running service, so we'll
+        # just always make this call, particularly in case other instances
+        # exist but aren't running.
         with SystemdJobHandler() as job_handler:
             job_path = job_handler.manager.StartUnit("postgresql.service", "replace")
             job_handler.register_job(job_path)
@@ -144,7 +162,7 @@ class Role(RoleBase):
         if result.status:
             # If the subprocess returned non-zero, raise an exception
             raise RolekitError(COMMAND_FAILED,
-                               "Creating user failed: %d" % result.status)
+                               "Creating user failed: %d. Must be unique." % result.status)
 
 
         createdb_args = ["/usr/bin/createdb", values['database'],
@@ -172,52 +190,66 @@ class Role(RoleBase):
                                "Setting owner password failed: %d" %
                                result.status)
 
-        # Then update the server configuration to accept network
-        # connections.
-        # edit postgresql.conf to add listen_addresses = '*'
-        sed_args = [ "/bin/sed",
-                     "-e", "s@^[#]listen_addresses\W*=\W*'.*'@listen_addresses = '\*'@",
-                     "-i.rksave", values['postgresql_conf'] ]
-        result = yield async.subprocess_future(sed_args)
+        if first_instance:
+            # Then update the server configuration to accept network
+            # connections.
+            # edit postgresql.conf to add listen_addresses = '*'
+            sed_args = [ "/bin/sed",
+                         "-e", "s@^[#]listen_addresses\W*=\W*'.*'@listen_addresses = '\*'@",
+                         "-i.rksave", values['postgresql_conf'] ]
+            result = yield async.subprocess_future(sed_args)
 
-        if result.status:
-            # If the subprocess returned non-zero, raise an exception
-            raise RolekitError(COMMAND_FAILED,
-                               "Changing listen_addresses in '%s' failed: %d" %
-                               (values['postgresql_conf'], result.status))
+            if result.status:
+                # If the subprocess returned non-zero, raise an exception
+                raise RolekitError(COMMAND_FAILED,
+                                   "Changing listen_addresses in '%s' failed: %d" %
+                                   (values['postgresql_conf'], result.status))
 
-        # Edit pg_hba.conf to allow 'md5' auth on IPv4 and
-        # IPv6 interfaces.
-        sed_args = [ "/bin/sed",
-                     "-e", "s@^host@#host@",
-                     "-e", '/^local/a # Use md5 method for all connections',
-                     "-e", '/^local/a host    all             all             all                     md5',
-                     "-i.rksave", values['pg_hba_conf'] ]
+            # Edit pg_hba.conf to allow 'md5' auth on IPv4 and
+            # IPv6 interfaces.
+            sed_args = [ "/bin/sed",
+                         "-e", "s@^host@#host@",
+                         "-e", '/^local/a # Use md5 method for all connections',
+                         "-e", '/^local/a host    all             all             all                     md5',
+                         "-i.rksave", values['pg_hba_conf'] ]
 
-        result = yield async.subprocess_future(sed_args)
+            result = yield async.subprocess_future(sed_args)
 
-        if result.status:
-            # If the subprocess returned non-zero, raise an exception
-            raise RolekitError(COMMAND_FAILED,
-                               "Changing all connections to use md5 method in '%s' failed: %d" %
-                               (values['pg_hba_conf'], result.status))
+            if result.status:
+                # If the subprocess returned non-zero, raise an exception
+                raise RolekitError(COMMAND_FAILED,
+                                   "Changing all connections to use md5 method in '%s' failed: %d" %
+                                   (values['pg_hba_conf'], result.status))
 
-        # Restart the postgresql server to accept the new configuration
-        with SystemdJobHandler() as job_handler:
-            job_path = job_handler.manager.RestartUnit("postgresql.service", "replace")
-            job_handler.register_job(job_path)
+            # Restart the postgresql server to accept the new configuration
+            with SystemdJobHandler() as job_handler:
+                job_path = job_handler.manager.RestartUnit("postgresql.service", "replace")
+                job_handler.register_job(job_path)
 
-            job_results = yield job_handler.all_jobs_done_future()
-            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
-                raise RolekitError(COMMAND_FAILED, "Restarting service failed: %s" % details)
+                job_results = yield job_handler.all_jobs_done_future()
+                if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
+                    details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                    raise RolekitError(COMMAND_FAILED, "Restarting service failed: %s" % details)
 
         # Create the systemd target definition
+        #
+        # We use all of BindsTo, Requires and RequiredBy so we can ensure that
+        # all database instances are started and stopped together, since
+        # they're really all a single daemon service.
+        #
+        # The intention here is that starting or stopping any role instance or
+        # the main postgresql server will result in the same action happening
+        # to all roles. This way, rolekit maintains an accurate view of what
+        # instances are running and can communicate that to anyone registered
+        # to listen for notifications.
+
         target = {'Role': 'databaseserver',
                   'Instance': self.get_name(),
                   'Description': "Database Server Role - %s" %
                                  self.get_name(),
-                  'Wants': ['postgresql.service'],
+                  'BindsTo': ['postgresql.service'],
+                  'Requires': ['postgresql.service'],
+                  'RequiredBy': ['postgresql.service'],
                   'After': ['syslog.target', 'network.target']}
 
         yield target

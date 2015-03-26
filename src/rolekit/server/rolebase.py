@@ -80,7 +80,7 @@ class RoleBase(slip.dbus.service.Object):
                  *args, **kwargs):
         """The DBUS_INTERFACE_ROLE_INSTANCE implementation.
 
-        :param parent: A DBusRole
+        :param parent: The DBusRole Object this is attached to
         :param name: Instance name
         :param type_name: Role name
         :param directory: FIXME: unused???

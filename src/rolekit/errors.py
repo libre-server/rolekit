@@ -40,6 +40,7 @@ INVALID_INSTANCE    =  108
 
 MISSING_ROLE        =  200
 MISSING_CHECK       =  201
+MISSING_ID          =  202
 
 NOT_RUNNING         =  252
 NOT_AUTHORIZED      =  253
