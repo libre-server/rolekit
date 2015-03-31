@@ -27,7 +27,9 @@ import pwd
 import grp
 import os
 
-from rolekit.config import ROLEKIT_ROLES
+from rolekit.config import ROLEKIT_ROLES, READY_TO_START, RUNNING, DEPLOYING, \
+    REDEPLOYING, DECOMMISSIONING, STARTING, STOPPING, UPDATING
+
 from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
@@ -35,6 +37,13 @@ from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
 from rolekit.util import generate_password
+
+# A list of states that may indicate that another instance of the DB
+# Role is already available on this system. It expressly ignores
+# NASCENT and ERROR, since those may be due to a failed earlier
+# deployment that didn't have the initialization run.
+deployed_states = (READY_TO_START, RUNNING, DEPLOYING, REDEPLOYING,
+                   DECOMMISSIONING, STARTING, STOPPING, UPDATING)
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
@@ -96,7 +105,9 @@ class Role(RoleBase):
 
         # Check whether this is the first instance of the database
         for value in self._parent.get_instances().values():
-            if 'databaseserver' == value._type and self._name != value._name:
+            if ('databaseserver' == value._type and
+                        self._name != value._name and
+                        self.get_state() in deployed_states):
                 first_instance = False
                 break
 
