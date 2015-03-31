@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.3.0
+Version: 0.3.1
 Release: 1%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
@@ -95,6 +95,11 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Tue Mar 31 2015 Stephen Gallagher <sgallagh@redhat.com> 0.3.1-1
+- Don't create an instance on input value failure
+- DB Role: don't consider ERROR instances when checking for first-instance
+  deployment.
+
 * Thu Mar 26 2015 Stephen Gallagher <sgallagh@redhat.com> 0.3.0-1
 - Support for the Database Server Role
 - New verbose option for 'rolectl list instances'
