@@ -871,8 +871,19 @@ class RoleBase(slip.dbus.service.Object):
         self.start(reply_handler, error_handler, sender)
 
 
+    def __remove_instance(self):
+        """Remove the instance"""
+
+        # Then clean up: remove settings file, remove from dbus
+        # connection and destroy instance
+        self._settings.remove()
+        self.remove_from_connection()
+        self._parent.remove_instance(self)
+
     def deploy_async(self, values, sender=None):
         """deploy role"""
+        remove_instance = False
+
         values = dbus_to_python(values)
 
         # Make sure we are in the proper state
@@ -891,9 +902,7 @@ class RoleBase(slip.dbus.service.Object):
             self.change_state(ERROR, write=True)
 
             # cleanup
-            self._settings.remove()
-            self.remove_from_connection()
-            self._parent.remove_instance(self)
+            self.__remove_instance()
             raise
 
         try:
@@ -910,7 +919,14 @@ class RoleBase(slip.dbus.service.Object):
             self.installFirewall()
 
             # Call do_deploy
-            target = yield async.call_future(self.do_deploy_async(values, sender))
+            try:
+                target = yield async.call_future(self.do_deploy_async(values, sender))
+            except RolekitError as e:
+                if e.code == INVALID_VALUE:
+                    # If we failed because the input values were incorrect,
+                    # also remove the instance.
+                    remove_instance = True
+                raise
 
             # Continue only after successful deployment:
             # Apply values to self._settings
@@ -931,6 +947,8 @@ class RoleBase(slip.dbus.service.Object):
         except:
             # Something failed, set state to error
             self.change_state(ERROR, write=True)
+            if remove_instance:
+                self.__remove_instance()
             raise
 
 
@@ -1042,12 +1060,8 @@ class RoleBase(slip.dbus.service.Object):
         # Uninstall firewall
         self.uninstallFirewall()
 
-        # Continue only after successful decommission:
-        # Then clean up: remove settings file, remove from dbus
-        # connection and destroy instance
-        self._settings.remove()
-        self.remove_from_connection()
-        self._parent.remove_instance(self)
+        # Remove the instance
+        self.__remove_instance()
 
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE)
