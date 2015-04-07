@@ -88,6 +88,7 @@ def main():
 
     # Connect to the local database via 'peer'
     conn = psycopg2.connect(database=args.database)
+    conn.autocommit = True
     log.info1("Connected to local database '%s'" % args.database)
     cur = conn.cursor()
 
