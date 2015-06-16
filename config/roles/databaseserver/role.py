@@ -148,8 +148,7 @@ class Role(RoleBase):
 
         if first_instance:
             # Initialize the database on the filesystem
-            initdb_args = ["/usr/bin/postgresql-setup", "--initdb",
-                           "--unit", "postgresql"]
+            initdb_args = ["/usr/bin/postgresql-setup", "--initdb"]
 
             result = yield async.subprocess_future(initdb_args)
             if result.status:
