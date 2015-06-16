@@ -1,6 +1,8 @@
 [Unit]
 Description=rolekit - role server
 After=network.target
+Requires=firewalld.service
+Requires=polkit.service
 
 [Service]
 EnvironmentFile=-/etc/sysconfig/rolekit
