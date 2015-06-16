@@ -592,7 +592,13 @@ class RoleBase(slip.dbus.service.Object):
             yield None
             return
 
-        dnf_install = [ "dnf", "-y", "install" ] + self._settings["packages"]
+        # There is a bug in DNF where it will return exit code 1 if
+        # all of the packages requested are @group and their contents
+        # already installed. There's a hacky workaround by adding a
+        # non-@group package to the command-line, so we'll add rolekit
+
+        dnf_install = [ "dnf", "-y", "install", "rolekit" ] + \
+                       self._settings["packages"]
         result = yield async.subprocess_future(dnf_install)
 
         if result.status:
@@ -613,8 +619,8 @@ class RoleBase(slip.dbus.service.Object):
 
             job_results = yield job_handler.all_jobs_done_future()
 
-        if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-            details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+        if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+            details = ", ".join(["%s: %s" % item for item in job_results.items()])
             raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
 
     def restartServices(self):
@@ -633,8 +639,8 @@ class RoleBase(slip.dbus.service.Object):
 
             job_results = yield job_handler.all_jobs_done_future()
 
-        if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-            details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+        if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+            details = ", ".join(["%s: %s" % item for item in job_results.items()])
             raise RolekitError(COMMAND_FAILED, "Stopping services failed: %s" % details)
 
     def installFirewall(self):
@@ -648,19 +654,38 @@ class RoleBase(slip.dbus.service.Object):
 
         # create firewall client
         fw = FirewallClient()
+        log.debug2("TRACE: Firewall client created")
+
+        # Make sure firewalld is running by getting the
+        # default zone
+        try:
+            default_zone = fw.getDefaultZone()
+        except DBusException:
+            # firewalld is not running
+            log.error("Firewalld is not running or rolekit cannot access it")
+            raise
 
         # save changes to the firewall
-        if "firewall-changes" in self._settings:
+        try:
             fw_changes = self._settings["firewall-changes"]
-        else:
+        except KeyError:
             fw_changes = { }
 
-        zones = self._settings["firewall_zones"]
+        log.debug2("TRACE: Checking for zones: {}".format(self._settings))
+
+        try:
+            zones = self._settings["firewall_zones"]
+        except KeyError:
+            zones = []
+
         # if firewall_zones setting is empty, use default zone
         if len(zones) < 1:
-            zones = [ fw.getDefaultZone() ]
+            zones = [ default_zone ]
+
+        log.debug2("TRACE: default zone {}".format(zones[0]))
 
         for zone in zones:
+            log.debug2("TRACE: Processing zone {0}".format(zone))
             # get permanent zone settings, run-time settings do not need a
             # special treatment
             z_perm = fw.config().getZoneByName(zone).getSettings()

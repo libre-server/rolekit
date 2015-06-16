@@ -1,7 +1,7 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.3.2
-Release: 1%{?dist}
+Version: 0.4.0
+Release: 0.dev%{?dist}
 URL: http://fedorahosted.org/rolekit
 License: GPLv2+
 Source0: https://fedorahosted.org/released/rolekit/%{name}-%{version}.tar.bz2
@@ -12,16 +12,27 @@ BuildRequires: intltool
 BuildRequires: glib2, glib2-devel, dbus-devel
 BuildRequires: systemd-units
 BuildRequires: docbook-style-xsl
-Requires: dbus-python
-Requires: python-futures
-Requires: python-slip-dbus
-Requires: python-decorator
-Requires: python-IPy
-Requires: pygobject3-base
+BuildRequires: polkit-devel
+
+BuildRequires: python3-devel
+Requires: python3-dbus
+Requires: python3-slip-dbus
+Requires: python3-decorator
+
+%if 0%{?fedora} >= 23
+Requires: python3-gobject-base
+%else
+Requires: python3-gobject
+%endif
+
+Requires: python3-firewall
+Requires: python-IPy-python3
+
 Requires: firewalld
 Requires: systemd
 Requires: NetworkManager
 Requires: dnf
+Requires: polkit
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
@@ -78,14 +89,20 @@ make install DESTDIR=%{buildroot}
 %config(noreplace) %{_sysconfdir}/dbus-1/system.d/rolekit1.conf
 %{_datadir}/polkit-1/actions/org.fedoraproject.rolekit1.policy
 %{_datadir}/dbus-1/system-services/org.fedoraproject.rolekit1.service
-%attr(0755,root,root) %dir %{python_sitelib}/rolekit
-%attr(0755,root,root) %dir %{python_sitelib}/rolekit/config
-%attr(0755,root,root) %dir %{python_sitelib}/rolekit/server
-%attr(0755,root,root) %dir %{python_sitelib}/rolekit/server/io
-%{python_sitelib}/rolekit/*.py*
-%{python_sitelib}/rolekit/config/*.py*
-%{python_sitelib}/rolekit/server/*.py*
-%{python_sitelib}/rolekit/server/io/*.py*
+%attr(0755,root,root) %dir %{python3_sitelib}/rolekit
+%attr(0755,root,root) %dir %{python3_sitelib}/rolekit/config
+%attr(0755,root,root) %dir %{python3_sitelib}/rolekit/server
+%attr(0755,root,root) %dir %{python3_sitelib}/rolekit/server/io
+%{python3_sitelib}/rolekit/*.py*
+%{python3_sitelib}/rolekit/config/*.py*
+%{python3_sitelib}/rolekit/server/*.py*
+%{python3_sitelib}/rolekit/server/io/*.py*
+
+%{python3_sitelib}/rolekit/config/__pycache__/*.py*
+%{python3_sitelib}/rolekit/__pycache__/*.py*
+%{python3_sitelib}/rolekit/server/__pycache__/*.py*
+%{python3_sitelib}/rolekit/server/io/__pycache__/*.py*
+
 %{_mandir}/man1/role*.1*
 %{_mandir}/man5/role*.5*
 %{_docdir}/examples/
@@ -95,6 +112,10 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Thu Jul 09 2015 Stephen Gallagher <sgallagh@redhat.com> 0.4.0-0.dev
+- Switch to python3 on platforms that support it
+- Add support for older versions of postgresql
+
 * Tue Apr 07 2015 Stephen Gallagher <sgallagh@redhat.com> 0.3.2-1
 - Fix bug with setting database owner password
 

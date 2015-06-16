@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 Red Hat, Inc.
@@ -75,7 +75,7 @@ def main():
     log.debug1("Arguments: %s" % sys.argv)
 
     # Read the password from stdin
-    user_pass = raw_input(False)
+    user_pass = input(False)
 
     # Check for valid database and user names
     # We restrict this to having only letters, numbers

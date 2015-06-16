@@ -53,7 +53,7 @@ class Role(RoleBase):
         "services": [ "postgresql.service" ],
         "packages": [ "postgresql-server",
                       "postgresql-contrib",
-                      "python-psycopg2" ], # Needed for role deployment
+                      "python3-psycopg2" ], # Needed for role deployment
         "firewall": { "ports": [],
                       "services": [ "postgresql" ] },
 
@@ -150,6 +150,7 @@ class Role(RoleBase):
             # Initialize the database on the filesystem
             initdb_args = ["/usr/bin/postgresql-setup", "--initdb"]
 
+            log.debug2("TRACE: Initializing database")
             result = yield async.subprocess_future(initdb_args)
             if result.status:
                 # If this fails, it may be just that the filesystem
@@ -161,17 +162,29 @@ class Role(RoleBase):
         # It's safe to start an already-running service, so we'll
         # just always make this call, particularly in case other instances
         # exist but aren't running.
-        with SystemdJobHandler() as job_handler:
-            job_path = job_handler.manager.StartUnit("postgresql.service", "replace")
-            job_handler.register_job(job_path)
+        log.debug2("TRACE: Starting postgresql.service unit")
+        try:
+            with SystemdJobHandler() as job_handler:
+                job_path = job_handler.manager.StartUnit("postgresql.service", "replace")
+                job_handler.register_job(job_path)
+                log.debug2("TRACE: unit start job registered")
 
-            job_results = yield job_handler.all_jobs_done_future()
-            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
-                raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
+
+                job_results = yield job_handler.all_jobs_done_future()
+
+                log.debug2("TRACE: unit start job concluded")
+
+                if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+                    details = ", ".join(["%s: %s" % item for item in job_results.items()])
+                    log.error("Starting services failed: {}".format(details))
+                    raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
+        except Exception as e:
+            log.error("Error received starting unit: {}".format(e))
+            raise
 
 
         # Next we create the owner
+        log.debug2("TRACE: Creating owner of new database")
         createuser_args = ["/usr/bin/createuser", values['owner']]
         result = yield async.subprocess_future(createuser_args,
                                                uid=self.pg_uid,
@@ -197,6 +210,7 @@ class Role(RoleBase):
         if not password_provided:
             values['password'] = generate_password()
 
+        log.debug2("TRACE: Creating new database")
         createdb_args = ["/usr/bin/createdb", values['database'],
                          "-O", values['owner']]
         result = yield async.subprocess_future(createdb_args,
@@ -210,6 +224,7 @@ class Role(RoleBase):
         # Next, set the password on the owner
         # We'll skip this phase if the the user already existed
         if new_owner:
+            log.debug2("TRACE: Setting password for database owner")
             pwd_args = [ROLEKIT_ROLES + "/databaseserver/tools/rk_db_setpwd.py",
                         "--database", values['database'],
                         "--user", values['owner']]
@@ -220,6 +235,7 @@ class Role(RoleBase):
 
             if result.status:
                 # If the subprocess returned non-zero, raise an exception
+                log.error("Setting owner password failed: {}".format(result.status))
                 raise RolekitError(COMMAND_FAILED,
                                    "Setting owner password failed: %d" %
                                    result.status)
@@ -231,12 +247,14 @@ class Role(RoleBase):
                 values.pop("password", None)
         else: # Not a new owner
             # Never save the password to settings for an existing owner
+            log.debug2("TRACE: Owner already exists, not setting password")
             values.pop("password", None)
 
         if first_instance:
             # Then update the server configuration to accept network
             # connections.
             # edit postgresql.conf to add listen_addresses = '*'
+            log.debug2("TRACE: Opening access to external addresses")
             sed_args = [ "/bin/sed",
                          "-e", "s@^[#]listen_addresses\W*=\W*'.*'@listen_addresses = '\*'@",
                          "-i.rksave", values['postgresql_conf'] ]
@@ -265,13 +283,14 @@ class Role(RoleBase):
                                    (values['pg_hba_conf'], result.status))
 
             # Restart the postgresql server to accept the new configuration
+            log.debug2("TRACE: Restarting postgresql.service unit")
             with SystemdJobHandler() as job_handler:
                 job_path = job_handler.manager.RestartUnit("postgresql.service", "replace")
                 job_handler.register_job(job_path)
 
                 job_results = yield job_handler.all_jobs_done_future()
-                if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-                    details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+                    details = ", ".join(["%s: %s" % item for item in job_results.items()])
                     raise RolekitError(COMMAND_FAILED, "Restarting service failed: %s" % details)
 
         # Create the systemd target definition
@@ -294,6 +313,8 @@ class Role(RoleBase):
                   'Requires': ['postgresql.service'],
                   'RequiredBy': ['postgresql.service'],
                   'After': ['syslog.target', 'network.target']}
+
+        log.debug2("TRACE: Database server deployed")
 
         yield target
 
@@ -340,8 +361,8 @@ class Role(RoleBase):
             job_handler.register_job(job_path)
 
             job_results = yield job_handler.all_jobs_done_future()
-            if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-                details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+            if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+                details = ", ".join(["%s: %s" % item for item in job_results.items()])
                 raise RolekitError(COMMAND_FAILED, "Starting services failed: %s" % details)
 
         # Drop the database
@@ -387,8 +408,8 @@ class Role(RoleBase):
                 job_handler.register_job(job_path)
 
                 job_results = yield job_handler.all_jobs_done_future()
-                if any([x for x in job_results.itervalues() if x not in ("skipped", "done")]):
-                    details = ", ".join(["%s: %s" % item for item in job_results.iteritems()])
+                if any([x for x in job_results.values() if x not in ("skipped", "done")]):
+                    details = ", ".join(["%s: %s" % item for item in job_results.items()])
                     raise RolekitError(COMMAND_FAILED, "Stopping services failed: %s" % details)
 
         # Decommissioning complete

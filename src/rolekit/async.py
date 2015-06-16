@@ -111,16 +111,17 @@ def start_with_callbacks(generator, result_handler, error_handler):
     # not actually called recursively, so the overall memory usage is constant.
     def async_step(future):
         try:
+            exception = None
             if future is None:
                 value = None
-                exception = None
             else:
                 assert future.done() and not future.cancelled()
                 try:
                     value = future.result(0)
                     exception = None
-                except Exception as exception:
+                except Exception as e:
                     value = None
+                    exception = e
 
             # Call into the generator to perform a part of its work until it
             # wants to give up the CPU.  The generator can return to us a value
@@ -129,7 +130,7 @@ def start_with_callbacks(generator, result_handler, error_handler):
             # StopIteration), or raise an exception (caught by the outer
             # try/except block).
             try:
-                if exception is not None:
+                if exception:
                     async_result = generator.throw(exception)
                 else:
                     async_result = generator.send(value)
@@ -225,21 +226,21 @@ def _fd_output_future(fd, log_fn):
             # explicitly test for HUP.
             try:
                 chunk = fd.read()
-            except IOError, e:
+            except IOError as e:
                 log.error("Error reading subprocess output: %s" % e)
             else:
                 if len(chunk) > 0:
-                    output_chunks.append(chunk)
+                    output_chunks.append(chunk.decode('utf-8'))
 
                     # Log the input at the requested level
-                    lines = (linebuf[0] + chunk).split('\n')
+                    lines = (linebuf[0] + chunk.decode('utf-8')).split('\n')
                     for line in lines[:-1]:
                         try:
-                            msg = line.encode('ascii', 'backslashencode')
-                        except:
+                            msg = line.encode(errors='backslashreplace')
+                        except UnicodeError:
                             # Line contains non-ASCII content that
                             # cannot be escaped. Log it as base64.
-                            msg = line.encode('base64')
+                            msg = line.encode(encoding='base64')
                         log_fn(msg)
                     linebuf[0] = lines[-1];
 
@@ -322,7 +323,7 @@ def subprocess_future(args, stdin=None, uid=None, gid=None):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    preexec_fn=preexec_fn)
-    except OSError, e:
+    except OSError as e:
         if e.errno is errno.EPERM:
             # Could not change users prior to executing the subprocess
             log.error("Insufficient privileges to impersonate UID/GID %s/%s" %
@@ -331,7 +332,7 @@ def subprocess_future(args, stdin=None, uid=None, gid=None):
 
     # Send the input data if needed.
     if stdin:
-        process.stdin.write(stdin)
+        process.stdin.write(stdin.encode('utf-8'))
     process.stdin.close()
 
     # The three partial results.

@@ -91,6 +91,9 @@ install-config:
 	$(MKDIR_P) $(DESTDIR)$(prefixlibdir)
 	cp -r $(srcdir)/roles $(DESTDIR)$(prefixlibdir)
 	chmod -R u+w $(DESTDIR)$(prefixlibdir)/roles
+	@echo "Fixing python shebang"
+	echo $(top_srcdir)/fix_python_shebang.sh "$(DESTDIR)$(prefixlibdir)/roles/databaseserver/tools/rk_db_setpwd.py"
+	$(top_srcdir)/fix_python_shebang.sh "$(DESTDIR)$(prefixlibdir)/roles/databaseserver/tools/rk_db_setpwd.py"
 
 uninstall-config:
 	rmdir $(DESTDIR)$(sconfdir)/roles
