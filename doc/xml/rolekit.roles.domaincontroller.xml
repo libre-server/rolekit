@@ -92,6 +92,17 @@
       <para>
         <variablelist>
           <varlistentry>
+            <term><command>host_name</command></term>
+            <listitem>
+              <para>
+                Set a new hostname for the domain controller.
+              </para>
+              <para>
+                Default: unset. Uses the existing machine hostname.
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
             <term><command>domain_name</command></term>
             <listitem>
               <para>

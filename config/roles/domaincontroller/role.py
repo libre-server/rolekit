@@ -36,6 +36,7 @@ from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.rolebase import *
+from rolekit.server.io.hostname import set_hostname
 from rolekit.dbus_utils import *
 from rolekit.errors import *
 from rolekit.util import generate_password
@@ -52,6 +53,11 @@ class Role(RoleBase):
                      "services": [ "freeipa-ldap",
                                    "freeipa-ldaps",
                                    "dns" ] },
+
+        # Host name will use the current system name if unspecified
+        # It will throw an exception if the hostname starts with 'localhost'
+        "host_name": None,
+
         # Default domain name will be autodetected if not specified
         "domain_name": None,
 
@@ -137,6 +143,22 @@ class Role(RoleBase):
         if 'admin_password' not in values:
             raise RolekitError(INVALID_VALUE, "admin_password unset")
 
+        # If the hostname wasn't specified, get it from the system
+        fqdn = socket.getfqdn()
+        if 'host_name' not in values:
+            values['host_name'] = fqdn
+
+        # Make sure this is a real hostname, not localhost.localdomain
+        if values['host_name'].startswith("localhost"):
+            raise RolekitError(INVALID_VALUE, "invalid hostname")
+
+        # We have been asked to change the hostname as part of the
+        # creation of the domain controller
+        if values['host_name'] != fqdn:
+            # Change the domain with the hostnamectl API
+            yield set_hostname(values['host_name'])
+
+        # Set the domain to the domain part of the
         if 'domain_name' not in values:
             values['domain_name'] = self._get_domain()
 
@@ -276,6 +298,16 @@ class Role(RoleBase):
                                    .format(prop))
             return True
 
+        elif prop in [ "host_name" ]:
+            self.check_type_string(value)
+
+            if value.startswith('localhost'):
+                # We don't support creating a domain controller named
+                # localhost[.localdomain]
+                raise RolekitError(INVALID_VALUE,
+                                   "{} is a local-only hostname".format(prop))
+            return True
+
         elif prop in [ "root_ca_file" ]:
             self.check_type_string(value)
 
@@ -347,6 +379,7 @@ class Role(RoleBase):
         # Cover additional settings and return a proper dbus type.
         if prop in [ "domain_name",
                      "realm_name",
+                     "host_name",
                      "dm_password",
                      "root_ca_file",
                      "primary_ip" ]:
@@ -375,6 +408,11 @@ class Role(RoleBase):
     def _get_domain(self):
         # First, look up this machine's FQDN
         fqdn = socket.getfqdn()
+
+        # Make sure this returned hostname.domain
+        if not fqdn.find("."):
+            raise RolekitError(INVALID_VALUE, "Domain missing from FQDN")
+
         # Get everything after the first dot as the domain
         return fqdn[fqdn.find(".") + 1:]
 
@@ -405,6 +443,12 @@ class Role(RoleBase):
         @dbus_handle_exceptions
         def realm_name(self):
             return self.get_dbus_property(self, "realm_name")
+
+
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def host_name(self):
+            return self.get_dbus_property(self, "host_name")
 
 
         @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
