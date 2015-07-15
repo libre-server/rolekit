@@ -72,11 +72,11 @@ class Role(RoleBase):
 
 
     # Redeploy code
-    def do_redeploy(self, values, sender=None):
+    def do_redeploy_async(self, values, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        yield None
 
 
     # Decommission code

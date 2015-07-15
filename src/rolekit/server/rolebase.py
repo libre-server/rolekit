@@ -812,7 +812,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
     # Redeploy code
-    def do_redeploy(self, values, sender=None):
+    def do_redeploy_async(self, values, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -1008,11 +1008,17 @@ class RoleBase(slip.dbus.service.Object):
             job_handler.manager.Reload()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='a{sv}',
-                         out_signature='')
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE,
+                         in_signature='a{sv}',
+                         out_signature='',
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def redeploy(self, values, sender=None):
-        """deploy role"""
+    def redeploy(self, values, reply_handler, error_handler, sender=None):
+        """redeploy role"""
+        async.start_with_dbus_callbacks(self.__redeploy_async(values, sender),
+                                        reply_handler, error_handler)
+
+    def __redeploy_async(self, values, sender):
         values = dbus_to_python(values)
 
         # Make sure we are in the proper state
@@ -1029,28 +1035,39 @@ class RoleBase(slip.dbus.service.Object):
             self.change_state(ERROR, write=True)
             raise
 
-        # Change to deploying state
-        self.change_state(REDEPLOYING)
-
-        # Call do_deploy
         try:
-            self.do_redeploy(values, sender)
+            # Change to redeploying state
+            self.change_state(REDEPLOYING)
+
+
+            # Copy _DEFAULTS to self._settings
+            self.copy_defaults()
+
+            # Call do_redeploy_async
+            yield async.call_future(self.do_redeploy_async(values, sender))
+
+            # Continue only after successful deployment:
+            # Apply values to self._settings
+            try:
+                self.apply_values(values)
+            except:
+                # applying of values failed, set state to error
+                self.change_state(ERROR, write=True)
+                raise
+
+            # Change to ready to start state
+            self.change_state(READY_TO_START, write=True)
+
+            # Attempt to start the newly-deployed role
+            # We do this because many role-installers will conclude by
+            # starting anyway and we want to ensure that our role mechanism
+            # is in sync with them.
+            yield async.call_future(self.__start_async(sender))
+
         except:
-            # deploy failed set state to error
+            # Something failed, set state to error
             self.change_state(ERROR, write=True)
             raise
-
-        # Continue only after successful deployment:
-        # Apply values to self._settings
-        try:
-            self.apply_values(values)
-        except:
-            # applying of values failed, set state to error
-            self.change_state(ERROR, write=True)
-            raise
-
-        # Change to ready to start state
-        self.change_state(READY_TO_START, write=True)
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='b',
                          out_signature='',

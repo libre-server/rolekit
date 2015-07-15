@@ -313,12 +313,12 @@ class Role(RoleBase):
         yield target
 
     # Redeploy code
-    def do_redeploy(self, values, sender=None):
+    def do_redeploy_async(self, values, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
         # FIXME: should just chain to parent for the common fields?
-        raise NotImplementedError()
+        raise NotImplementedError("Redeploy not supported yet")
 
 
     # Decommission code
