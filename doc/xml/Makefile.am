@@ -16,7 +16,8 @@ man5_MANS = \
 	../man/man5/rolekit.dbus.5 \
 	../man/man5/rolekit.roles.5 \
 	../man/man5/rolekit.roles.databaseserver.5 \
-	../man/man5/rolekit.roles.domaincontroller.5
+	../man/man5/rolekit.roles.domaincontroller.5 \
+	../man/man5/rolekit.roles.memcache.5
 
 CLEAN_FILES = *~ errorcodes.xml
 DISTCLEANFILES = $(man_MANS) $(HTMLS) transform-*.xsl

@@ -84,6 +84,8 @@ make install DESTDIR=%{buildroot}
 %{_prefix}/lib/rolekit/roles/databaseserver/*.py*
 %{_prefix}/lib/rolekit/roles/databaseserver/tools/rk_db_setpwd.py*
 
+%{_prefix}/lib/rolekit/roles/memcache/*.py*
+
 %config(noreplace) %{_sysconfdir}/sysconfig/rolekit
 %{_unitdir}/rolekit.service
 %config(noreplace) %{_sysconfdir}/dbus-1/system.d/rolekit1.conf

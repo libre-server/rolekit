@@ -34,7 +34,8 @@ EXTRA_DIST = \
 	roles/testrole/role.py \
 	roles/domaincontroller/role.py \
 	roles/databaseserver/role.py \
-	roles/databaseserver/tools/rk_db_setpwd.py
+	roles/databaseserver/tools/rk_db_setpwd.py \
+	roles/memcache/role.py
 
 INSTALL_TARGETS = install-config
 UNINSTALL_TARGETS = uninstall-config

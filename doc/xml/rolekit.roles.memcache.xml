@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[
+<!ENTITY authors SYSTEM "authors.xml">
+<!ENTITY seealso SYSTEM "seealso.xml">
+<!ENTITY notes SYSTEM "notes.xml">
+<!ENTITY errorcodes SYSTEM "errorcodes.xml">
+]>
+
+<!--
+  This file is part of rolekit.
+
+  Copyright (C) 2014 Red Hat, Inc.
+  Authors:
+  Stephen Gallagher <sgallagh@redhat.com>
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<refentry id="rolekit.roles.memcache">
+
+  <refentryinfo>
+    <title>rolekit.roles.memcache</title>
+    <productname>rolekit</productname>
+    &authors;
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>rolekit.roles.memcache</refentrytitle>
+    <manvolnum>5</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>rolekit.roles.memcache</refname>
+    <refpurpose>rolekit Memory Cache Server Role Documentation</refpurpose>
+  </refnamediv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>
+      The Memory Cache Server Role provides a high-performance memory object
+      caching system useful for speeding up web applications by reducing
+      database updates.
+    </para>
+  </refsect1>
+
+  <refsect1 id="deployment">
+    <title>DEPLOYMENT</title>
+    <para>
+      The Memory Cache Server role can be deployed using the
+      <replaceable>rolectl</replaceable> command-line utility or through the
+      rolekit D-BUS API. When using the <replaceable>rolectl</replaceable>
+      tool, a settings file must be created in the JSON  format unless you
+      intend to take only the default options.
+    </para>
+    <para>
+      The Memory Cache Server role will run inside a Docker-managed container
+      on the system.
+    </para>
+    <refsect2 id="mandatory-settings">
+      <title>Mandatory Settings</title>
+      <para>
+        These settings must always be present or the deployment will be unable
+        to complete.
+      </para>
+      <para>
+        All settings for the Memory Cache Server Role are optional.
+      </para>
+    </refsect2>
+    <refsect2 id="other-settings">
+      <title>Optional Settings</title>
+      <para>
+        This section provides a list of optional settings for deployment.
+      </para>
+      <para>
+        <variablelist>
+          <varlistentry>
+            <term><command>cache_size</command></term>
+            <listitem>
+              <para>
+                The size of the cache's object storage in MiB.
+              </para>
+              <para>
+                Default: 25% of available memory or 1024 MiB, whichever
+                is smaller.
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term><command>connections</command></term>
+            <listitem>
+              <para>
+                The maxmimum number of client connections that can be served
+                simultaneously.
+              </para>
+              <para>
+                Default: 1024
+              </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term><command>threads</command></term>
+            <listitem>
+              <para>
+                The number of threads to run to process connections. It is
+                recommended to leave this at four without good reasons.
+                Rolekit will refuse to set this value higher than the number
+                of virtual CPUs on the system.
+              </para>
+              <para>
+                Default: 4
+              </para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </para>
+    </refsect2>
+  </refsect1>
+
+  <refsect1 id="examples">
+    <title>Example settings.json</title>
+    <programlisting>
+{
+    "cache_size": 256,
+    "connections": 1024,
+    "threads": 4
+}
+    </programlisting>
+  </refsect1>
+
+  &seealso;
+
+  &notes;
+
+</refentry>
