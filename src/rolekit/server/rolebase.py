@@ -938,12 +938,14 @@ class RoleBase(slip.dbus.service.Object):
             self.copy_defaults()
 
             # Install package groups and packages
+            log.debug9("TRACE: Installing packages")
             yield async.call_future(self.installPackages())
 
             # Install firewall
             self.installFirewall()
 
             # Call do_deploy
+            log.debug9("TRACE: Performing role-specific deployment")
             try:
                 target = yield async.call_future(self.do_deploy_async(values, sender))
             except RolekitError as e:
@@ -955,9 +957,11 @@ class RoleBase(slip.dbus.service.Object):
 
             # Continue only after successful deployment:
             # Apply values to self._settings
+            log.debug9("TRACE: role-specific deployment complete, applying values")
             self.apply_values(values)
 
             # Set up systemd target files
+            log.debug9("TRACE: Creating systemd target files")
             self.create_target(target)
 
             # Change to ready to start state
@@ -967,6 +971,7 @@ class RoleBase(slip.dbus.service.Object):
             # We do this because many role-installers will conclude by
             # starting anyway and we want to ensure that our role mechanism
             # is in sync with them.
+            log.debug9("TRACE: Starting %s" % self.name)
             yield async.call_future(self.__start_async(sender))
 
         except:
