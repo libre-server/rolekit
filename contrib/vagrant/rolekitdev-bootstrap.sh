@@ -54,6 +54,8 @@ systemctl enable firewalld.service
 systemctl restart firewalld.service
 systemctl enable rolekit.service
 systemctl restart rolekit.service
+systemctl enable docker.service
+systemctl restart docker.service
 
 # Use the non-blocking random pool
 /usr/sbin/rngd -r /dev/urandom
