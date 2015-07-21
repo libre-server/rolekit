@@ -817,7 +817,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
     # Decommission code
-    def do_decommission(self, force=False, sender=None):
+    def do_decommission_async(self, force=False, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
