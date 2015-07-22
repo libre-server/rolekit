@@ -24,6 +24,7 @@ import os
 import shutil
 import json
 
+from rolekit.errors import RolekitError
 from rolekit.config import SYSTEMD_UNITS, SYSTEMD_DEPS, DBUS_SEND
 from rolekit.config.dbus import DBUS_INTERFACE, DBUS_PATH
 
@@ -173,3 +174,65 @@ class SystemdExtensionUnits(dict):
             f.write("PartOf=%s\n" % self.target['targetname'])
             f.write("OnFailure=%s\n" % self.target['failurename'])
         pass
+
+
+class SystemdContainerServiceUnit():
+    """
+    Class to write out service units for contained services
+
+    image_name: The name of the docker image to run from
+    container_name: A name to give the started image
+    desc: A description for the systemd unit file
+    env: An dictionary of environment variables to pass to the image
+    ports: An array of port mappings. Mappings must be specified in
+           the exact format that Docker uses. See docker-run(1) for
+           details.
+           e.g. ("1234:1234", "1235-1237:8035-8037/tcp")
+    """
+
+    def __init__(self,
+                 image_name=None,
+                 container_name=None,
+                 desc=None,
+                 env=None,
+                 ports=None):
+
+        if not image_name:
+            raise RolekitError("Missing container image name")
+        if not desc:
+            raise RolekitError("Missing description")
+        if not ports:
+            raise RolekitError("No ports specified")
+
+        self.image_name = image_name
+        self.container_name = container_name
+        self.desc = desc
+        self.ports = ports
+
+        if env:
+            self.env = env
+        else:
+            self.env = {}
+
+    def write(self):
+        path = "%s/%s.service" % (SYSTEMD_UNITS, self.container_name)
+
+        docker_run = "/usr/bin/docker run --name=%s" % self.container_name
+        for key in self.env:
+            docker_run += " --env %s=%s" % (key, self.env[key])
+
+        for mapping in self.ports:
+            docker_run += " -p %s" % mapping
+        docker_run += " %s" % self.image_name
+
+        with open(path, "w") as f:
+            f.write("[Unit]\n")
+            f.write("Description=%s\n" % self.desc)
+            f.write("Requires=docker.service\n")
+            f.write("After=docker.service\n\n")
+            f.write("[Service]\n")
+            f.write("Restart=always\n")
+            f.write("ExecStart=%s\n" % docker_run)
+            f.write("ExecStop=/usr/bin/docker stop -t 5 {0} ; /usr/bin/docker rm -f {0}\n\n".format(self.container_name))
+            f.write("[Install]\n")
+            f.write("WantedBy=multi-user.target\n")
