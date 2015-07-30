@@ -275,11 +275,11 @@ class Role(RoleBase):
 
 
     # Update code
-    def do_update(self, sender=None):
+    def do_update_async(self, sender=None):
         # Do the magic
         #
         # In case of error raise an exception
-        pass
+        raise NotImplementedError()
 
 
     # Check own properties

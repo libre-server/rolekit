@@ -238,7 +238,7 @@ class Role(RoleBase):
 
 
     # Update code
-    def do_update(self, sender=None):
+    def do_update_async(self, sender=None):
         # If this role requires any special processing during an
         # update (other than simply updating the packages),
         # run them here.

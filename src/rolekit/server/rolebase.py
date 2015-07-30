@@ -822,7 +822,7 @@ class RoleBase(slip.dbus.service.Object):
         raise NotImplementedError()
 
     # Update code
-    def do_update(self, sender=None):
+    def do_update_async(self, sender=None):
         # NOT IMPLEMENTED
         raise NotImplementedError()
 
@@ -1111,11 +1111,15 @@ class RoleBase(slip.dbus.service.Object):
         self.__remove_instance()
 
 
-    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE)
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE,
+                         async_callbacks=('reply_handler', 'error_handler'))
     @dbus_handle_exceptions
-    def update(self, sender=None):
+    def update(self, reply_handler, error_handler, sender=None):
         """update role"""
+        async.start_with_dbus_callbacks(self.__update_async(sender),
+                                        reply_handler, error_handler)
 
+    def __update_async(self, sender=None):
         # Make sure we are in the proper state
         self.assert_state(READY_TO_START)
 
@@ -1127,9 +1131,10 @@ class RoleBase(slip.dbus.service.Object):
 
         # Call do_update
         try:
-            self.do_update(sender)
+            yield async.call_future(self.do_update_async(sender))
         except:
             self.change_state(ERROR, write=True)
+            raise
 
         # Continue only after successful update:
         # Change to deploying state
