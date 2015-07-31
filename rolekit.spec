@@ -71,7 +71,7 @@ make install DESTDIR=%{buildroot}
 
 #%files -f %{name}.lang
 %files
-%doc COPYING README
+%doc COPYING README.md
 %{_sbindir}/roled
 %{_bindir}/rolectl
 %defattr(-,root,root)

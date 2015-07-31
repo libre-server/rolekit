@@ -11,7 +11,7 @@ AM_TESTS_ENVIRONMENT = export PYTHONPATH=$(abs_top_srcdir)/src;
 
 EXTRA_DIST = \
 	COPYING \
-	README \
+	README.md \
 	autogen.sh \
 	${PACKAGE_NAME}.spec \
 	fix_python_shebang.sh \
