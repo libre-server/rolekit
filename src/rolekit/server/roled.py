@@ -52,6 +52,10 @@ class RoleD(slip.dbus.service.Object):
     default_polkit_auth_required = PK_ACTION_ALL
     """ Use PK_ACTION_ALL as a default """
 
+    default_duration = 60
+    """Increase lifetime to 60 seconds without clients connected to the bus.
+    Overrides the slip.dbus.service.Object default of 5 seconds."""
+
     @handle_exceptions
     def __init__(self, *args, **kwargs):
         super(RoleD, self).__init__(*args, **kwargs)
