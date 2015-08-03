@@ -183,12 +183,19 @@ rk.setExceptionHandler(__exception_handler)
 if rk.connected == False:
     __print_and_exit ("Rolekit is not running", NOT_RUNNING)
 
+try:
+    command = a.parser
+except AttributeError:
+    # Python 3 does not handle this the same way; treat this as identical to --help
+    parser.print_usage()
+    sys.exit(0)
+
 # version
-if a.parser == "version":
+if command == "version":
     __print_and_exit(rk.get_property("version"))
 
 #list
-elif a.parser == "list":
+elif command == "list":
     if a.list == "roles":
         if a.object_path:
             __print_and_exit("\n".join(sorted(rk.getRoles())))
@@ -215,7 +222,7 @@ elif a.parser == "list":
         __print_and_exit("\n".join(names))
 
 # settings
-elif a.parser == "settings":
+elif command == "settings":
     if "/" in a.what:
         splits = a.what.split("/")
         obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
@@ -244,7 +251,7 @@ elif a.parser == "settings":
 
 
 # deploy
-elif a.parser == "deploy":
+elif command == "deploy":
     obj = rk.getNamedRoleObj(a.role)
 
     # TODO: Implement progress meter
@@ -256,7 +263,7 @@ elif a.parser == "deploy":
     else:
         obj.deploy(a.name, { })
 
-elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
+elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
                    "reset-error", "decommission" ]:
 
     splits = a.instance.split("/")
@@ -264,7 +271,7 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
 
 
     # redeploy
-    if a.parser == "redeploy":
+    if command == "redeploy":
         if a.settings_file:
             obj.redeploy(create_settings_from_file(a.settings_file))
         else:
@@ -272,36 +279,36 @@ elif a.parser in [ "redeploy", "status", "start", "stop", "restart", "update",
 
 
     # status
-    elif a.parser == "status":
+    elif command == "status":
         __print_and_exit(obj.get_property("state"))
 
 
     # start
-    elif a.parser == "start":
+    elif command == "start":
         obj.start()
 
 
     # stop
-    elif a.parser == "stop":
+    elif command == "stop":
         obj.stop()
 
 
     # restart
-    elif a.parser == "restart":
+    elif command == "restart":
         obj.restart()
 
 
     # update
-    elif a.parser == "update":
+    elif command == "update":
         obj.update()
 
 
     # reset-error
-    elif a.parser == "reset-error":
+    elif command == "reset-error":
         obj.resetError()
 
     # decommission
-    elif a.parser == "decommission":
+    elif command == "decommission":
         # TODO: Implement progress meter
         __print("Decommissioning can take a long time. To monitor the "
                 "progress, run \n"
