@@ -87,6 +87,14 @@ def create_settings_from_file(filename):
     except IOError as e:
         __print_and_exit("Error: Failed to open file '%s'" % filename)
 
+
+def create_settings_from_stdin():
+    try:
+        settings = json.loads(''.join(sys.stdin.readlines()))
+    except ValueError as e:
+        __print_and_exit("Error: input is not valid JSON: %s" % e)
+    return settings
+
 parser = argparse.ArgumentParser(description="Rolekit command line control utility")
 subparsers = parser.add_subparsers(help="Commands")
 #subparsers.required = True
@@ -128,7 +136,8 @@ grp_deploy = subparsers.add_parser("deploy", help="Deploy a role to create a rol
 grp_deploy.set_defaults(parser="deploy")
 grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
 grp_deploy.add_argument("--name", metavar="<name>", default="")
-grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>", help="Not using a settings file will result in attempting to deploy without custom settings. This will fail if the role has mandatory settings.")
+grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>", help="Read settings from a file. Not using a settings file will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
+grp_deploy.add_argument("--settings-stdin", action="store_true", help="Read settings from stdin. Not specifying settings will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
 
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
@@ -258,8 +267,13 @@ elif command == "deploy":
     __print("Deployment can take a long time. To monitor the progress, run \n"
             "journalctl -ef -u rolekit")
 
+    if a.settings_file and a.settings_stdin:
+        __print_and_exit("Only one of --settings-file or --settings-stdin may be specified.")
+
     if a.settings_file:
         obj.deploy(a.name, create_settings_from_file(a.settings_file))
+    elif a.settings_stdin:
+        obj.deploy(a.name, create_settings_from_stdin())
     else:
         obj.deploy(a.name, { })
 
@@ -274,6 +288,8 @@ elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
     if command == "redeploy":
         if a.settings_file:
             obj.redeploy(create_settings_from_file(a.settings_file))
+        elif a.settings_stdin:
+            obj.redeploy(create_settings_from_stdin())
         else:
             obj.redeploy({ })
 
