@@ -326,6 +326,11 @@ elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
     # decommission
     elif command == "decommission":
         # TODO: Implement progress meter
+
+        if obj.get_property("state") == "running":
+            __print("Stopping services before decommissioning")
+            obj.stop()
+
         __print("Decommissioning can take a long time. To monitor the "
                 "progress, run \n"
                 "journalctl -ef -u rolekit")
