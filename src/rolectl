@@ -35,7 +35,7 @@ from rolekit.errors import *
 from rolekit.functions import joinArgs, splitArgs
 
 def __print(msg=None):
-    if msg and not a.quiet:
+    if msg and not args.quiet:
         print(msg)
 
 def __print_and_exit(msg=None, exit_code=0):
@@ -53,7 +53,7 @@ def __fail(msg=None):
     __print_and_exit(msg, 2)
 
 def __print_if_verbose(msg=None):
-    if msg and a.verbose:
+    if msg and args.verbose:
         print(msg)
 
 def __print_query_result(value):
@@ -181,7 +181,7 @@ grp_decommission.add_argument("instance", type=instance_type, action="store", me
 grp_decommission.add_argument("--force", action="store_true")
 
 
-a = parser.parse_args()
+args = parser.parse_args()
 
 # Check various impossible combinations of options
 
@@ -193,7 +193,7 @@ if rk.connected == False:
     __print_and_exit ("Rolekit is not running", NOT_RUNNING)
 
 try:
-    command = a.parser
+    command = args.parser
 except AttributeError:
     # Python 3 does not handle this the same way; treat this as identical to --help
     parser.print_usage()
@@ -206,28 +206,28 @@ if command == "version":
 #list
 elif command == "list":
     try:
-        list_type = a.list
+        list_type = args.list
     except AttributeError:
         grp_list.print_usage()
         sys.exit(0)
 
     if list_type == "roles":
-        if a.object_path:
+        if args.object_path:
             __print_and_exit("\n".join(sorted(rk.getRoles())))
         __print_and_exit("\n".join(sorted(rk.getRoleNames())))
     elif list_type == "instances":
-        if a.state:
-            instances = rk.getAllRoleInstancesByState(a.state)
+        if args.state:
+            instances = rk.getAllRoleInstancesByState(args.state)
         else:
             instances = rk.getAllRoleInstances()
 
-        if a.object_path:
+        if args.object_path:
             __print_and_exit("\n".join(instances))
 
         names = [ ]
         for i in instances:
             o = rk.getRoleInstanceObj(i)
-            if a.verbose:
+            if args.verbose:
                 names.append("%s/%s: %s" % (o.get_property("type"),
                                             o.get_property("name"),
                                             o.get_property("state")))
@@ -238,23 +238,23 @@ elif command == "list":
 
 # settings
 elif command == "settings":
-    if "/" in a.what:
-        splits = a.what.split("/")
+    if "/" in args.what:
+        splits = args.what.split("/")
         obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
     else:
-        obj = rk.getNamedRoleObj(a.what)
+        obj = rk.getNamedRoleObj(args.what)
 
-    if a.key:
-        if "/" in a.what:
-            __print_and_exit(obj.get_property(a.key))
+    if args.key:
+        if "/" in args.what:
+            __print_and_exit(obj.get_property(args.key))
         else:
             props = obj.get_properties()["DEFAULTS"]
-            if a.key not in props:
+            if args.key not in props:
                 __print_and_exit("Error: No property '%s' in role '%s'" % \
-                                 (a.key, a.what))
-            __print_and_exit(props[a.key])
+                                 (args.key, args.what))
+            __print_and_exit(props[args.key])
 
-    if "/" in a.what:
+    if "/" in args.what:
         props = obj.get_properties()
     else:
         props = obj.get_properties()["DEFAULTS"]
@@ -267,34 +267,34 @@ elif command == "settings":
 
 # deploy
 elif command == "deploy":
-    obj = rk.getNamedRoleObj(a.role)
+    obj = rk.getNamedRoleObj(args.role)
 
     # TODO: Implement progress meter
     __print("Deployment can take a long time. To monitor the progress, run \n"
             "journalctl -ef -u rolekit")
 
-    if a.settings_file and a.settings_stdin:
+    if args.settings_file and args.settings_stdin:
         __print_and_exit("Only one of --settings-file or --settings-stdin may be specified.")
 
-    if a.settings_file:
-        obj.deploy(a.name, create_settings_from_file(a.settings_file))
-    elif a.settings_stdin:
-        obj.deploy(a.name, create_settings_from_stdin())
+    if args.settings_file:
+        obj.deploy(args.name, create_settings_from_file(args.settings_file))
+    elif args.settings_stdin:
+        obj.deploy(args.name, create_settings_from_stdin())
     else:
-        obj.deploy(a.name, { })
+        obj.deploy(args.name, { })
 
 elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
                    "reset-error", "decommission" ]:
 
-    splits = a.instance.split("/")
+    splits = args.instance.split("/")
     obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
 
 
     # redeploy
     if command == "redeploy":
-        if a.settings_file:
-            obj.redeploy(create_settings_from_file(a.settings_file))
-        elif a.settings_stdin:
+        if args.settings_file:
+            obj.redeploy(create_settings_from_file(args.settings_file))
+        elif args.settings_stdin:
             obj.redeploy(create_settings_from_stdin())
         else:
             obj.redeploy({ })
@@ -340,7 +340,7 @@ elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
         __print("Decommissioning can take a long time. To monitor the "
                 "progress, run \n"
                 "journalctl -ef -u rolekit")
-        obj.decommission(a.force)
+        obj.decommission(args.force)
 
 
 else:
