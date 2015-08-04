@@ -205,11 +205,17 @@ if command == "version":
 
 #list
 elif command == "list":
-    if a.list == "roles":
+    try:
+        list_type = a.list
+    except AttributeError:
+        grp_list.print_usage()
+        sys.exit(0)
+
+    if list_type == "roles":
         if a.object_path:
             __print_and_exit("\n".join(sorted(rk.getRoles())))
         __print_and_exit("\n".join(sorted(rk.getRoleNames())))
-    elif a.list == "instances":
+    elif list_type == "instances":
         if a.state:
             instances = rk.getAllRoleInstancesByState(a.state)
         else:
