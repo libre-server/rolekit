@@ -42,4 +42,11 @@
     <surname>Trmač</surname>
     <email>mitr@redhat.com</email>
   </author>
+
+  <author>
+    <contrib>Developer</contrib>
+    <firstname>Nils</firstname>
+    <surname>Philippsen</surname>
+    <email>nils@redhat.com</email>
+  </author>
 </authorgroup>
