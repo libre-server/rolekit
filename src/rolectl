@@ -195,9 +195,8 @@ if rk.connected == False:
 try:
     command = args.parser
 except AttributeError:
-    # Python 3 does not handle this the same way; treat this as identical to --help
-    parser.print_usage()
-    sys.exit(0)
+    # Python 3 does not handle this the same way; treat this similarly to --help
+    parser.error("missing command")
 
 # version
 if command == "version":
@@ -208,8 +207,7 @@ elif command == "list":
     try:
         list_type = args.list
     except AttributeError:
-        grp_list.print_usage()
-        sys.exit(0)
+        grp_list.error("must specify 'roles' or 'instances'")
 
     if list_type == "roles":
         if args.object_path:
