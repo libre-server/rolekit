@@ -2,8 +2,10 @@ Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
 Version: 0.4.0
 Release: 0.dev%{?dist}
-URL: http://fedorahosted.org/rolekit
+URL: https://github.com/libre-server/rolekit
 License: GPLv2+
+# fixme, point to github once the tarballs are there
+# https://github.com/libre-server/rolekit/issues/37
 Source0: https://fedorahosted.org/released/rolekit/%{name}-%{version}.tar.bz2
 BuildArch: noarch
 BuildRequires: gettext

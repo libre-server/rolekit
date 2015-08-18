@@ -29,7 +29,7 @@ Install the following requirements or packages:
 * glib2-devel: /usr/share/aclocal/gsettings.m4
 * systemd-units
 * dbus-python
-* python-slip-dbus (http://fedorahosted.org/python-slip)
+* python-slip-dbus (https://github.com/nphilipp/python-slip)
 * python-decorator
 
 To be able to create man pages and documentation from docbook files:

@@ -25,21 +25,12 @@
   <title>Notes</title>
   <variablelist>
     <varlistentry>
-      <term>rolekit home page at fedorahosted.org:</term>
+      <term>rolekit home page at github.com:</term>
       <listitem>
-	<para>
-	  <ulink url="https://fedorahosted.org/rolekit/"></ulink>
-	</para>
-      </listitem>
-    </varlistentry>
-    <varlistentry>
-      <term>More documentation with examples:</term>
-      <listitem>
-	<para>
-	  <ulink url="http://fedoraproject.org/wiki/rolekit"></ulink>
-	</para>
+    <para>
+      <ulink url="https://github.com/libre-server/rolekit/"></ulink>
+    </para>
       </listitem>
     </varlistentry>
   </variablelist>
 </refsect1>
-
