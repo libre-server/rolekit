@@ -133,12 +133,12 @@ class Role(RoleBase):
         try:
             self.pg_uid = pwd.getpwnam('postgres').pw_uid
         except KeyError:
-            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgress user")
+            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgres user")
 
         try:
             self.pg_gid = grp.getgrnam('postgres').gr_gid
         except KeyError:
-            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgress group")
+            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgres group")
 
         if first_instance:
             # Initialize the database on the filesystem
@@ -331,12 +331,12 @@ class Role(RoleBase):
         try:
             self.pg_uid = pwd.getpwnam('postgres').pw_uid
         except KeyError:
-            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgress user")
+            raise RolekitError(MISSING_ID, "Could not retrieve UID for postgres user")
 
         try:
             self.pg_gid = grp.getgrnam('postgres').gr_gid
         except KeyError:
-            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgress group")
+            raise RolekitError(MISSING_ID, "Could not retrieve GID for postgres group")
 
         # Check whether this is the last instance of the database
         last_instance = True
