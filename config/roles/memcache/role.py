@@ -27,6 +27,7 @@ import dbus.service
 from rolekit.server.rolebase import *
 from rolekit.dbus_utils import *
 from rolekit.errors import *
+from rolekit.server.io.systemd import enable_units
 from rolekit.server.io.systemd import SystemdContainerServiceUnit
 
 MEMCACHED_DOCKER_IMAGE = "fedora/memcached"
@@ -148,8 +149,7 @@ class Role(RoleBase):
         log.debug2("Enabling the Docker container manager")
 
         # Enable and start the docker service
-        with SystemdJobHandler() as job_handler:
-            job_handler.manager.EnableUnitFiles(["docker.service"], False, True)
+        enable_units(['docker.service'])
 
         log.debug2("Starting the Docker container manager")
         with SystemdJobHandler() as job_handler:

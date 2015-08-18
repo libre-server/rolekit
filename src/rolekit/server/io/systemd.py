@@ -27,6 +27,35 @@ import json
 from rolekit.errors import RolekitError
 from rolekit.config import SYSTEMD_UNITS, SYSTEMD_DEPS, DBUS_SEND
 from rolekit.config.dbus import DBUS_INTERFACE, DBUS_PATH
+from rolekit.dbus_utils import SystemdJobHandler
+
+def enable_units(units):
+    '''
+    This routine enables systemd units and triggers a reload.
+    Without the reload, the change in behavior is not communicated
+    to client applications such as systemctl (it will still take
+    effect on the next boot, but tools will not reflect this
+    reality).
+    :param units: A list containing one or more units to enable
+    :return:Nothing
+    '''
+    with SystemdJobHandler() as job_handler:
+        job_handler.manager.EnableUnitFiles(units, False, True)
+        job_handler.manager.Reload()
+
+def disable_units(units):
+    '''
+    This routine disables systemd units and triggers a reload.
+    Without the reload, the change in behavior is not communicated
+    to client applications such as systemctl (it will still take
+    effect on the next boot, but tools will not reflect this
+    reality).
+    :param units: A list containing one or more units to enable
+    :return:Nothing
+    '''
+    with SystemdJobHandler() as job_handler:
+        job_handler.manager.DisableUnitFiles(units, False)
+        job_handler.manager.Reload()
 
 class SystemdTargetUnit(dict):
     """
