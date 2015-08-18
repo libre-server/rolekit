@@ -142,8 +142,8 @@ grp_deploy.add_argument("--settings-stdin", action="store_true", help="Read sett
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
 grp_redeploy.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
-grp_redeploy.add_argument("--settings-file", type=str, metavar="<json settings file>")
-grp_redeploy.add_argument("--settings-stdin", action="store_true")
+grp_redeploy.add_argument("--settings-file", type=str, metavar="<json settings file>", help="Read settings from a file. Not using a settings file will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
+grp_redeploy.add_argument("--settings-stdin", action="store_true", help="Read settings from stdin. Not specifying settings will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
 
 
 grp_status = subparsers.add_parser("status", help="Get status for role/instance")
