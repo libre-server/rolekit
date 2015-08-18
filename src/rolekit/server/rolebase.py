@@ -35,6 +35,8 @@ from rolekit.config.dbus import *
 from rolekit.logger import log
 from rolekit.server.decorators import *
 from rolekit.server.io.rolesettings import RoleSettings
+from rolekit.server.io.systemd import enable_units
+from rolekit.server.io.systemd import disable_units
 from rolekit.server.io.systemd import SystemdTargetUnit
 from rolekit.server.io.systemd import SystemdFailureUnit
 from rolekit.server.io.systemd import SystemdExtensionUnits
@@ -614,6 +616,11 @@ class RoleBase(slip.dbus.service.Object):
 
         with SystemdJobHandler() as job_handler:
             target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+
+            log.debug9("Enabling %s" % target_unit)
+            enable_units([target_unit])
+
+            log.debug9("Starting %s" % target_unit)
             job_path = job_handler.manager.StartUnit(target_unit, "replace")
             job_handler.register_job(job_path)
 
@@ -634,6 +641,11 @@ class RoleBase(slip.dbus.service.Object):
 
         with SystemdJobHandler() as job_handler:
             target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+
+            log.debug9("Disabling %s" % target_unit)
+            disable_units([target_unit])
+
+            log.debug9("Stopping %s" % target_unit)
             job_path = job_handler.manager.StopUnit(target_unit, "replace")
             job_handler.register_job(job_path)
 

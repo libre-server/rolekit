@@ -317,7 +317,7 @@
             <term><methodname>start</methodname>() &rarr; Nothing</term>
             <listitem>
               <para>
-		Start the instance.
+		Start the instance and configure it to start on boot.
 	      </para>
               <para>
 		Only functional if the instance is in <replaceable>ready-to-start</replaceable> state.
@@ -329,7 +329,7 @@
             <term><methodname>stop</methodname>() &rarr; Nothing</term>
             <listitem>
               <para>
-		Stop the instance.
+		Stop the instance and disable starting it on boot.
 	      </para>
               <para>
 		Only functional if the instance is in <replaceable>running</replaceable> state.
