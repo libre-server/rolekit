@@ -15,5 +15,5 @@ Type=dbus
 BusName=org.fedoraproject.rolekit1
 
 [Install]
-WantedBy=basic.target
+WantedBy=multi-user.target
 Alias=dbus-org.fedoraproject.rolekit1.service
