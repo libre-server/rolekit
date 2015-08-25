@@ -68,12 +68,6 @@ tx-pull:
 tx-push:
 	tx push -s
 
-#archive: update-po tx-push $(desktop_DATA) tag dist
-archive: update-po $(desktop_DATA) tag dist
-	scp "${PACKAGE_NAME}-$(PACKAGE_VERSION).tar.bz2" fedorahosted.org:${PACKAGE_NAME}
-	@echo "The archive is in ${PACKAGE_NAME}-$(PACKAGE_VERSION).tar.bz2"
-	@echo "Also have a look at https://fedorahosted.org/released/${PACKAGE_NAME}/"
-
 local: distclean
 	@rm -rf ${PACKAGE_NAME}-$(PACKAGE_VERSION).tar.bz2
 	@rm -rf /tmp/${PACKAGE_NAME}-$(PACKAGE_VERSION) /tmp/${PACKAGE_NAME}
