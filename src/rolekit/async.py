@@ -171,6 +171,8 @@ def start_with_dbus_callbacks(generator, result_handler, error_handler):
         # So the three cases in dbus_handle_exceptions amount to just this.
         if not isinstance(e, DBusException):
             log.error("{0}: {1}".format(type(e), str(e)))
+            if not isinstance(e, RolekitError):
+                log.exception()
             e = DBusException(str(e))
         error_handler(e)
 
