@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-COMMANDS="version list settings deploy redeploy status start stop restart update decommission"
+COMMANDS="version list settings deploy redeploy status start stop restart update decommission reset-error"
 
 _contains() {
     local y z=$1; shift
