@@ -43,6 +43,50 @@ class RoleSettings(dict):
             self.name = self.get_unique_instance(self._type)
 
         self.filepath = "%s/%s.json" % (self.path, self.name)
+        self._callbacks = { "changed": None }
+
+    def connect(self, signal, handler, *args):
+        """Connect a callback to the given signal with optional user data.
+
+        :param str signal:
+            The signal to connect to, right now only "changed" is supported.
+        :param callable handler:
+            Callback handler to connect the signal to.
+        :param *args:
+            Variable data which is passed through to the signal handler.
+
+        The "changed" signal:
+            user_function(property, new_value[, *args])
+        """
+        if signal in self._callbacks:
+            self._callbacks[signal] = (handler, args)
+        else:
+            raise ValueError("Unknown signal name '%s'" % signal)
+
+    def __setitem__(self, key, value):
+        """Set item in RoleSettings and call the handler the changed signal
+        if set.
+
+        :param str key:
+            The name of the property to be changed.
+        :param value:
+            Variable value data the property will be set to.
+        """
+        super(RoleSettings, self).__setitem__(key, value)
+        # call callback
+        if "changed" in self._callbacks and self._callbacks["changed"]:
+            cb = self._callbacks["changed"]
+            cb_args = [ key, value ]
+            try:
+                cb_args.extend(cb[1])
+            except TypeError:
+                # Got None here
+                pass
+            try:
+                # call back
+                cb[0](*cb_args)
+            except Exception as msg:
+                print(msg)
 
     def read(self):
         with open(self.filepath, "r") as f:

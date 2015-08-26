@@ -100,6 +100,7 @@ class RoleBase(slip.dbus.service.Object):
                                            self._escaped_name)
         self._directory = directory
         self._settings = settings
+        self._settings.connect("changed", self._emit_property_changed)
         # TODO: place target_unit in settings
         self.target_unit = "role-%s-%s.target" % (self._type, self.get_name())
 
@@ -581,6 +582,15 @@ class RoleBase(slip.dbus.service.Object):
 
             # write validated setting
             self._settings.write()
+
+    # emit property changed
+    def _emit_property_changed(self, prop, value):
+        # use value from get_dbus_property, it is already converted for dbus
+        if prop in self._DEFAULTS:
+            dbus_changed = dbus.Dictionary(signature="sv")
+            dbus_changed[prop] = self.get_dbus_property(self, prop)
+            self.PropertiesChanged(DBUS_INTERFACE_ROLE_INSTANCE,
+                                   dbus_changed, [ ])
 
     # package handling
 
