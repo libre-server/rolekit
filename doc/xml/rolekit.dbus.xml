@@ -163,7 +163,7 @@
 		Deploy the role and create an instance at <link linkend="rolekit1.role.instance">org.fedoraproject.rolekit1.role.instance</link> with name <parameter>name</parameter> and <parameter>settings</parameter>.
               </para>
 	      <para>
-		If the name is empty, rolekit will use the next lowest unused instance number starting by 1 as the name. The first not named instance will be 1, the second 2 and so on. The name needs to be unique for all instances of a role.
+		If the name is empty, rolekit will use the next lowest unused instance number starting by 1 as the name. The first not named instance will be 1, the second 2 and so on. The name needs to be unique for all instances of a role. Note: this name-generation may be racy. It is always recommended to specify a name explicitly.
 	      </para>
 	      <para>
 		Settings are key value pairs. There are mandatory, optional and read only settings. Please have a look at the documentation of the role to get further information about settings in the role.

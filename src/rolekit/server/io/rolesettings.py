@@ -24,15 +24,24 @@ import shutil
 import json
 
 from rolekit.config import *
+from rolekit.logger import log
 
 class RoleSettings(dict):
     """ Rolesettings store """
 
     def __init__(self, type_name, name, *args, **kwargs):
         super(RoleSettings, self).__init__(*args, **kwargs)
+
         self.name = name
         self._type = type_name
+
         self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._type)
+
+        # If we need to autogenerate a name, do it here
+        if not name:
+            # Check both the existing and pending role directories
+            self.name = self.get_unique_instance(self._type)
+
         self.filepath = "%s/%s.json" % (self.path, self.name)
 
     def read(self):
@@ -69,3 +78,21 @@ class RoleSettings(dict):
             os.remove(self.filepath)
         except OSError:
             pass
+
+    @staticmethod
+    def get_unique_instance(type):
+        instances = [ ]
+        for path in ("%s/%s" % (ETC_ROLEKIT_ROLES, type),):
+            if os.path.exists(path) and os.path.isdir(path):
+                for name in sorted(os.listdir(path)):
+                    if not name.endswith(".json"):
+                        continue
+                    # Add this instance to the list, sans .json
+                    instances.append(name[:-5])
+
+        # We'll use numeric identifiers for instances
+        id = 1
+        while str(id) in instances:
+            id += 1
+        log.debug1("Generating unique instance %s" % str(id))
+        return str(id)

@@ -303,19 +303,17 @@ class DBusRole(slip.dbus.service.Object):
 
         # TODO: lock
 
-        # create name if empty
-        if not name:
-            id = 1
-            while str(id) in self._instances:
-                id += 1
-            name = str(id)
+        # Create the settings object. If no name has been passed in,
+        # this function will create one from the next available value.
+        # Note: this isn't protected by a lock, so name-generation
+        # might be racy.
+        settings = RoleSettings(self._name, name)
 
         # create escaped name and check if it is already in use
-        instance_escaped_name = dbus_label_escape(name)
+        instance_escaped_name = dbus_label_escape(settings.name)
         if instance_escaped_name in self._instances:
             raise RolekitError(NAME_CONFLICT, instance_escaped_name)
 
-        settings = RoleSettings(self._name, name)
         try:
             settings.read()
         except ValueError as e:
@@ -326,7 +324,7 @@ class DBusRole(slip.dbus.service.Object):
             raise RolekitError(NAME_CONFLICT, settings.filename)
 
         # create role
-        role = self._role(self, name, self._name, self._directory, settings,
+        role = self._role(self, settings.name, self._name, self._directory, settings,
                           self._path,
                           "%s/%s/%s" % (DBUS_PATH_ROLES, self._escaped_name,
                                         instance_escaped_name),
