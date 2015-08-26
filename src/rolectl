@@ -171,6 +171,11 @@ grp_update.set_defaults(parser="update")
 grp_update.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
 
 
+grp_sanitize = subparsers.add_parser("sanitize", help="Sanitize role settings")
+grp_sanitize.set_defaults(parser="sanitize")
+grp_sanitize.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
+
+
 grp_reset_error = subparsers.add_parser("reset-error", help="Reset error state in a role instance")
 grp_reset_error.set_defaults(parser="reset-error")
 grp_reset_error.add_argument("instance", type=instance_type, action="store", metavar="<role/instance>")
@@ -283,7 +288,7 @@ elif command == "deploy":
         obj.deploy(args.name, { })
 
 elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
-                   "reset-error", "decommission" ]:
+                  "sanitize", "reset-error", "decommission" ]:
 
     splits = args.instance.split("/")
     obj = rk.getNamedRoleObj(splits[0]).getNamedInstanceObj(splits[1])
@@ -324,9 +329,15 @@ elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
         obj.update()
 
 
+    # sanitize
+    elif command == "sanitize":
+        obj.sanitize()
+
+
     # reset-error
     elif command == "reset-error":
         obj.resetError()
+
 
     # decommission
     elif command == "decommission":

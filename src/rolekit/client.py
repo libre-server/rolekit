@@ -183,6 +183,11 @@ class RolekitClientRoleInstance(object):
     def resetError(self):
         self.instance.resetError()
 
+    @slip.dbus.polkit.enable_proxy
+    @handle_exceptions
+    def sanitize(self):
+        self.instance.sanitize()
+
 # rolekit client
 
 class RolekitClient(object):

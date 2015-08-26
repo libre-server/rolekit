@@ -1175,3 +1175,22 @@ class RoleBase(slip.dbus.service.Object):
 
         # Change to state updating
         self.change_state(READY_TO_START, write=True)
+
+
+    @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, out_signature='')
+    @dbus_handle_exceptions
+    def sanitize(self, sender=None):
+        """sanitize settings to remove passwords or other sensitive data"""
+        # Make sure we are in the proper state
+        self.assert_state(READY_TO_START, RUNNING, ERROR)
+
+        # Log
+        log.debug1("%s.sanitize()", self._log_prefix)
+
+        if hasattr(self, "do_sanitize"):
+            try:
+                self.do_sanitize()
+            except:
+                raise
+            else:
+                self._settings.write()

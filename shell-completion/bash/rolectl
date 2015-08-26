@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-COMMANDS="version list settings deploy redeploy status start stop restart update decommission reset-error"
+COMMANDS="version list settings deploy redeploy status start stop restart update decommission reset-error sanitize"
 
 _contains() {
     local y z=$1; shift
@@ -154,6 +154,13 @@ _rolectl()
 	fi
 
     elif [ "$command" = "update" ]; then
+	instances=$(_list_instances)
+
+	if ! _contains "$what" $instances; then
+	    comps="$instances"
+	fi
+
+    elif [ "$command" = "sanitize" ]; then
 	instances=$(_list_instances)
 
 	if ! _contains "$what" $instances; then

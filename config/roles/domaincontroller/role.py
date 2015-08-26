@@ -364,6 +364,12 @@ class Role(RoleBase):
         return False
 
 
+    # Sanitize settings
+    def do_sanitize(self):
+        """Sanitize settings"""
+        self._settings['dm_password'] = None
+
+
     # Static method for use in roles and instances
     #
     # Usage in roles: <class>.do_get_dbus_property(<class>, key)

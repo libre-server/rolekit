@@ -287,6 +287,18 @@
           </varlistentry>
 
           <varlistentry>
+            <term><methodname>sanitize</methodname>() &rarr; Nothing</term>
+            <listitem>
+              <para>
+		Sanitize settings of the role instance like passwords or other sensitive data.
+	      </para>
+              <para>
+		Only functional if the instance is in <replaceable>ready-to-start</replaceable>, <replaceable>running</replaceable> or <replaceable>error</replaceable> state.
+              </para>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
             <term><methodname>resetError</methodname>() &rarr; Nothing</term>
             <listitem>
               <para>
