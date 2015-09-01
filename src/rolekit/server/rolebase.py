@@ -1066,21 +1066,27 @@ class RoleBase(slip.dbus.service.Object):
             # Change to redeploying state
             self.change_state(REDEPLOYING)
 
+            # Uninstall firewall
+            self.uninstallFirewall()
 
             # Copy _DEFAULTS to self._settings
             self.copy_defaults()
 
+            # Install package groups and packages
+            log.debug9("TRACE: Installing packages")
+            yield async.call_future(self.installPackages())
+
+            # Install firewall
+            self.installFirewall()
+
             # Call do_redeploy_async
+            log.debug9("TRACE: Performing role-specific redeployment")
             yield async.call_future(self.do_redeploy_async(values, sender))
 
             # Continue only after successful deployment:
             # Apply values to self._settings
-            try:
-                self.apply_values(values)
-            except:
-                # applying of values failed, set state to error
-                self.change_state(ERROR, write=True)
-                raise
+            log.debug9("TRACE: role-specific redeployment complete, applying values")
+            self.apply_values(values)
 
             # Change to ready to start state
             self.change_state(READY_TO_START, write=True)
@@ -1089,6 +1095,7 @@ class RoleBase(slip.dbus.service.Object):
             # We do this because many role-installers will conclude by
             # starting anyway and we want to ensure that our role mechanism
             # is in sync with them.
+            log.debug9("TRACE: Starting %s" % self.name)
             yield async.call_future(self.__start_async(sender))
 
         except:
