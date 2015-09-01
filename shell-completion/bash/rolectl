@@ -101,8 +101,9 @@ _rolectl()
 		if ! _contains "--name" ${COMP_WORDS[*]}; then
 		    comps+="--name "
 		fi
-		if ! _contains "--settings-file" ${COMP_WORDS[*]}; then
-		    comps+="--settings-file "
+		if ! _contains "--settings-file" ${COMP_WORDS[*]} && \
+			! _contains "--settings-stdin" ${COMP_WORDS[*]}; then
+		    comps+="--settings-file --settings-stdin "
 		fi
 	    fi
 	fi
@@ -119,8 +120,9 @@ _rolectl()
 		return 0
 	    else
 		comps=""
-		if ! _contains "--settings-file" ${COMP_WORDS[*]}; then
-		    comps="--settings-file"
+		if ! _contains "--settings-file" ${COMP_WORDS[*]} && \
+			! _contains "--settings-stdin" ${COMP_WORDS[*]}; then
+		    comps+="--settings-file --settings-stdin "
 		fi
 	    fi
 	fi
