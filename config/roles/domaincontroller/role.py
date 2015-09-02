@@ -65,7 +65,8 @@ class Role(RoleBase):
         # the upper-case version of domain_name if not.
         "realm_name": None,
 
-        # Must be supplied
+        # If not supplied, do_deploy_async() will generate a
+        # random password
         "admin_password": None,
 
         # If not supplied, do_deploy_async() will generate a
@@ -139,10 +140,6 @@ class Role(RoleBase):
         #
         # In case of error raise an exception
 
-        # Ensure we have all the mandatory arguments
-        if 'admin_password' not in values:
-            raise RolekitError(INVALID_VALUE, "admin_password unset")
-
         # If the hostname wasn't specified, get it from the system
         fqdn = socket.getfqdn()
         if 'host_name' not in values:
@@ -168,10 +165,20 @@ class Role(RoleBase):
             values['realm_name'] = values['domain_name'].upper()
 
         # If left unspecified, assign a random password for
+        # the administrative user
+        if 'admin_password' not in values:
+            admin_pw_provided = False
+            values['admin_password'] = generate_password()
+        else:
+            admin_pw_provided = True
+
+        # If left unspecified, assign a random password for
         # the directory manager
         if 'dm_password' not in values:
-            # Generate a random password
+            dm_pw_provided = False
             values['dm_password'] = generate_password()
+        else:
+            dm_pw_provided = True
 
         # Call ipa-server-install with the requested arguments
         ipa_install_args = [
@@ -232,9 +239,12 @@ class Role(RoleBase):
         # TODO: If the user has specified a root CA file,
         # set up the argument to ipa-server-install
 
-        # Remove the admin_password from the values so
-        # it won't be saved to the settings
-        values.pop('admin_password', None)
+        # Remove the passwords from the values so
+        # they won't be saved to the settings
+        if admin_pw_provided:
+            values.pop('admin_password', None)
+        if dm_pw_provided:
+            values.pop('dm_password', None)
 
         result = yield async.subprocess_future(ipa_install_args)
 
@@ -367,6 +377,7 @@ class Role(RoleBase):
     # Sanitize settings
     def do_sanitize(self):
         """Sanitize settings"""
+        self._settings['admin_password'] = None
         self._settings['dm_password'] = None
 
 
@@ -386,6 +397,7 @@ class Role(RoleBase):
         if prop in [ "domain_name",
                      "realm_name",
                      "host_name",
+                     "admin_password",
                      "dm_password",
                      "root_ca_file",
                      "primary_ip" ]:
@@ -399,13 +411,6 @@ class Role(RoleBase):
             return dbus.Int32(x.get_property(x, prop))
         elif prop in [ "dns_forwarders" ]:
             return dbus.Dictionary(x.get_property(x, prop), "sas")
-
-        # Do not export the admin_password as that is a user account
-        # and may have been changed.
-        # We have to export the dm_password as it may be the only
-        # way to recover it, if it was generated randomly.
-        elif prop in [ "admin_password" ]:
-            raise RolekitError(UNKNOWN_SETTING, prop)
 
         raise RolekitError(INVALID_PROPERTY, prop)
 
@@ -456,6 +461,10 @@ class Role(RoleBase):
         def host_name(self):
             return self.get_dbus_property(self, "host_name")
 
+        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
+        @dbus_handle_exceptions
+        def admin_password(self):
+            return self.get_dbus_property(self, "admin_password")
 
         @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
         @dbus_handle_exceptions

@@ -70,18 +70,7 @@
         to complete.
       </para>
       <para>
-        <variablelist>
-          <varlistentry>
-            <term><command>admin_password</command></term>
-            <listitem>
-              <para>
-                Specify the initial password for the <quote>admin</quote> user
-                of FreeIPA. This password can be changed later through normal
-                password-change operations.
-              </para>
-            </listitem>
-          </varlistentry>
-        </variablelist>
+        All settings for the Domain Controller Server Role are optional.
       </para>
     </refsect2>
     <refsect2 id="other-settings">
@@ -122,6 +111,23 @@
               <para>
                 Default: unset. Autodetected as the domain_name in all upper-case.
               </para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term><command>admin_password</command></term>
+            <listitem>
+              <para>
+                Specify the initial password for the <quote>admin</quote> user
+                of FreeIPA. This password can be changed later through normal
+                password-change operations.
+              </para>
+              <para>
+                Default: unset. If not specified, a random password will be generated
+                and retrievable later through the D-BUS API via:
+              </para>
+              <programlisting>
+rolectl settings domaincontroller/&lt;instance&gt;
+              </programlisting>
             </listitem>
           </varlistentry>
           <varlistentry>
