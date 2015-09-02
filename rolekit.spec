@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.3.93
+Version: 0.3.94
 Release: 0%{?dist}
 URL: https://github.com/libre-server/rolekit
 License: GPLv2+
