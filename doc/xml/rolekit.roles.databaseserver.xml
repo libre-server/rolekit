@@ -69,16 +69,7 @@
         to complete.
       </para>
       <para>
-        <variablelist>
-          <varlistentry>
-            <term><command>database</command></term>
-            <listitem>
-              <para>
-                Specify the name of the database to be created
-              </para>
-            </listitem>
-          </varlistentry>
-        </variablelist>
+        All settings for the Database Server Role are optional.
       </para>
     </refsect2>
     <refsect2 id="other-settings">
@@ -88,6 +79,19 @@
       </para>
       <para>
         <variablelist>
+          <varlistentry>
+            <term><command>database</command></term>
+            <listitem>
+              <para>
+                Specify the name of the database to be created
+              </para>
+              <para>
+                Default: The name of the role instance. If the role name
+                begins with a non-alphabetic character (such as when the name
+                was auto-generated), it will be prefixed with "db_".
+              </para>
+            </listitem>
+          </varlistentry>
           <varlistentry>
             <term><command>owner</command></term>
             <listitem>
