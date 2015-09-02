@@ -21,6 +21,7 @@
 # force use of pygobject3 in python-slip
 from gi.repository import GObject
 import sys
+import os
 from rolekit.server.io.systemd import SystemdExtensionUnits
 sys.modules['gobject'] = GObject
 
@@ -988,6 +989,36 @@ class RoleBase(slip.dbus.service.Object):
 
             # Change to ready to start state
             self.change_state(READY_TO_START, write=True)
+
+            # In case this was a nextboot deployment, make sure to remove
+            # the deferred role settings and systemd unit
+            try:
+                # Remove settings
+                deferredsettings = "%s/%s/%s.json" % (ETC_ROLEKIT_DEFERREDROLES, self.type, self.name)
+                os.unlink(deferredsettings)
+
+                # Remove systemd service unit
+                deferredunit = "%s/deferred-role-deployment-%s-%s.service" % (
+                    SYSTEMD_UNITS, self.type, self.name)
+                disable_units([deferredunit])
+                os.unlink(deferredunit)
+            except FileNotFoundError:
+                # Files didn't exist; ignore that
+                pass
+            except PermissionError:
+                # SELinux bug?
+                log.fatal("ERROR: permission error attempting to delete %s or %s" % (
+                    deferredsettings, deferredunit
+                ))
+                # We'll continue anyway, since the service should be runnable at this point
+                # The ConditionPathExists will prevent the service from trying to deploy
+                # again
+                pass
+
+            # Tell systemd to reload the daemon configuration
+            log.debug9("Reloading systemd units\n")
+            with SystemdJobHandler() as job_handler:
+                job_handler.manager.Reload()
 
             # Attempt to start the newly-deployed role
             # We do this because many role-installers will conclude by

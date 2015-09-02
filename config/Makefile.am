@@ -89,6 +89,7 @@ uninstall-service: uninstall-sysconfig
 install-config:
 	$(MKDIR_P) $(DESTDIR)$(sconfdir)
 	$(MKDIR_P) $(DESTDIR)$(sconfdir)/roles
+	$(MKDIR_P) $(DESTDIR)$(sconfdir)/deferredroles
 	$(MKDIR_P) $(DESTDIR)$(prefixlibdir)
 	cp -r $(srcdir)/roles $(DESTDIR)$(prefixlibdir)
 	chmod -R u+w $(DESTDIR)$(prefixlibdir)/roles
@@ -98,6 +99,7 @@ install-config:
 
 uninstall-config:
 	rmdir $(DESTDIR)$(sconfdir)/roles
+	rmdir $(DESTDIR)$(sconfdir)/deferredroles
 	rm -rf $(DESTDIR)$(prefixlibdir)/roles/*
 	rmdir $(DESTDIR)$(prefixlibdir)/roles
 

@@ -98,6 +98,9 @@ _rolectl()
 		return 0
 	    else
 		comps=""
+		if ! _contains "--deferred" ${COMP_WORDS[*]}; then
+			comps+="--deferred "
+		fi
 		if ! _contains "--name" ${COMP_WORDS[*]}; then
 		    comps+="--name "
 		fi

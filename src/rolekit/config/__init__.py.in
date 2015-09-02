@@ -39,6 +39,7 @@ ROLEKIT_VERSION = "@VERSION@"
 
 ETC_ROLEKIT = '/etc/rolekit'
 ETC_ROLEKIT_ROLES = ETC_ROLEKIT + '/roles'
+ETC_ROLEKIT_DEFERREDROLES = ETC_ROLEKIT + '/deferredroles'
 
 USR_LIB_ROLEKIT = '/usr/lib/rolekit'
 ROLEKIT_ROLES = USR_LIB_ROLEKIT + '/roles'

@@ -33,6 +33,9 @@ import json
 from rolekit.client import *
 from rolekit.errors import *
 from rolekit.functions import joinArgs, splitArgs
+from rolekit.server.io.rolesettings import RoleSettings
+from rolekit.rolectl import generate_nextboot_unit
+from rolekit.util import generate_password
 
 def __print(msg=None):
     if msg and not args.quiet:
@@ -138,6 +141,7 @@ grp_deploy.add_argument("role", type=str, action="store", metavar="<role>")
 grp_deploy.add_argument("--name", metavar="<name>", default="")
 grp_deploy.add_argument("--settings-file", type=str, metavar="<json settings file>", help="Read settings from a file. Not using a settings file will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
 grp_deploy.add_argument("--settings-stdin", action="store_true", help="Read settings from stdin. Not specifying settings will result in attempting to deploy with default settings. This will fail if the role has mandatory settings.")
+grp_deploy.add_argument("--deferred", action="store_true", help="Configure rolekit to deploy the role on the next system boot. This is mostly useful for automated deployment tools such as kickstart.")
 
 grp_redeploy = subparsers.add_parser("redeploy", help="Redeploy a role instance")
 grp_redeploy.set_defaults(parser="redeploy")
@@ -193,10 +197,21 @@ args = parser.parse_args()
 
 # use rolekit
 
-rk = RolekitClient()
-rk.setExceptionHandler(__exception_handler)
-if rk.connected == False:
-    __print_and_exit ("Rolekit is not running", NOT_RUNNING)
+try:
+    # Skip connecting to the D-BUS if we are setting up for
+    # next-boot. This is because the D-BUS probably isn't
+    # present at all.
+    connect_client = not args.deferred
+except AttributeError:
+    connect_client = True
+
+if connect_client:
+    rk = RolekitClient()
+    rk.setExceptionHandler(__exception_handler)
+    if rk.connected == False:
+        # If we're queuing actions for the next boot, we will not
+        # contact DBUS at all, so this is okay to ignore
+        __print_and_exit ("Rolekit is not running", NOT_RUNNING)
 
 try:
     command = args.parser
@@ -271,21 +286,53 @@ elif command == "settings":
 
 # deploy
 elif command == "deploy":
-    obj = rk.getNamedRoleObj(args.role)
-
-    # TODO: Implement progress meter
-    __print("Deployment can take a long time. To monitor the progress, run \n"
-            "journalctl -ef -u rolekit")
-
     if args.settings_file and args.settings_stdin:
         __print_and_exit("Only one of --settings-file or --settings-stdin may be specified.")
 
     if args.settings_file:
-        obj.deploy(args.name, create_settings_from_file(args.settings_file))
+        settings = create_settings_from_file(args.settings_file)
     elif args.settings_stdin:
-        obj.deploy(args.name, create_settings_from_stdin())
+        settings = create_settings_from_stdin()
     else:
-        obj.deploy(args.name, { })
+        settings = {}
+
+    if args.deferred:
+        # We've been asked to deploy this on the next boot.
+        # Save the settings to the deferredroles directory
+
+        # First ensure that we are root, since no other user
+        # should be permitted to create deferred roles.
+        # We cannot determine these permissions using polkit
+        # because we are probably running in a system-
+        # installer environment where DBUS is unavailable.
+        if not os.geteuid() == 0:
+            __print_and_exit("Only root is permitted to create roles on the next boot.")
+
+        # If a name was specified, make sure it is not in use
+        if args.name:
+            if args.name in RoleSettings.get_instances(args.role):
+                __print_and_exit("Instance name already in use", INVALID_NAME)
+
+        try:
+            deferredsettings = RoleSettings(args.role, args.name, deferred=True)
+        except Exception as e:
+            # Handle unexpected errors gracefully
+            __fail(str(e))
+
+        deferredsettings.update(settings)
+        deferredsettings.write()
+
+        # Create a oneshot systemd unit file to perform the deployment
+        generate_nextboot_unit(args.role, deferredsettings.name, deferredsettings.filepath)
+        __print("Deployment is prepped and will run on the next boot.")
+
+    else:
+        # TODO: Implement progress meter
+        obj = rk.getNamedRoleObj(args.role)
+
+        __print("Deployment can take a long time. To monitor the progress, run \n"
+                "journalctl -ef -u rolekit")
+        obj.deploy(args.name, settings)
 
 elif command in [ "redeploy", "status", "start", "stop", "restart", "update",
                   "sanitize", "reset-error", "decommission" ]:

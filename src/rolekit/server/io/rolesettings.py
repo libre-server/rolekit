@@ -20,6 +20,7 @@
 #
 
 import os
+import errno
 import shutil
 import json
 
@@ -29,17 +30,33 @@ from rolekit.logger import log
 class RoleSettings(dict):
     """ Rolesettings store """
 
-    def __init__(self, type_name, name, *args, **kwargs):
+    def __init__(self, type_name, name, deferred=False, *args, **kwargs):
         super(RoleSettings, self).__init__(*args, **kwargs)
 
         self.name = name
         self._type = type_name
 
-        self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._type)
+        if deferred:
+            self.path = "%s/%s" % (ETC_ROLEKIT_DEFERREDROLES, self._type)
+        else:
+            self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._type)
+
+        # Ensure that this directory exists
+        try:
+            os.makedirs(self.path)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                if not os.path.isdir(self.path):
+                    log.fatal("'%s' is not a directory.", e.strerror)
+            else:
+                log.fatal("Failed to create '%s': %s", e.strerror)
+                raise
+        else:
+            log.debug1("Created missing '%s'.", self.path)
 
         # If we need to autogenerate a name, do it here
         if not name:
-            # Check both the existing and pending role directories
+            # Check both the existing and deferred role directories
             self.name = self.get_unique_instance(self._type)
 
         self.filepath = "%s/%s.json" % (self.path, self.name)
@@ -124,19 +141,23 @@ class RoleSettings(dict):
             pass
 
     @staticmethod
-    def get_unique_instance(type):
+    def get_instances(type):
         instances = [ ]
-        for path in ("%s/%s" % (ETC_ROLEKIT_ROLES, type),):
+        for path in ("%s/%s" % (ETC_ROLEKIT_ROLES, type),
+                     "%s/%s" % (ETC_ROLEKIT_DEFERREDROLES, type)):
             if os.path.exists(path) and os.path.isdir(path):
                 for name in sorted(os.listdir(path)):
                     if not name.endswith(".json"):
                         continue
                     # Add this instance to the list, sans .json
                     instances.append(name[:-5])
+        return instances
 
+    @staticmethod
+    def get_unique_instance(type):
         # We'll use numeric identifiers for instances
         id = 1
-        while str(id) in instances:
+        while str(id) in RoleSettings.get_instances(type):
             id += 1
         log.debug1("Generating unique instance %s" % str(id))
         return str(id)

@@ -164,7 +164,7 @@
       </varlistentry>
 
       <varlistentry>
-        <term><command>deploy <replaceable>ROLE</replaceable> <optional>--name <replaceable>NAME</replaceable></optional> <optional>--settings-file <replaceable>FILE</replaceable> | --settings-stdin</optional> </command></term>
+        <term><command>deploy <replaceable>ROLE</replaceable> <optional>--next-boot</optional> <optional>--name <replaceable>NAME</replaceable></optional> <optional>--settings-file <replaceable>FILE</replaceable> | --settings-stdin</optional> </command></term>
         <listitem>
           <para>
             Deploys the role <replaceable>ROLE</replaceable> with the optional name <replaceable>NAME</replaceable> and the optional settings file <replaceable>FILE</replaceable> to an instance.
@@ -184,6 +184,9 @@
 	  <para>
 	    After deploy the instance will be in the <replaceable>ready-to-start</replaceable> state if there was no error while deploying, else in the <replaceable>error</replaceable> state.
 	  </para>
+          <para>
+            If the <replaceable>--next-boot</replaceable> argument is passed, rolekit will not deploy the role immediately. It will instead create a systemd service to deploy the role on the next system boot. This feature is useful for deploying roles as part of an unattended system installation.
+          </para>
         </listitem>
       </varlistentry>
 

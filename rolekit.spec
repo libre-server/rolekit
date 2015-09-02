@@ -79,6 +79,7 @@ make install DESTDIR=%{buildroot}
 %defattr(-,root,root)
 %dir %{_sysconfdir}/rolekit
 %dir %{_sysconfdir}/rolekit/roles
+%dir %{_sysconfdir}/rolekit/deferredroles
 %dir %{_prefix}/lib/rolekit
 %dir %{_prefix}/lib/rolekit/roles
 %{_prefix}/lib/rolekit/roles/domaincontroller/*.py*
@@ -99,11 +100,13 @@ make install DESTDIR=%{buildroot}
 %attr(0755,root,root) %dir %{python3_sitelib}/rolekit/server/io
 %{python3_sitelib}/rolekit/*.py*
 %{python3_sitelib}/rolekit/config/*.py*
+%{python3_sitelib}/rolekit/rolectl/*.py*
 %{python3_sitelib}/rolekit/server/*.py*
 %{python3_sitelib}/rolekit/server/io/*.py*
 
 %{python3_sitelib}/rolekit/config/__pycache__/*.py*
 %{python3_sitelib}/rolekit/__pycache__/*.py*
+%{python3_sitelib}/rolekit/rolectl/__pycache__/*.py*
 %{python3_sitelib}/rolekit/server/__pycache__/*.py*
 %{python3_sitelib}/rolekit/server/io/__pycache__/*.py*
 
