@@ -87,7 +87,10 @@
                 Set a new hostname for the domain controller.
               </para>
               <para>
-                Default: unset. Uses the existing machine hostname.
+                Default: unset. Uses the existing machine hostname or
+                generates a random hostname of the type
+                dc-&lt;16 characters&gt; if the machine hostname is currently
+                a local-only name (such as <quote>localhost</quote>.
               </para>
             </listitem>
           </varlistentry>
@@ -98,7 +101,7 @@
                 The name of the domain that the new controller should create.
               </para>
               <para>
-                Default: unset. Autodetected from the machine hostname.
+                Default: Uses the role instance name if it is a valid domain.
               </para>
             </listitem>
           </varlistentry>

@@ -28,6 +28,7 @@ import copy
 import string
 import os
 import random
+import re
 
 from concurrent.futures import Future
 
@@ -55,7 +56,8 @@ class Role(RoleBase):
                                    "dns" ] },
 
         # Host name will use the current system name if unspecified
-        # It will throw an exception if the hostname starts with 'localhost'
+        # If the system name starts with "localhost" it will be changed to
+        # DC-<UUID>
         "host_name": None,
 
         # Default domain name will be autodetected if not specified
@@ -132,6 +134,9 @@ class Role(RoleBase):
     def __init__(self, name, directory, *args, **kwargs):
         super(Role, self).__init__(name, directory, *args, **kwargs)
 
+        # Add a compiled regular expression for testing domain validity
+        self.allowed_fqdn = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+
 
     # Deploy code
     def do_deploy_async(self, values, sender=None):
@@ -140,24 +145,33 @@ class Role(RoleBase):
         #
         # In case of error raise an exception
 
-        # If the hostname wasn't specified, get it from the system
-        fqdn = socket.getfqdn()
-        if 'host_name' not in values:
-            values['host_name'] = fqdn
+        # Get the domain name from the passed-in settings
+        # or set it to the instance name if ommitted
 
-        # Make sure this is a real hostname, not localhost.localdomain
-        if values['host_name'].startswith("localhost"):
-            raise RolekitError(INVALID_VALUE, "invalid hostname")
-
-        # We have been asked to change the hostname as part of the
-        # creation of the domain controller
-        if values['host_name'] != fqdn:
-            # Change the domain with the hostnamectl API
-            yield set_hostname(values['host_name'])
-
-        # Set the domain to the domain part of the
         if 'domain_name' not in values:
-            values['domain_name'] = self._get_domain()
+            values['domain_name'] = self.get_name()
+
+        if not self._valid_fqdn(values['domain_name']):
+            raise RolekitError(INVALID_VALUE,
+                               "Invalid domain name: %s" % values['domain_name'])
+
+        if "host_name" not in values:
+            # Let's construct a new host name.
+            host_part = self._get_hostname()
+            if host_part.startswith("localhost"):
+                # We'll assign a random hostname starting with "dc-"
+                random_part = ''.join(random.choice(string.ascii_lowercase)
+                                      for _ in range(16))
+                host_part = "dc-%s" % random_part
+
+            values['host_name'] = "%s.%s" % (host_part, values['domain_name'])
+
+        if not self._valid_fqdn(values['host_name']):
+            raise RolekitError(INVALID_VALUE,
+                               "Invalid host name: %s" % values['host_name'])
+
+        # Change the hostname with the hostnamectl API
+        yield set_hostname(values['host_name'])
 
         # If left unspecified, default the realm to the
         # upper-case version of the domain name
@@ -294,8 +308,7 @@ class Role(RoleBase):
 
     # Check own properties
     def do_check_property(self, prop, value):
-        if prop in [ "domain_name",
-                     "realm_name"]:
+        if prop in [ "realm_name" ]:
             return self.check_type_string(value)
 
         elif prop in [ "admin_password",
@@ -311,11 +324,19 @@ class Role(RoleBase):
         elif prop in [ "host_name" ]:
             self.check_type_string(value)
 
-            if value.startswith('localhost'):
-                # We don't support creating a domain controller named
-                # localhost[.localdomain]
+            if not self._valid_fqdn(value):
                 raise RolekitError(INVALID_VALUE,
-                                   "{} is a local-only hostname".format(prop))
+                                   "Invalid hostname: %s" % value)
+
+            return True
+
+        elif prop in [ "domain_name" ]:
+            self.check_type_string(value)
+
+            if not self._valid_fqdn(value):
+                raise RolekitError(INVALID_VALUE,
+                                   "Invalid domain name: %s" % value)
+
             return True
 
         elif prop in [ "root_ca_file" ]:
@@ -414,18 +435,16 @@ class Role(RoleBase):
 
         raise RolekitError(INVALID_PROPERTY, prop)
 
-
     # Helper Routines
-    def _get_domain(self):
-        # First, look up this machine's FQDN
-        fqdn = socket.getfqdn()
+    def _get_hostname(self):
+        # First, look up this machine's hostname
+        # We don't need the FQDN because we're only interested
+        # in the first part anyway.
+        host = socket.gethostname()
 
-        # Make sure this returned hostname.domain
-        if not fqdn.find("."):
-            raise RolekitError(INVALID_VALUE, "Domain missing from FQDN")
+        # Get everything up to the first dot as the hostname
+        return host.split(".")[0]
 
-        # Get everything after the first dot as the domain
-        return fqdn[fqdn.find(".") + 1:]
 
     # Check Domain Controller-specific properties
     def _check_property(self, prop, value):
@@ -439,6 +458,23 @@ class Role(RoleBase):
                 log.debug1("Property %s did not validate" % prop)
                 raise
 
+    def _valid_fqdn(self, fqdn):
+        # Most parts taken from
+        # http://stackoverflow.com/questions/2532053/validate-a-hostname-string
+        # This function will also work for either domain or hostname-only
+        # portions of a hostname
+        if len(fqdn) > 255:
+            return False
+
+        # Disallow the autogenerated instance names (names that are nothing but
+        # a number)
+        if fqdn.isdigit():
+            return False
+
+        if fqdn[-1] == ".":
+            fqdn = fqdn[:-1] # strip exactly one dot from the right, if present
+
+        return all(self.allowed_fqdn.match(x) for x in fqdn.split("."))
 
     # D-Bus Property handling
     if hasattr(dbus.service, "property"):
