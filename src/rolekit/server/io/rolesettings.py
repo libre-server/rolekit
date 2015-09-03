@@ -131,8 +131,14 @@ class RoleSettings(dict):
                                                              msg))
 
         d = json.dumps(self)
+
+        # Settings files may contain sensitive information,
+        # so we'll restrict access to them to the rolekit user
+        # (generally 'root')
+        old_umask = os.umask(0o0177)
         with open(self.filepath, "w") as f:
             f.write(d)
+        os.umask(old_umask)
 
     def remove(self):
         try:
