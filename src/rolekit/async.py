@@ -170,7 +170,7 @@ def start_with_dbus_callbacks(generator, result_handler, error_handler):
         # We can’t use log.exception() because the traceback is no longer available.
         # So the three cases in dbus_handle_exceptions amount to just this.
         if not isinstance(e, DBusException):
-            log.error("{0}: {1}".format(type(e), str(e)))
+            log.error("{0}: {1}".format(type(e).__name__, str(e)))
             if not isinstance(e, RolekitError):
                 log.exception()
             e = DBusException(str(e))
