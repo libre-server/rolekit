@@ -103,7 +103,8 @@ class RoleBase(slip.dbus.service.Object):
         self._settings = settings
         self._settings.connect("changed", self._emit_property_changed)
         # TODO: place target_unit in settings
-        self.target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+        self.target_unit = "role-%s-%s.target" % (self.get_type(),
+                                                  self.get_name())
 
         # No loaded self._settings, set state to NASCENT
         if not "state" in self._settings:
@@ -314,9 +315,9 @@ class RoleBase(slip.dbus.service.Object):
         if hasattr(x, "_settings") and prop in x._settings:
             return x._settings[prop]
         if prop == "name":
-            return x._name
+            return x.get_name()
         elif prop == "type":
-            return x._type
+            return x.get_type()
         elif prop == "state":
             return ""
         elif prop == "lasterror":
@@ -509,6 +510,9 @@ class RoleBase(slip.dbus.service.Object):
     def get_name(self):
         return self._name
 
+    def get_type(self):
+        return self._type
+
     # get/assert and change state
 
     def get_state(self):
@@ -626,7 +630,7 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.start_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+            target_unit = "role-%s-%s.target" % (self.get_type(), self.get_name())
 
             log.debug9("Enabling %s" % target_unit)
             enable_units([target_unit])
@@ -651,7 +655,7 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.stop_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            target_unit = "role-%s-%s.target" % (self._type, self.get_name())
+            target_unit = "role-%s-%s.target" % (self.get_type(), self.get_name())
 
             log.debug9("Disabling %s" % target_unit)
             disable_units([target_unit])
@@ -994,12 +998,12 @@ class RoleBase(slip.dbus.service.Object):
             # the deferred role settings and systemd unit
             try:
                 # Remove settings
-                deferredsettings = "%s/%s/%s.json" % (ETC_ROLEKIT_DEFERREDROLES, self.type, self.name)
+                deferredsettings = "%s/%s/%s.json" % (ETC_ROLEKIT_DEFERREDROLES, self.get_type(), self.get_name())
                 os.unlink(deferredsettings)
 
                 # Remove systemd service unit
                 deferredunit = "%s/deferred-role-deployment-%s-%s.service" % (
-                    SYSTEMD_UNITS, self.type, self.name)
+                    SYSTEMD_UNITS, self.get_type(), self.get_name())
                 disable_units([deferredunit])
                 os.unlink(deferredunit)
             except FileNotFoundError:
@@ -1024,7 +1028,7 @@ class RoleBase(slip.dbus.service.Object):
             # We do this because many role-installers will conclude by
             # starting anyway and we want to ensure that our role mechanism
             # is in sync with them.
-            log.debug9("TRACE: Starting %s" % self.name)
+            log.debug9("TRACE: Starting %s" % self.get_name())
             yield async.call_future(self.__start_async(sender))
 
         except:
@@ -1126,7 +1130,7 @@ class RoleBase(slip.dbus.service.Object):
             # We do this because many role-installers will conclude by
             # starting anyway and we want to ensure that our role mechanism
             # is in sync with them.
-            log.debug9("TRACE: Starting %s" % self.name)
+            log.debug9("TRACE: Starting %s" % self.get_name())
             yield async.call_future(self.__start_async(sender))
 
         except:

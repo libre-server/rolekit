@@ -157,7 +157,7 @@ class RoleD(slip.dbus.service.Object):
                                persistent=self.persistent)
 
                 if obj in self._roles:
-                    log.error("Duplicate role '%s'", obj.name)
+                    log.error("Duplicate role '%s'", obj.get_name())
                 else:
                     self._roles.append(obj)
             except RolekitError as msg:

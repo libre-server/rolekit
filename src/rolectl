@@ -323,7 +323,8 @@ elif command == "deploy":
         deferredsettings.write()
 
         # Create a oneshot systemd unit file to perform the deployment
-        generate_nextboot_unit(args.role, deferredsettings.name, deferredsettings.filepath)
+        generate_nextboot_unit(args.role, deferredsettings.get_name(),
+                               deferredsettings.filepath)
         __print("Deployment is prepped and will run on the next boot.")
 
     else:

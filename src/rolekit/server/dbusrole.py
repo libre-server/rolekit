@@ -69,28 +69,29 @@ class DBusRole(slip.dbus.service.Object):
 
         # create instances for stored instance settings
 
-        path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._name)
+        path = "%s/%s" % (ETC_ROLEKIT_ROLES, self.get_name())
         if os.path.exists(path) and os.path.isdir(path):
             for name in sorted(os.listdir(path)):
                 if not name.endswith(".json"):
                     continue
                 instance = name[:-5]
-                log.debug1("Loading '%s' instance '%s'", self._name, instance)
+                log.debug1("Loading '%s' instance '%s'", self.get_name(),
+                           instance)
 
-                settings = RoleSettings(self._name, instance)
+                settings = RoleSettings(self.get_name(), instance)
                 try:
                     settings.read()
                 except ValueError as e:
                     log.error("Failed to load '%s' instance '%s': %s",
-                              self._name, instance, e)
+                              self.get_name(), instance, e)
                     continue
 
                 instance_escaped_name = dbus_label_escape(instance)
                 if instance_escaped_name in self._instances:
                     raise RolekitError(NAME_CONFLICT, instance_escaped_name)
 
-                role = self._role(self, instance, self._name, self._directory,
-                                  settings, self._path,
+                role = self._role(self, instance, self.get_name(),
+                                  self._directory, settings, self._path,
                                   "%s/%s/%s" % (DBUS_PATH_ROLES,
                                                 self._escaped_name,
                                                 instance_escaped_name),
@@ -108,7 +109,7 @@ class DBusRole(slip.dbus.service.Object):
 
     def get_property(self, prop):
         if prop == "name":
-            return self._name
+            return self.get_name()
         elif prop == "DEFAULTS":
             return self._role._DEFAULTS
 
@@ -307,10 +308,10 @@ class DBusRole(slip.dbus.service.Object):
         # this function will create one from the next available value.
         # Note: this isn't protected by a lock, so name-generation
         # might be racy.
-        settings = RoleSettings(self._name, name)
+        settings = RoleSettings(self.get_name(), name)
 
         # create escaped name and check if it is already in use
-        instance_escaped_name = dbus_label_escape(settings.name)
+        instance_escaped_name = dbus_label_escape(settings.get_name())
         if instance_escaped_name in self._instances:
             raise RolekitError(NAME_CONFLICT, instance_escaped_name)
 
@@ -324,8 +325,8 @@ class DBusRole(slip.dbus.service.Object):
             raise RolekitError(NAME_CONFLICT, settings.filename)
 
         # create role
-        role = self._role(self, settings.name, self._name, self._directory, settings,
-                          self._path,
+        role = self._role(self, settings.get_name(), self.get_name(),
+                          self._directory, settings, self._path,
                           "%s/%s/%s" % (DBUS_PATH_ROLES, self._escaped_name,
                                         instance_escaped_name),
                           persistent=self.persistent)

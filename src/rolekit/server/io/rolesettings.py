@@ -33,13 +33,13 @@ class RoleSettings(dict):
     def __init__(self, type_name, name, deferred=False, *args, **kwargs):
         super(RoleSettings, self).__init__(*args, **kwargs)
 
-        self.name = name
+        self._name = name
         self._type = type_name
 
         if deferred:
-            self.path = "%s/%s" % (ETC_ROLEKIT_DEFERREDROLES, self._type)
+            self.path = "%s/%s" % (ETC_ROLEKIT_DEFERREDROLES, self.get_type())
         else:
-            self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self._type)
+            self.path = "%s/%s" % (ETC_ROLEKIT_ROLES, self.get_type())
 
         # Ensure that this directory exists
         try:
@@ -57,10 +57,16 @@ class RoleSettings(dict):
         # If we need to autogenerate a name, do it here
         if not name:
             # Check both the existing and deferred role directories
-            self.name = self.get_unique_instance(self._type)
+            self._name = self.get_unique_instance(self.get_type())
 
-        self.filepath = "%s/%s.json" % (self.path, self.name)
+        self.filepath = "%s/%s.json" % (self.path, self.get_name())
         self._callbacks = { "changed": None }
+
+    def get_name(self):
+        return self._name
+
+    def get_type(self):
+        return self._type
 
     def connect(self, signal, handler, *args):
         """Connect a callback to the given signal with optional user data.

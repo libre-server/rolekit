@@ -172,8 +172,8 @@ class Role(RoleBase):
         # Generate a systemd service unit for this container
         container_unit = SystemdContainerServiceUnit(
             image_name = MEMCACHED_DOCKER_IMAGE,
-            container_name = "memcached_%s" % self.name,
-            desc="memcached docker container - %s" % self.name,
+            container_name = "memcached_%s" % self.get_name(),
+            desc="memcached docker container - %s" % self.get_name(),
             env = {
                 "MEMCACHED_CACHE_SIZE": str(values['cache_size']),
                 "MEMCACHED_CONNECTIONS": str(values['connections']),
@@ -194,7 +194,7 @@ class Role(RoleBase):
                   'Instance': self.get_name(),
                   'Description': "Memory Cache Role - %s" %
                                  self.get_name(),
-                  'Wants': ['memcached_%s.service' % self.name],
+                  'Wants': ['memcached_%s.service' % self.get_name()],
                   'After': ['network.target']}
         log.debug9("TRACE: exiting do_deploy_async")
         yield target
@@ -226,7 +226,7 @@ class Role(RoleBase):
         # Remove the container unit
         # Nothing else needs to happen here; the image is
         # removed as part of the role stop() operation
-        path = "%s/memcached_%s.service" % (SYSTEMD_UNITS, self.name)
+        path = "%s/memcached_%s.service" % (SYSTEMD_UNITS, self.get_name())
         try:
             os.unlink(path)
         except FileNotFoundError:
