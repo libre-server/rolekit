@@ -123,7 +123,7 @@ class RoleSettings(dict):
             self[key] = value
         del imported
 
-    def write(self):
+    def backup(self):
         try:
             os.mkdir(self.path)
         except OSError:
@@ -136,6 +136,8 @@ class RoleSettings(dict):
                 raise IOError("Backup of '%s' failed: %s" % (self.filepath,
                                                              msg))
 
+    def write(self):
+        self.backup()
         d = json.dumps(self)
 
         # Settings files may contain sensitive information,
@@ -147,6 +149,11 @@ class RoleSettings(dict):
         os.umask(old_umask)
 
     def remove(self):
+        try:
+            self.backup()
+        except Exception as msg:
+            log.error(msg)
+
         try:
             os.remove(self.filepath)
         except OSError:
