@@ -525,17 +525,26 @@ class RoleBase(slip.dbus.service.Object):
             return
         raise RolekitError(INVALID_STATE, "Not in state '%s', but '%s'" % ("' or '".join(args), self._settings["state"]))
 
-    def change_state(self, state, write=False):
+    def change_state(self, state, error="", write=False):
         # change the state of the instance to state if it is valid and not in
         # this state already
         if state not in PERSISTENT_STATES and \
            state not in TRANSITIONAL_STATES:
             raise RolekitError(INVALID_STATE, state)
+
+        if "lasterror" not in self._settings or \
+           self._settings["lasterror"] != error:
+            # emit PropertiesChanged only if lasterror really changed
+            self._settings["lasterror"] = error
+            # force write
+            write = True
+
         if state != self._settings["state"]:
             self._settings["state"] = state
-            if write:
-                self._settings.write()
             self.StateChanged(state)
+
+        if write:
+            self._settings.write()
 
     # copy defaults
 
@@ -899,8 +908,8 @@ class RoleBase(slip.dbus.service.Object):
             self.change_state(STOPPING)
             yield async.call_future(self.do_stop_async(sender))
             self.change_state(READY_TO_START, write=True)
-        except:
-            self.change_state(ERROR, write=True)
+        except Exception as e:
+            self.change_state(ERROR, error=str(e), write=True)
             raise
 
 
@@ -947,11 +956,11 @@ class RoleBase(slip.dbus.service.Object):
         # Check values
         try:
             self.check_values(values)
-        except:
+        except Exception as e:
             # Check values failed, remove the instance again if verification
             # failed, set state to error, save it (will be visible in the
             # .old backup file).
-            self.change_state(ERROR, write=True)
+            self.change_state(ERROR, error=str(e), write=True)
 
             # cleanup
             self.__remove_instance()
@@ -1031,9 +1040,9 @@ class RoleBase(slip.dbus.service.Object):
             log.debug9("TRACE: Starting %s" % self.get_name())
             yield async.call_future(self.__start_async(sender))
 
-        except:
+        except Exception as e:
             # Something failed, set state to error
-            self.change_state(ERROR, write=True)
+            self.change_state(ERROR, error=str(e), write=True)
             if remove_instance:
                 self.__remove_instance()
             raise
@@ -1092,9 +1101,9 @@ class RoleBase(slip.dbus.service.Object):
         # Check values
         try:
             self.check_values(values)
-        except:
+        except Exception as e:
             # checking of values failed, set state to error
-            self.change_state(ERROR, write=True)
+            self.change_state(ERROR, error=str(e), write=True)
             raise
 
         try:
@@ -1133,9 +1142,9 @@ class RoleBase(slip.dbus.service.Object):
             log.debug9("TRACE: Starting %s" % self.get_name())
             yield async.call_future(self.__start_async(sender))
 
-        except:
+        except Exception as e:
             # Something failed, set state to error
-            self.change_state(ERROR, write=True)
+            self.change_state(ERROR, error=str(e), write=True)
             raise
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE, in_signature='b',
@@ -1163,8 +1172,8 @@ class RoleBase(slip.dbus.service.Object):
         try:
             yield async.call_future(self.do_decommission_async(force=force,
                                                                sender=sender))
-        except:
-            self.change_state(ERROR, write=True)
+        except Exception as e:
+            self.change_state(ERROR, error=str(e), write=True)
             if not force:
                 raise
 
@@ -1196,8 +1205,8 @@ class RoleBase(slip.dbus.service.Object):
         # Call do_update
         try:
             yield async.call_future(self.do_update_async(sender))
-        except:
-            self.change_state(ERROR, write=True)
+        except Exception as e:
+            self.change_state(ERROR, error=str(e), write=True)
             raise
 
         # Continue only after successful update:

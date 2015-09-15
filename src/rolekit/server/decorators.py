@@ -55,9 +55,9 @@ def dbus_handle_exceptions(func, *args, **kwargs):
     except RolekitError as error:
         log.error(str(error))
         raise DBusException(str(error))
-    except DBusException as e:
-        # only log DBusExceptions once
-        raise e
+    except DBusException:
+        # only log DBusExceptions once, pass it through
+        raise
     except Exception as e:
         log.exception()
         raise DBusException(str(e))
