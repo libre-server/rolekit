@@ -59,22 +59,17 @@ class RoleD(slip.dbus.service.Object):
     @handle_exceptions
     def __init__(self, *args, **kwargs):
         super(RoleD, self).__init__(*args, **kwargs)
-        self._path = args[0]
+        self.busname = args[0]
+        self.path = args[1]
         self._roles = [ ]
         self._instances = [ ]
         self.start()
         self.timeout_restart()
 
-        try:
-            bus = slip.dbus.SystemBus()
-        except:
-            bus = dbus.SystemBus()
-
-        bus.add_signal_receiver(self._signal_receiver,
-                                dbus_interface=DBUS_INTERFACE,
-                                interface_keyword='interface',
-                                member_keyword='member',
-                                path_keyword='path')
+        self.busname.get_bus().add_signal_receiver(
+            self._signal_receiver, dbus_interface=DBUS_INTERFACE,
+            interface_keyword='interface', member_keyword='member',
+            path_keyword='path')
 
     @handle_exceptions
     def _signal_receiver(self, *args, **kwargs):
@@ -152,7 +147,7 @@ class RoleD(slip.dbus.service.Object):
                 role = getattr(mod, "Role")
 
                 # create role object that contains the role instance class
-                obj = DBusRole(role, name, directory, self._path,
+                obj = DBusRole(role, name, directory, self.busname,
                                 "%s/%s" % (DBUS_PATH_ROLES, escaped_name),
                                persistent=self.persistent)
 
@@ -167,7 +162,6 @@ class RoleD(slip.dbus.service.Object):
                 log.error("Failed to load role '%s':", name)
                 log.exception()
                 continue
-
 
     @handle_exceptions
     def suspend(self):
@@ -188,88 +182,86 @@ class RoleD(slip.dbus.service.Object):
 
     # Property handling
 
-    if hasattr(dbus.service, "property"):
-        # property support in dbus.service
-
-        @dbus.service.property(DBUS_INTERFACE, signature='s')
-        def version(self):
-            return ROLEKIT_VERSION
-
-        @dbus.service.property(DBUS_INTERFACE, signature='ao')
-        def roles(self):
+    @dbus_handle_exceptions
+    def _get_property(self, prop):
+        if prop == "version":
+            return dbus.String(ROLEKIT_VERSION)
+        elif prop == "roles":
             return dbus.Array(self._roles, "o")
-
-    else:
-        # no property support in dbus.service
-
-        @dbus_handle_exceptions
-        def _get_property(self, prop):
-            if prop == "version":
-                return ROLEKIT_VERSION
-            elif prop == "roles":
-                return dbus.Array(self._roles, "o")
-            else:
-                raise dbus.exceptions.DBusException(
-                    "org.freedesktop.DBus.Error.AccessDenied: "
-                    "Property '%s' isn't exported (or may not exist)" % prop)
-
-        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ss',
-                             out_signature='v')
-        @dbus_handle_exceptions
-        def Get(self, interface_name, property_name, sender=None):
-            # get a property
-            interface_name = dbus_to_python(interface_name)
-            property_name = dbus_to_python(property_name)
-            log.debug1("Get('%s', '%s')", interface_name, property_name)
-
-            if interface_name != DBUS_INTERFACE:
-                raise dbus.exceptions.DBusException(
-                    "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "roled does not implement %s" % interface_name)
-
-            return self._get_property(property_name)
-
-        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
-                             out_signature='a{sv}')
-        @dbus_handle_exceptions
-        def GetAll(self, interface_name, sender=None):
-            interface_name = dbus_to_python(interface_name)
-            log.debug1("GetAll('%s')", interface_name)
-
-            if interface_name != DBUS_INTERFACE:
-                raise dbus.exceptions.DBusException(
-                    "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "roled does not implement %s" % interface_name)
-
-            return {
-                'version': self._get_property("version"),
-                'roles': self._get_property("roles"),
-            }
-
-
-        @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
-        @dbus_handle_exceptions
-        def Set(self, interface_name, property_name, new_value, sender=None):
-            interface_name = dbus_to_python(interface_name)
-            property_name = dbus_to_python(property_name)
-            new_value = dbus_to_python(new_value)
-            log.debug1("Set('%s', '%s', '%s')", interface_name, property_name,
-                       new_value)
-            self.accessCheck(sender)
-
-            if interface_name != DBUS_INTERFACE:
-                raise dbus.exceptions.DBusException(
-                    "org.freedesktop.DBus.Error.UnknownInterface: "
-                    "roled does not implement %s" % interface_name)
-
+        else:
             raise dbus.exceptions.DBusException(
                 "org.freedesktop.DBus.Error.AccessDenied: "
-                "Property '%s' is not settable" % property_name)
+                "Property '%s' isn't exported (or may not exist)" % prop)
 
-        @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
-        def PropertiesChanged(self, interface_name, changed_properties,
-                              invalidated_properties):
-            pass
+    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ss',
+                         out_signature='v')
+    @dbus_handle_exceptions
+    def Get(self, interface_name, property_name, sender=None):
+        # get a property
+        interface_name = dbus_to_python(interface_name)
+        property_name = dbus_to_python(property_name)
+        log.debug1("Get('%s', '%s')", interface_name, property_name)
+
+        if interface_name != DBUS_INTERFACE:
+            raise dbus.exceptions.DBusException(
+                "org.freedesktop.DBus.Error.UnknownInterface: "
+                "roled does not implement %s" % interface_name)
+
+        return self._get_property(property_name)
+
+    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='s',
+                         out_signature='a{sv}')
+    @dbus_handle_exceptions
+    def GetAll(self, interface_name, sender=None):
+        interface_name = dbus_to_python(interface_name)
+        log.debug1("GetAll('%s')", interface_name)
+
+        if interface_name != DBUS_INTERFACE:
+            raise dbus.exceptions.DBusException(
+                "org.freedesktop.DBus.Error.UnknownInterface: "
+                "roled does not implement %s" % interface_name)
+
+        return {
+            'version': self._get_property("version"),
+            'roles': self._get_property("roles"),
+        }
+
+
+    @dbus_service_method(dbus.PROPERTIES_IFACE, in_signature='ssv')
+    @dbus_handle_exceptions
+    def Set(self, interface_name, property_name, new_value, sender=None):
+        interface_name = dbus_to_python(interface_name)
+        property_name = dbus_to_python(property_name)
+        new_value = dbus_to_python(new_value)
+        log.debug1("Set('%s', '%s', '%s')", interface_name, property_name,
+                   new_value)
+        self.accessCheck(sender)
+
+        if interface_name != DBUS_INTERFACE:
+            raise dbus.exceptions.DBusException(
+                "org.freedesktop.DBus.Error.UnknownInterface: "
+                "roled does not implement %s" % interface_name)
+
+        raise dbus.exceptions.DBusException(
+            "org.freedesktop.DBus.Error.AccessDenied: "
+            "Property '%s' is not settable" % property_name)
+
+    @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
+    def PropertiesChanged(self, interface_name, changed_properties,
+                          invalidated_properties):
+        interface_name = dbus_to_python(interface_name)
+        changed_properties = dbus_to_python(changed_properties)
+        invalidated_properties = dbus_to_python(invalidated_properties)
+        log.debug1("PropertiesChanged('%s', '%s', '%s')",
+                   interface_name, changed_properties, invalidated_properties)
+
+    @dbus_service_method(dbus.INTROSPECTABLE_IFACE, out_signature='s')
+    @dbus_handle_exceptions
+    def Introspect(self, sender=None):
+        log.debug1("Introspect()")
+
+        data = super(RoleD, self).Introspect(self.path, self.busname.get_bus())
+        return dbus_introspection_add_properties(self, data, DBUS_INTERFACE)
 
     # Role methods
 

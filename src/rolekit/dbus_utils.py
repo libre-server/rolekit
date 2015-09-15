@@ -35,6 +35,8 @@ SYSTEMD_MANAGER_NAME = "org.freedesktop.systemd1"
 SYSTEMD_MANAGER_PATH = "/org/freedesktop/systemd1"
 SYSTEMD_UNIT_INTERFACE = "org.freedesktop.systemd1.Unit"
 
+from xml.dom import minidom
+
 def command_of_pid(pid):
     """ Get command for pid from /proc """
     try:
@@ -135,7 +137,7 @@ def dbus_to_python(obj):
          isinstance(obj, dict):
         return obj
     else:
-        raise TypeError("Unhandled %s" % obj)
+        raise TypeError("Unhandled %s" % repr(obj))
 
 def dbus_label_escape(label):
     # Escape labels to only contain characters dbus is able to handle.
@@ -158,6 +160,56 @@ def dbus_label_escape(label):
 
     return ret
 
+def dbus_signature(obj):
+    if isinstance(obj, dbus.Boolean):
+        return 'b'
+    elif isinstance(obj, dbus.String):
+        return 's'
+    elif isinstance(obj, dbus.ObjectPath):
+        return 'o'
+    elif isinstance(obj, dbus.Byte):
+        return 'y'
+    elif isinstance(obj, dbus.Int16):
+        return 'n'
+    elif isinstance(obj, dbus.Int32):
+        return 'i'
+    elif isinstance(obj, dbus.Int64):
+        return 'x'
+    elif isinstance(obj, dbus.UInt16):
+        return 'q'
+    elif isinstance(obj, dbus.UInt32):
+        return 'u'
+    elif isinstance(obj, dbus.UInt64):
+        return 't'
+    elif isinstance(obj, dbus.Double):
+        return 'd'
+    elif isinstance(obj, dbus.Array):
+        if len(obj.signature) > 1:
+            return 'a(%s)' % obj.signature
+        else:
+            return 'a%s' % obj.signature
+    elif isinstance(obj, dbus.Struct):
+        return '(%s)' % obj.signature
+    elif isinstance(obj, dbus.Dictionary):
+        return 'a{%s}' % obj.signature
+    elif PY2 and isinstance(obj, dbus.UTF8String):
+        return 's'
+    else:
+        raise TypeError("Unhandled %s" % repr(obj))
+
+def dbus_introspection_add_properties(obj, data, interface):
+    doc = minidom.parseString(data)
+
+    for node in doc.getElementsByTagName("interface"):
+        if node.hasAttribute("name") and node.getAttribute("name") == interface:
+            for key,value in obj.GetAll(interface).items():
+                prop = doc.createElement("property")
+                prop.setAttribute("name", key)
+                prop.setAttribute("type", dbus_signature(value))
+                prop.setAttribute("access", "read")
+                node.appendChild(prop)
+    log.debug10(doc.toxml())
+    return doc.toxml()
 
 # FIXME: Is it possible to write a reasonably stand-alone test for this?
 class SystemdJobHandler(object):

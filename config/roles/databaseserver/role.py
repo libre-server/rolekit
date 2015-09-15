@@ -480,33 +480,3 @@ class Role(RoleBase):
             return dbus.String(x.get_property(x, prop))
 
         raise RolekitError(INVALID_PROPERTY, prop)
-
-
-    # D-Bus Property handling
-    if hasattr(dbus.service, "property"):
-        # property support in dbus.service
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def database(self):
-            return self.get_dbus_property(self, "database")
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def owner(self):
-            return self.get_dbus_property(self, "owner")
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def postgresql_conf(self):
-            return self.get_dbus_property(self, "postgresql_conf")
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def pg_hba_conf(self):
-            return self.get_dbus_property(self, "pg_hba_conf")
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def password(self):
-            return self.get_dbus_property(self, "password")

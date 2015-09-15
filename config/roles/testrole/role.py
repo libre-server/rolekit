@@ -117,13 +117,3 @@ class Role(RoleBase):
         if prop == "myownsetting":
             return dbus.String(x.get_property(x, prop))
         raise RolekitError(INVALID_PROPERTY, prop)
-
-
-    # D-Bus Property handling
-    if hasattr(dbus.service, "property"):
-        # property support in dbus.service
-
-        @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-        @dbus_handle_exceptions
-        def myownsetting(self):
-            return self.get_dbus_property(self, "myownsetting")

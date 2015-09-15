@@ -319,26 +319,3 @@ class Role(RoleBase):
         # Lastly, always fall through to INVALID_PROPERTY if
         # the setting is unknown.
         raise RolekitError(INVALID_PROPERTY, prop)
-
-
-
-    # D-Bus Property handling
-    # Create a decorated function to return the value of any of
-    # this role's custom settings.
-    # Note the use of self.get_dbus_property(), *NOT*
-    # self.do_get_dbus_property()
-
-    @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-    @dbus_handle_exceptions
-    def cache_size(self):
-        return self.get_dbus_property(self, "cache_size")
-
-    @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-    @dbus_handle_exceptions
-    def connections(self):
-        return self.get_dbus_property(self, "connections")
-
-    @dbus.service.property(DBUS_INTERFACE_ROLE_INSTANCE, signature='s')
-    @dbus_handle_exceptions
-    def threads(self):
-        return self.get_dbus_property(self, "threads")
