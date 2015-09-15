@@ -64,6 +64,7 @@ class DBusRole(slip.dbus.service.Object):
         self._role = role
         self._name = name
         self._escaped_name = dbus_label_escape(name)
+        self._log_prefix = "role.%s" % self._escaped_name
         self._directory = directory
         self._instances = { }
 
@@ -124,7 +125,7 @@ class DBusRole(slip.dbus.service.Object):
                 try:
                     ret[x] = self._role.get_dbus_property(self._role, x)
                 except Exception as e:
-                    log.error("role.%s.DEFAULTS(): Failed to get/convert property '%s'", self._escaped_name, x)
+                    log.error("%s.DEFAULTS: Failed to get/convert property '%s'", self._log_prefix, x)
                     pass
             return ret
 
@@ -158,7 +159,8 @@ class DBusRole(slip.dbus.service.Object):
             # get a property
             interface_name = dbus_to_python(interface_name)
             property_name = dbus_to_python(property_name)
-            log.debug1("Get('%s', '%s')", interface_name, property_name)
+            log.debug1("%s.Get('%s', '%s')", self._log_prefix,
+                       interface_name, property_name)
 
             if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
@@ -172,7 +174,7 @@ class DBusRole(slip.dbus.service.Object):
         @dbus_handle_exceptions
         def GetAll(self, interface_name, sender=None):
             interface_name = dbus_to_python(interface_name)
-            log.debug1("GetAll('%s')", interface_name)
+            log.debug1("%s.GetAll('%s')", self._log_prefix, interface_name)
 
             if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
@@ -190,8 +192,8 @@ class DBusRole(slip.dbus.service.Object):
             interface_name = dbus_to_python(interface_name)
             property_name = dbus_to_python(property_name)
             new_value = dbus_to_python(new_value)
-            log.debug1("Set('%s', '%s', '%s')", interface_name,
-                       property_name, new_value)
+            log.debug1("%s.Set('%s', '%s', '%s')", self._log_prefix,
+                       interface_name, property_name, new_value)
 
             if interface_name != DBUS_INTERFACE_ROLE:
                 raise dbus.exceptions.DBusException(
@@ -219,8 +221,8 @@ class DBusRole(slip.dbus.service.Object):
         @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
         def PropertiesChanged(self, interface_name, changed_properties,
                               invalidated_properties):
-            log.debug1("PropertiesChanged('%s', '%s', '%s')",
-                       interface_name, changed_properties,
+            log.debug1("%s.PropertiesChanged('%s', '%s', '%s')",
+                       self._log_prefix, interface_name, changed_properties,
                        invalidated_properties)
 
 
@@ -253,7 +255,7 @@ class DBusRole(slip.dbus.service.Object):
     @dbus_handle_exceptions
     def getInstances(self, sender=None):
         """get role instances"""
-        log.debug1("role.%s.getInstances()", self._escaped_name)
+        log.debug1("%s.getInstances()", self._log_prefix)
 
         return self._instances.values()
 
@@ -263,7 +265,7 @@ class DBusRole(slip.dbus.service.Object):
     def getNamedInstance(self, name, sender=None):
         """ return the role with the name, otherwise raise error """
         name = dbus_to_python(name)
-        log.debug1("role.%s.getNamedInstance('%s')", self._escaped_name, name)
+        log.debug1("%s.getNamedInstance('%s')", self._log_prefix, name)
         instance_escaped_name = dbus_label_escape(name)
         if instance_escaped_name in self._instances:
             return self._instances[instance_escaped_name]
@@ -272,12 +274,12 @@ class DBusRole(slip.dbus.service.Object):
     @dbus.service.signal(DBUS_INTERFACE_ROLE, signature='s')
     @dbus_handle_exceptions
     def InstanceAdded(self, name):
-        log.debug1("role.%s.InstanceAdded('%s')", self._escaped_name, name)
+        log.debug1("%s.InstanceAdded('%s')", self._log_prefix, name)
 
     @dbus.service.signal(DBUS_INTERFACE_ROLE, signature='s')
     @dbus_handle_exceptions
     def InstanceRemoved(self, name):
-        log.debug1("role.%s.InstanceRemoved('%s')", self._escaped_name, name)
+        log.debug1("%s.InstanceRemoved('%s')", self._log_prefix, name)
 
     # deploy: create new instance and deploy
 
@@ -295,7 +297,7 @@ class DBusRole(slip.dbus.service.Object):
     def __deploy_async(self, name, values):
         values = dbus_to_python(values)
         name = dbus_to_python(name)
-        log.debug1("role.%s.deploy('%s', %s)", self._escaped_name, name, values)
+        log.debug1("%s.deploy('%s', %s)", self._log_prefix, name, values)
 
         # limit role instances to max instances per role
         if len(self._instances) >= self._role._MAX_INSTANCES:
