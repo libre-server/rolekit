@@ -112,7 +112,7 @@ class SystemdTargetUnit(dict):
             f.write('WantedBy=multi-user.target\n')
 
             # Return the list of extension units
-            return extension_units.keys()
+            return self.filepath, extension_units.keys()
 
 
     def remove(self):
@@ -162,7 +162,7 @@ class SystemdFailureUnit(dict):
             # Write the [Service] section
             f.write("[Service]\n")
             f.write("ExecStart=%s\n" % dsend)
-
+            return self.filepath
 
     def remove(self):
         try:

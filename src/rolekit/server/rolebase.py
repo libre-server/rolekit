@@ -1019,10 +1019,11 @@ class RoleBase(slip.dbus.service.Object):
         log.debug9("Creating failure file {0}".format(target['failurename']))
 
         # Create target unit
-        target['extensions'] = SystemdTargetUnit(target).write()
+        self._settings['target_unit'], target['extensions'] = \
+                SystemdTargetUnit(target).write()
 
         # Create failure notification unit
-        SystemdFailureUnit(target).write()
+        self._settings['failure_unit'] = SystemdFailureUnit(target).write()
 
         # Create extension units for required components
         extunits = SystemdExtensionUnits(target)
@@ -1046,18 +1047,21 @@ class RoleBase(slip.dbus.service.Object):
             job_handler.manager.Reload()
 
     def cleanup_targets(self):
-        # remove extension units
-        files = self._settings.get('extension_units', ())
+        # remove created units, avoid removing files multiple times
+        files = set(self._settings.get('extension_units', ()))
+        files.update({
+            self._settings[x] for x in ('target_unit', 'failure_unit')
+            if x in self._settings})
 
         for f in files:
             try:
                 os.unlink(f)
             except Exception as e:
                 log.warning(
-                    "Couldn't remove extension unit '{}': {!s}\n".format(
+                    "Couldn't remove unit '{}': {!s}\n".format(
                         f, e))
             else:
-                log.debug9("Removed extension unit '{}'\n".format(f))
+                log.debug9("Removed unit '{}'\n".format(f))
 
         # tell systemd about it
         with SystemdJobHandler() as job_handler:
