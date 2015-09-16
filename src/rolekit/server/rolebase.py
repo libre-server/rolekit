@@ -22,6 +22,7 @@
 from gi.repository import GObject
 import sys
 import os
+
 from rolekit.server.io.systemd import SystemdExtensionUnits
 sys.modules['gobject'] = GObject
 
@@ -1026,17 +1027,40 @@ class RoleBase(slip.dbus.service.Object):
 
         # Create extension units for required components
         extunits = SystemdExtensionUnits(target)
+        # Store created units so we can clean them up on decommission
+        extunits_settings = {}
         for dep in SYSTEMD_DEPS:
             if dep in target:
                 for unit in target[dep]:
                     log.debug9("Creating extension unit for {0}".format(unit))
-                    extunits.write(unit)
+                    extunits_settings[unit] = os.path.normpath(
+                            extunits.write(unit))
+        if extunits_settings:
+            self._settings['extension_units'] = list(
+                    extunits_settings.values())
 
         # Tell systemd to reload the daemon configuration
         log.debug9("Reloading systemd units\n")
         with SystemdJobHandler() as job_handler:
             job_handler.manager.Reload()
 
+    def cleanup_targets(self):
+        # remove extension units
+        files = self._settings.get('extension_units', ())
+
+        for f in files:
+            try:
+                os.unlink(f)
+            except Exception as e:
+                log.warning(
+                    "Couldn't remove extension unit '{}': {!s}\n".format(
+                        f, e))
+            else:
+                log.debug9("Removed extension unit '{}'\n".format(f))
+
+        # tell systemd about it
+        with SystemdJobHandler() as job_handler:
+            job_handler.manager.Reload()
 
     @dbus_service_method(DBUS_INTERFACE_ROLE_INSTANCE,
                          in_signature='a{sv}',
@@ -1138,6 +1162,9 @@ class RoleBase(slip.dbus.service.Object):
 
         # Uninstall firewall
         self.uninstallFirewall()
+
+        # Remove extension unit files
+        self.cleanup_targets()
 
         # Remove the instance
         self.__remove_instance()
