@@ -1032,6 +1032,8 @@ class RoleBase(slip.dbus.service.Object):
         for dep in SYSTEMD_DEPS:
             if dep in target:
                 for unit in target[dep]:
+                    if unit in extunits_settings:
+                        continue
                     log.debug9("Creating extension unit for {0}".format(unit))
                     extunits_settings[unit] = os.path.normpath(
                             extunits.write(unit))
