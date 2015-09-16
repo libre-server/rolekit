@@ -221,7 +221,6 @@ class Role(RoleBase):
                      for x in values['dns_forwarders']['ipv4']]
                 [ipa_install_args.append("--forwarder=%s" % x)
                      for x in values['dns_forwarders']['ipv6']]
-                pass
             else:
                 ipa_install_args.append('--no-forwarders')
 
@@ -453,7 +452,6 @@ class Role(RoleBase):
         except RolekitError as e:
             if e.code == MISSING_CHECK:
                 log.debug1("Unvalidated property: %s" % prop)
-                pass
             else:
                 log.debug1("Property %s did not validate" % prop)
                 raise

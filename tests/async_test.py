@@ -151,7 +151,6 @@ class TestAsyncInfrastructure(unittest.TestCase):
             return False
         GLib.timeout_add_seconds(DELAY, fn)
         yield f
-        pass
 
     def test_async_StopIteration_in_mainloop(self):
         self.assertIs(self.__run_in_mainloop(lambda: self.__no_return_value_async()), None)

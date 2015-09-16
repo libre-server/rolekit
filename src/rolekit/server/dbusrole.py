@@ -127,7 +127,6 @@ class DBusRole(slip.dbus.service.Object):
                     ret[x] = self._role.get_dbus_property(self._role, x)
                 except Exception as e:
                     log.error("%s.DEFAULTS: Failed to get/convert property '%s'", self._log_prefix, x)
-                    pass
             return ret
 
         raise dbus.exceptions.DBusException(

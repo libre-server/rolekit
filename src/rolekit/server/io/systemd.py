@@ -206,7 +206,6 @@ class SystemdExtensionUnits(dict):
             f.write("PartOf=%s\n" % self.target['targetname'])
             f.write("OnFailure=%s\n" % self.target['failurename'])
             return unitfile
-        pass
 
 
 class SystemdContainerServiceUnit():

@@ -986,7 +986,6 @@ class RoleBase(slip.dbus.service.Object):
                 # We'll continue anyway, since the service should be runnable at this point
                 # The ConditionPathExists will prevent the service from trying to deploy
                 # again
-                pass
 
             # Tell systemd to reload the daemon configuration
             log.debug9("Reloading systemd units\n")

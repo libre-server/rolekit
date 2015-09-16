@@ -98,8 +98,6 @@ class Role(RoleBase):
         # In case of error raise an exception</comment>
 
         yield None
-
-        pass
     </programlisting>
 
     <para>
