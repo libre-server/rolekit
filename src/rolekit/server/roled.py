@@ -143,18 +143,18 @@ class RoleD(slip.dbus.service.Object):
                 if os.path.exists(os.path.join(directory, "role.py")):
                     mod = imp.load_source(name, "%s/role.py" % directory)
 
-                # get Role from module
-                role = getattr(mod, "Role")
+                    # get Role from module
+                    role = getattr(mod, "Role")
 
-                # create role object that contains the role instance class
-                obj = DBusRole(role, name, directory, self.busname,
-                                "%s/%s" % (DBUS_PATH_ROLES, escaped_name),
-                               persistent=self.persistent)
+                    # create role object that contains the role instance class
+                    obj = DBusRole(role, name, directory, self.busname,
+                                    "%s/%s" % (DBUS_PATH_ROLES, escaped_name),
+                                   persistent=self.persistent)
 
-                if obj in self._roles:
-                    log.error("Duplicate role '%s'", obj.get_name())
-                else:
-                    self._roles.append(obj)
+                    if obj in self._roles:
+                        log.error("Duplicate role '%s'", obj.get_name())
+                    else:
+                        self._roles.append(obj)
             except RolekitError as msg:
                 log.error("Failed to load role '%s': %s", name, msg)
                 continue
