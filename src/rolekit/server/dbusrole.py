@@ -98,6 +98,18 @@ class DBusRole(slip.dbus.service.Object):
                                                 self._escaped_name,
                                                 instance_escaped_name),
                                   persistent=self.persistent)
+
+                # During roled startup (the only time this function should be
+                # called), if any role is in a transitional state, it can only
+                # mean that roled was terminated while it was still supposed
+                # to be doing something.
+                # Always set the state to ERROR here if it's in a transitional state,
+                # otherwise we won't be able to clean it up.
+                if role._settings["state"] in TRANSITIONAL_STATES:
+                    role.change_state(state=ERROR,
+                                      write=True,
+                                      error="roled terminated unexpectedly")
+
                 self._instances[instance_escaped_name] = role
 
         self.timeout_restart()
