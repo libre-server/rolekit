@@ -18,6 +18,7 @@ BuildRequires: polkit-devel
 
 BuildRequires: python3-devel
 Requires: python3-dbus
+Requires: python3-slip >= 0.6.4
 Requires: python3-slip-dbus
 Requires: python3-decorator
 
@@ -119,6 +120,9 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Sat Sep 19 2015 Nils Philippsen <nils@redhat.com> 0.4.0-0.dev
+- require python3-slip >= 0.6.4
+
 * Thu Jul 09 2015 Stephen Gallagher <sgallagh@redhat.com> 0.4.0-0.dev
 - Switch to python3 on platforms that support it
 - Add support for older versions of postgresql

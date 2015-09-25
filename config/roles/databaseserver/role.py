@@ -26,6 +26,10 @@ import slip.dbus.service
 import pwd
 import grp
 import os
+import errno
+import re
+
+from slip.util.files import linkfile, overwrite_safely
 
 from rolekit.config import ROLEKIT_ROLES, READY_TO_START, RUNNING, DEPLOYING, \
     REDEPLOYING, DECOMMISSIONING, STARTING, STOPPING, UPDATING
@@ -44,6 +48,79 @@ from rolekit.util import generate_password
 # deployment that didn't have the initialization run.
 deployed_states = (READY_TO_START, RUNNING, DEPLOYING, REDEPLOYING,
                    DECOMMISSIONING, STARTING, STOPPING, UPDATING)
+
+def _tweak_lines(lines_iterable, tweaking_rules, append_if_missing=False):
+    """Tweak lines of text according to the supplied rules.
+
+`lines_iterable`: the text to be tweaked
+
+`tweaking rules`: a sequence of rules, each of which is a dict with the
+    following keys:
+
+    `regex`: regular expression to match, compiled or as a string, mandatory
+    `replace`: text with which  to replace a matched regular expression, can
+        access matched groups in `regex`
+    `append`: line to append after the line that matched `regex`
+    `append_if_missing`: whether or not to append `replace` or `append` after
+        all lines are processed if `regex` never matched
+    `apply_multi`: whether or not to apply the rule to the whole text
+
+    Rule dicts will be manipulated when the function is executed.
+
+`append_if_missing`: default value for individual rules if it isn't set
+    explicitly
+
+BUGS: Much too unwieldy."""
+
+    # Compile all regexes, apply defaults
+    for rule in tweaking_rules:
+        regex = rule['regex']
+        if isinstance(regex, str):
+            rule['regex'] = re.compile(regex)
+        rule.setdefault('apply_multi', True)
+        rule.setdefault('append_if_missing', append_if_missing)
+
+    # which regexes triggered a rule to be applied
+    found_regexes = set()
+    # which regexes to ignore (i.e. after being encountered if they are
+    # to be applied only once
+    ignore_regexes = set()
+
+    for line in lines_iterable:
+        # lines which should be appended after the currently processed
+        # one
+        lines_to_append = []
+        for rule in tweaking_rules:
+            regex = rule['regex']
+            # don't process regexes which were applied once if apply_multi ==
+            # False
+            if regex not in ignore_regexes:
+                m = regex.search(line)
+                if m:
+                    # bookkeeping
+                    found_regexes.add(regex)
+                    if not rule['apply_multi']:
+                        ignore_regexes.add(regex)
+                    # apply rule
+                    if 'replace' in rule:
+                        line = regex.sub(rule['replace'], line)
+                    if 'append' in rule:
+                        lines_to_append.append(rule['append'])
+        # yield processed line...
+        yield line
+        # ...and lines to be appended, if any
+        for l in lines_to_append:
+            yield l + "\n"
+
+    # append lines of rules which didn't match
+    for rule in tweaking_rules:
+        if rule['append_if_missing'] and \
+                rule['regex'] not in found_regexes:
+            if 'replace' in rule:
+                yield rule['replace'] + "\n"
+            if 'append' in rule:
+                yield rule['append'] + "\n"
+
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
@@ -253,34 +330,91 @@ class Role(RoleBase):
         if first_instance:
             # Then update the server configuration to accept network
             # connections.
-            # edit postgresql.conf to add listen_addresses = '*'
             log.debug2("TRACE: Opening access to external addresses")
-            sed_args = [ "/bin/sed",
-                         "-e", "s@^[#]listen_addresses\W*=\W*'.*'@listen_addresses = '\*'@",
-                         "-i.rksave", values['postgresql_conf'] ]
-            result = yield async.subprocess_future(sed_args)
 
-            if result.status:
-                # If the subprocess returned non-zero, raise an exception
+            # edit postgresql.conf to add listen_addresses = '*'
+            conffile = values['postgresql_conf']
+            bakfile = conffile + ".rksave"
+
+            try:
+                linkfile(conffile, bakfile)
+
+                with open(conffile) as f:
+                    conflines = f.readlines()
+
+                tweaking_rules = [
+                    {
+                        'regex': r"^\s*#?\s*listen_addresses\s*=.*",
+                        'replace': r"listen_addresses = '*'",
+                        'append_if_missing': True
+                    }
+                ]
+
+                overwrite_safely(
+                        conffile,
+                        "".join(_tweak_lines(conflines, tweaking_rules)))
+            except Exception as e:
+                log.fatal("Couldn't write {!r}: {}".format(conffile, e))
+                # At this point, conffile is unmodified, otherwise
+                # overwrite_safely() would have succeeded
+                try:
+                    os.unlink(bakfile)
+                except Exception as x:
+                    if not (isinstance(x, OSError) and x.errno == errno.ENOENT):
+                        log.error("Couldn't remove {!r}: {}".format(bakfile, x))
+
                 raise RolekitError(COMMAND_FAILED,
-                                   "Changing listen_addresses in '%s' failed: %d" %
-                                   (values['postgresql_conf'], result.status))
+                        "Opening access to external addresses in '{}'"
+                        "failed: {}".format(conffile, e))
 
             # Edit pg_hba.conf to allow 'md5' auth on IPv4 and
             # IPv6 interfaces.
-            sed_args = [ "/bin/sed",
-                         "-e", "s@^host@#host@",
-                         "-e", '/^local/a # Use md5 method for all connections',
-                         "-e", '/^local/a host    all             all             all                     md5',
-                         "-i.rksave", values['pg_hba_conf'] ]
+            conffile = values['pg_hba_conf']
+            bakfile = conffile + ".rksave"
 
-            result = yield async.subprocess_future(sed_args)
+            try:
+                linkfile(conffile, bakfile)
 
-            if result.status:
-                # If the subprocess returned non-zero, raise an exception
+                with open(conffile) as f:
+                    conflines = f.readlines()
+
+                tweaking_rules = [
+                    {
+                        'regex': r"^\s*host((?:\s.*)$)",
+                        'replace': r"#host\1"
+                    },
+                    {
+                        'regex': r"^\s*local(?:\s.*|)$",
+                        'append': "# Use md5 method for all connections\nhost    all             all             all                     md5"
+                    }
+                ]
+
+                overwrite_safely(
+                        conffile,
+                        "".join(_tweak_lines(conflines, tweaking_rules)))
+            except Exception as e:
+                log.fatal("Couldn't write {!r}: {}".format(conffile, e))
+                # At this point, conffile is unmodified, otherwise
+                # overwrite_safely() would have succeeded
+                try:
+                    os.unlink(bakfile)
+                except Exception as x:
+                    if not (isinstance(x, OSError) and x.errno == errno.ENOENT):
+                        log.error("Couldn't remove {!r}: {}".format(bakfile, x))
+
+                # Restore previous postgresql.conf from the backup
+                conffile = values['postgresql_conf']
+                bakfile = conffile + ".rksave"
+                try:
+                    os.rename(bakfile, conffile)
+                except Exception as x:
+                    log.error(
+                        "Couldn't restore {!r} from backup {!r}: {}".format(
+                            conffile, bakfile, x))
+
                 raise RolekitError(COMMAND_FAILED,
-                                   "Changing all connections to use md5 method in '%s' failed: %d" %
-                                   (values['pg_hba_conf'], result.status))
+                    "Changing all connections to use md5 method in '{}'"
+                    "failed: {}".format(values['pg_hba_conf'], e))
 
             # Restart the postgresql server to accept the new configuration
             log.debug2("TRACE: Restarting postgresql.service unit")
