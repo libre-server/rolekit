@@ -378,8 +378,7 @@ class Role(RoleBase):
                 IP(value)
             except ValueError as ve:
                 raise RolekitError(INVALID_VALUE,
-                                   "{0} is not a valid IP address"
-                                   .format(value))
+                        "{} is not a valid IP address: {}".format(value, ve))
             return True
 
         # We didn't recognize this argument
