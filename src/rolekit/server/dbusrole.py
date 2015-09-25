@@ -30,13 +30,15 @@ import slip.dbus
 import slip.dbus.service
 
 from rolekit import async
-from rolekit.config import *
-from rolekit.config.dbus import *
+from rolekit.config import ETC_ROLEKIT_ROLES
+from rolekit.config.dbus import DBUS_INTERFACE_ROLE, DBUS_PATH_ROLES, PK_ACTION_ALL
 from rolekit.logger import log
-from rolekit.server.decorators import *
+from rolekit.server.decorators import dbus_handle_exceptions
+from rolekit.server.decorators import dbus_service_method, handle_exceptions
 from rolekit.server.io.rolesettings import RoleSettings
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit.dbus_utils import dbus_introspection_add_properties
+from rolekit.dbus_utils import dbus_label_escape, dbus_to_python
+from rolekit.errors import INVALID_INSTANCE, MISSING_CHECK, NAME_CONFLICT, RolekitError, TOO_MANY_INSTANCES, UNKNOWN_SETTING
 
 ############################################################################
 #

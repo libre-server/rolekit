@@ -29,8 +29,8 @@ import dbus
 import dbus.mainloop.glib
 import slip.dbus
 
-from rolekit.config import *
-from rolekit.config.dbus import *
+from rolekit.config.dbus import DBUS_INTERFACE, DBUS_INTERFACE_ROLE
+from rolekit.config.dbus import DBUS_INTERFACE_ROLE_INSTANCE, DBUS_PATH
 from rolekit.dbus_utils import dbus_to_python
 from rolekit.functions import b2u
 from decorator import decorator

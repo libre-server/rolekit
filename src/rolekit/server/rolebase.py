@@ -23,7 +23,6 @@ from gi.repository import GObject
 import sys
 import os
 
-from rolekit.server.io.systemd import SystemdExtensionUnits
 sys.modules['gobject'] = GObject
 
 import dbus
@@ -32,18 +31,27 @@ import slip.dbus
 import slip.dbus.service
 
 from rolekit import async
-from rolekit.config import *
-from rolekit.config.dbus import *
+from rolekit.config import DECOMMISSIONING, DEPLOYING, ERROR, NASCENT
+from rolekit.config import READY_TO_START, REDEPLOYING, RUNNING, STARTING
+from rolekit.config import STOPPING, UPDATING
+from rolekit.config import ETC_ROLEKIT_DEFERREDROLES, SYSTEMD_DEPS
+from rolekit.config import SYSTEMD_UNITS
+from rolekit.config import PERSISTENT_STATES, TRANSITIONAL_STATES
+from rolekit.config.dbus import DBUS_INTERFACE_ROLE_INSTANCE, PK_ACTION_ALL
 from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.io.rolesettings import RoleSettings
+from rolekit.server.decorators import dbus_handle_exceptions
+from rolekit.server.decorators import dbus_service_method
 from rolekit.server.io.systemd import enable_units
 from rolekit.server.io.systemd import disable_units
 from rolekit.server.io.systemd import SystemdTargetUnit
 from rolekit.server.io.systemd import SystemdFailureUnit
 from rolekit.server.io.systemd import SystemdExtensionUnits
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit.dbus_utils import dbus_introspection_add_properties
+from rolekit.dbus_utils import dbus_label_escape, dbus_to_python
+from rolekit.dbus_utils import SystemdJobHandler, target_unit_state
+from rolekit.errors import COMMAND_FAILED, INVALID_PROPERTY, INVALID_STATE
+from rolekit.errors import INVALID_VALUE, MISSING_CHECK, READONLY_SETTING
+from rolekit.errors import RolekitError, UNKNOWN_SETTING
 
 from firewall.client import FirewallClient
 from firewall.functions import getPortRange
@@ -656,7 +664,7 @@ class RoleBase(slip.dbus.service.Object):
         # default zone
         try:
             default_zone = fw.getDefaultZone()
-        except DBusException:
+        except dbus.exceptions.DBusException:
             # firewalld is not running
             log.error("Firewalld is not running or rolekit cannot access it")
             raise

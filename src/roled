@@ -27,12 +27,10 @@
 import os
 import sys
 import dbus
-import syslog
 import traceback
 import argparse
 
 from rolekit import config
-from rolekit.errors import *
 from rolekit.functions import roled_is_active
 from rolekit.logger import log, FileLog
 

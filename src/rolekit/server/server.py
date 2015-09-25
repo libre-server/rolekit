@@ -25,7 +25,7 @@
 #   Thomas Liu  <tliu@redhat.com>
 #   Dan Walsh <dwalsh@redhat.com>
 
-import os, sys
+import sys
 import signal
 
 # force use of pygobject3 in python-slip
@@ -37,7 +37,7 @@ import dbus.service
 import dbus.mainloop.glib
 import slip.dbus
 
-from rolekit.config.dbus import *
+from rolekit.config.dbus import DBUS_INTERFACE, DBUS_PATH
 from rolekit.logger import log
 from rolekit.server.roled import RoleD
 

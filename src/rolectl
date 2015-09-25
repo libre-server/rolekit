@@ -26,16 +26,14 @@ import sys
 sys.modules['gobject'] = GObject
 
 import argparse
-import dbus
 import os
 import json
 
-from rolekit.client import *
-from rolekit.errors import *
-from rolekit.functions import joinArgs, splitArgs
+from rolekit.client import RolekitClient
+from rolekit.errors import INVALID_NAME, NOT_AUTHORIZED, NOT_RUNNING
+from rolekit.errors import RolekitError
 from rolekit.server.io.rolesettings import RoleSettings
 from rolekit.rolectl import generate_nextboot_unit
-from rolekit.util import generate_password
 
 def __print(msg=None):
     if msg and not args.quiet:

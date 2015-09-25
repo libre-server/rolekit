@@ -20,16 +20,19 @@
 
 import dbus
 import dbus.service
-import slip.dbus
-import slip.dbus.service
 
-from rolekit.config import *
-from rolekit.config.dbus import *
-from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.rolebase import *
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit.server.rolebase import RoleBase
+from rolekit.errors import INVALID_PROPERTY, RolekitError
+
+# Some example imports:
+# from rolekit.dbus_utils import SystemdJobHandler
+# from rolekit import async
+# from rolekit.config import SYSTEMD_UNITS
+# from rolekit.errors import COMMAND_FAILED, INVALID_VALUE, INVALID_PROPERTY
+# from rolekit.errors import RolekitError
+# from rolekit.logger import log
+# from rolekit.server.io.systemd import enable_units
+# from rolekit.server.io.systemd import SystemdContainerServiceUnit
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.

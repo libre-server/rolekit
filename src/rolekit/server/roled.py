@@ -32,13 +32,18 @@ import dbus.service
 import slip.dbus
 import slip.dbus.service
 
-from rolekit.config import *
-from rolekit.config.dbus import *
+from rolekit.config import ERROR, RUNNING
+from rolekit.config import ETC_ROLEKIT_ROLES, ROLEKIT_ROLES
+from rolekit.config import ROLEKIT_VERSION
+from rolekit.config.dbus import DBUS_INTERFACE, DBUS_PATH_ROLES, PK_ACTION_ALL
 from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.dbusrole import *
-from rolekit.dbus_utils import dbus_to_python, dbus_label_escape
-from rolekit.errors import *
+from rolekit.server.decorators import dbus_handle_exceptions
+from rolekit.server.decorators import dbus_service_method, handle_exceptions
+from rolekit.server.dbusrole import DBusRole
+from rolekit.dbus_utils import dbus_introspection_add_properties
+from rolekit.dbus_utils import dbus_label_escape, dbus_to_python
+from rolekit.dbus_utils import target_unit_state
+from rolekit.errors import INVALID_ROLE, RolekitError
 
 ############################################################################
 #

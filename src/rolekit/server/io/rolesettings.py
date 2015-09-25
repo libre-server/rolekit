@@ -24,7 +24,7 @@ import errno
 import shutil
 import json
 
-from rolekit.config import *
+from rolekit.config import ETC_ROLEKIT_ROLES, ETC_ROLEKIT_DEFERREDROLES
 from rolekit.logger import log
 
 class RoleSettings(dict):

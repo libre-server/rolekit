@@ -21,8 +21,6 @@
 
 import dbus
 import dbus.service
-import slip.dbus
-import slip.dbus.service
 import pwd
 import grp
 import os
@@ -34,12 +32,13 @@ from slip.util.files import linkfile, overwrite_safely
 from rolekit.config import ROLEKIT_ROLES, READY_TO_START, RUNNING, DEPLOYING, \
     REDEPLOYING, DECOMMISSIONING, STARTING, STOPPING, UPDATING
 
-from rolekit.config.dbus import *
+from rolekit.dbus_utils import SystemdJobHandler
 from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.rolebase import *
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit.server.rolebase import RoleBase
+from rolekit import async
+from rolekit.errors import COMMAND_FAILED
+from rolekit.errors import INVALID_PROPERTY, INVALID_SETTING, INVALID_VALUE
+from rolekit.errors import MISSING_ID, RolekitError
 from rolekit.util import generate_password
 
 # A list of states that may indicate that another instance of the DB

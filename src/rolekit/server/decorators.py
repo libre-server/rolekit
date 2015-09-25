@@ -23,7 +23,7 @@ from dbus.exceptions import DBusException
 from decorator import decorator
 
 from rolekit.logger import log
-from rolekit.errors import *
+from rolekit.errors import RolekitError
 
 ############################################################################
 #

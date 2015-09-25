@@ -20,26 +20,18 @@
 
 import dbus
 import dbus.service
-import slip.dbus
-import slip.dbus.service
-import subprocess
 import socket
-import copy
 import string
 import os
 import random
 import re
 
-from concurrent.futures import Future
-
-from rolekit.config import *
-from rolekit.config.dbus import *
 from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.rolebase import *
+from rolekit.server.rolebase import RoleBase
 from rolekit.server.io.hostname import set_hostname
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit import async
+from rolekit.errors import COMMAND_FAILED, INVALID_PROPERTY, INVALID_VALUE
+from rolekit.errors import MISSING_CHECK, RolekitError
 from rolekit.util import generate_password
 from IPy import IP
 

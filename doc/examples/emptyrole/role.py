@@ -19,9 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import dbus.service
-from rolekit.server.rolebase import *
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+from rolekit.server.rolebase import RoleBase
+from rolekit.server.decorators import dbus_handle_exceptions
+from rolekit.logger import log
+from rolekit.errors import INVALID_PROPERTY, RolekitError
+from rolekit.config.dbus import DBUS_INTERFACE_ROLE_INSTANCE
 
 class Role(RoleBase):
     # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
