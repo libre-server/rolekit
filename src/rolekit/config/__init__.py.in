@@ -74,3 +74,6 @@ UPDATING = "updating"
 PERSISTENT_STATES = [ NASCENT, READY_TO_START, RUNNING, ERROR ]
 TRANSITIONAL_STATES = [ DEPLOYING, REDEPLOYING, DECOMMISSIONING,
                         STARTING, STOPPING, UPDATING ]
+
+# instance and type name regular expression
+VALIDATE_NAME_REGEXP = "^[A-Za-z0-9][A-Za-z0-9_\-\.]*$"

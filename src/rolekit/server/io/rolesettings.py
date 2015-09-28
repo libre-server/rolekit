@@ -26,12 +26,19 @@ import json
 
 from rolekit.config import ETC_ROLEKIT_ROLES, ETC_ROLEKIT_DEFERREDROLES
 from rolekit.logger import log
+from rolekit.util import validate_name
 
 class RoleSettings(dict):
     """ Rolesettings store """
 
     def __init__(self, type_name, name, deferred=False, *args, **kwargs):
         super(RoleSettings, self).__init__(*args, **kwargs)
+
+        # If name is given check it
+        if name:
+            validate_name(name)
+        # Check type name
+        validate_name(type_name)
 
         self._name = name
         self._type = type_name

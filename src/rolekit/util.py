@@ -20,6 +20,9 @@
 
 import string
 import random
+import re
+from rolekit.errors import *
+from rolekit.config import VALIDATE_NAME_REGEXP
 
 """
 Utilities shared by role implementations
@@ -38,3 +41,14 @@ def generate_password(size=16, complex=False):
                            for _ in range(size))
     return password
 
+def validate_name(name):
+    """
+    Check instance name for valid chars. See INSTANCE_NAME_REGEXP in
+    rolekit.config.
+
+    Raises INVALID_NAME error if the name is not valid,
+    returns True otherwise.
+    """
+    if not re.match(VALIDATE_NAME_REGEXP, name):
+        raise RolekitError(INVALID_NAME, "'%s' is not a valid name." % name)
+    return True
