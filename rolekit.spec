@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.3.94
+Version: 0.4.0
 Release: 0%{?dist}
 URL: https://github.com/libre-server/rolekit
 License: GPLv2+
@@ -120,6 +120,9 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Mon Sep 28 2015 Stephen Gallagher <sgallagh@redhat.com> 0.4.0-0
+- Release 0.4.0
+
 * Sat Sep 19 2015 Nils Philippsen <nils@redhat.com> 0.4.0-0.dev
 - require python3-slip >= 0.6.4
 
