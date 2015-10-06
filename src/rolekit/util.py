@@ -21,7 +21,7 @@
 import string
 import random
 import re
-from rolekit.errors import *
+from rolekit.errors import RolekitError, INVALID_NAME
 from rolekit.config import VALIDATE_NAME_REGEXP
 
 """
