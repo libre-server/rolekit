@@ -30,7 +30,7 @@ import slip.dbus
 import slip.dbus.service
 
 from rolekit import async
-from rolekit.config import ETC_ROLEKIT_ROLES
+from rolekit.config import ETC_ROLEKIT_ROLES, TRANSITIONAL_STATES, ERROR
 from rolekit.config.dbus import DBUS_INTERFACE_ROLE, DBUS_PATH_ROLES, PK_ACTION_ALL
 from rolekit.logger import log
 from rolekit.server.decorators import dbus_handle_exceptions
