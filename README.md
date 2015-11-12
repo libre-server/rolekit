@@ -73,8 +73,9 @@ All options for the available roles can be found in their manual pages: rolekit.
 Development
 ===========
 To check out the source repository, you can use:
-
-  git clone https://github.com/libre-server/rolekit.git
+```
+git clone https://github.com/libre-server/rolekit.git
+```
 
 This will create a local copy of the repository.
 
