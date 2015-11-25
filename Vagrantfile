@@ -17,8 +17,8 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
 
   config.vm.define :rolekitdev do |rolekitdev|
-      rolekitdev.vm.box = "fedora-22"
-      rolekitdev.vm.box_url = "http://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Base-Vagrant-22-20150521.x86_64.vagrant-libvirt.box"
+      rolekitdev.vm.box = "fedora-23"
+      rolekitdev.vm.box_url = "https://download.fedoraproject.org/pub/fedora/linux/releases/23/Cloud/x86_64/Images/Fedora-Cloud-Base-Vagrant-23-20151030.x86_64.vagrant-libvirt.box"
       rolekitdev.vm.provision :shell, path: "contrib/vagrant/rolekitdev-bootstrap.sh"
       rolekitdev.vm.provider :libvirt do |domain|
           domain.memory = 1024

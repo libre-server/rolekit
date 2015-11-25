@@ -2,9 +2,21 @@
 
 dnf remove -y fedora-release-cloud
 rm -f /usr/lib/os-release /etc/firewalld/firewalld.conf
+
+# Temporary workaround for broken docker 1.8.2
+# There is a bug in 1.8.2 where it will fail the initialization of the
+# loopback device on first start-up. It will run fine as long as the
+# init was done by 1.7.0, so we force that version here
+dnf install -y docker --disablerepo=updates
+systemctl start docker.service
+systemctl stop docker.service
+
 dnf install -y fedora-release-server
 
 dnf install -y @buildsys-build rolekit libxslt graphviz polkit rng-tools
+
+# Now we can update to the latest docker as well
+dnf update -y docker
 
 dnf builddep -y /vagrant/rolekit.spec
 
