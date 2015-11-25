@@ -23,11 +23,10 @@ import dbus
 import pwd
 import slip.dbus
 import sys
-import urllib
 
 from concurrent.futures import Future
 from rolekit.logger import log
-from rolekit.config import READY_TO_START, RUNNING, REDEPLOYING, \
+from rolekit.config import READY_TO_START, RUNNING, \
                            STARTING, STOPPING, ERROR
 
 PY2 = sys.version < '3'
@@ -36,6 +35,7 @@ SYSTEMD_MANAGER_INTERFACE = "org.freedesktop.systemd1.Manager"
 SYSTEMD_MANAGER_NAME = "org.freedesktop.systemd1"
 SYSTEMD_MANAGER_PATH = "/org/freedesktop/systemd1"
 SYSTEMD_UNIT_INTERFACE = "org.freedesktop.systemd1.Unit"
+SYSTEMD_UNIT_PATH = SYSTEMD_MANAGER_PATH + "/unit"
 
 from xml.dom import minidom
 
@@ -309,6 +309,9 @@ def target_unit_state(target_unit):
         obj = bus.get_object(SYSTEMD_MANAGER_NAME, job_path)
         props = dbus.Interface(
             obj, dbus_interface='org.freedesktop.DBus.Properties')
-        return dbus_to_python(props.Get(SYSTEMD_UNIT_INTERFACE,
-                                        "ActiveState"))
-    return None
+        systemd_state = dbus_to_python(props.Get(SYSTEMD_UNIT_INTERFACE,
+                                       "ActiveState"))
+        rolekit_state = map_systemd_state(systemd_state);
+        log.debug1("Detected systemd state %s" % rolekit_state)
+        return rolekit_state
+    raise RolekitError(COMMAND_FAILED, "Could not get role state.")

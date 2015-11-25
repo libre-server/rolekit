@@ -60,6 +60,11 @@ def disable_units(units):
         job_handler.manager.DisableUnitFiles(units, False)
         job_handler.manager.Reload()
 
+def escape_systemd_unit(unit):
+    # This is quick-and-dirty; it is not a complete implementation
+    # It only addresses the escapes that we allow in our unit names
+    return unit.replace(".", "_2e").replace("-", "_2d")
+
 class SystemdTargetUnit(dict):
     """
     Class to create and write out the target units

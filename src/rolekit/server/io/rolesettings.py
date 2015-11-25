@@ -25,8 +25,10 @@ import shutil
 import json
 
 from rolekit.config import ETC_ROLEKIT_ROLES, ETC_ROLEKIT_DEFERREDROLES
+from rolekit.config import NASCENT, ERROR, SYSTEMD
 from rolekit.logger import log
 from rolekit.util import validate_name
+
 
 class RoleSettings(dict):
     """ Rolesettings store """
@@ -129,6 +131,28 @@ class RoleSettings(dict):
         for key,value in imported.items():
             self[key] = value
         del imported
+
+        # Every time we read this file in, we need to update the role status
+        # with the actual state of the target unit. We will do that in
+        # rolebase.py; for now we set the state to SYSTEMD to indicate that
+        # it has not yet been updated.
+        # If there is no state here, it is because this role is not yet
+        # deployed.
+        if "state" not in self:
+            self["state"] = NASCENT
+        elif self["state"] == ERROR or self["state"] == NASCENT:
+            # Do not change the state if we are in ERROR or NASCENT
+            # We don't want to reset this from systemd. In the ERROR case,
+            # this might result in losing the error data. In the NASCENT
+            # case, we would end up getting an error trying to retrieve a
+            # non-existent systemd unit state.
+            pass
+        else:
+            # Note: this should never get written out to the JSON settings
+            # file. It will always be updated immediately by roled when
+            # appropriate.
+            self["state"] = SYSTEMD
+
 
     def backup(self):
         try:

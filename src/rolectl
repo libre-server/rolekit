@@ -34,6 +34,7 @@ from rolekit.errors import INVALID_NAME, NOT_AUTHORIZED, NOT_RUNNING
 from rolekit.errors import RolekitError
 from rolekit.server.io.rolesettings import RoleSettings
 from rolekit.rolectl import generate_nextboot_unit
+from rolekit.config import NASCENT
 
 def __print(msg=None):
     if msg and not args.quiet:
@@ -318,6 +319,16 @@ elif command == "deploy":
             __fail(str(e))
 
         deferredsettings.update(settings)
+
+        # Explicitly unset the state
+        # If we are carrying a state value here, it will fail when we actually
+        # do the deployment later.
+        try:
+            del deferredsettings["state"]
+        except KeyError:
+            # Don't fail if it wasn't set
+            pass
+
         deferredsettings.write()
 
         # Create a oneshot systemd unit file to perform the deployment

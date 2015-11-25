@@ -33,11 +33,12 @@ import slip.dbus.service
 from rolekit import async
 from rolekit.config import DECOMMISSIONING, DEPLOYING, ERROR, NASCENT
 from rolekit.config import READY_TO_START, REDEPLOYING, RUNNING, STARTING
-from rolekit.config import STOPPING, UPDATING
+from rolekit.config import STOPPING, UPDATING, SYSTEMD
 from rolekit.config import ETC_ROLEKIT_DEFERREDROLES, SYSTEMD_DEPS
 from rolekit.config import SYSTEMD_UNITS
 from rolekit.config import PERSISTENT_STATES, TRANSITIONAL_STATES
 from rolekit.config.dbus import DBUS_INTERFACE_ROLE_INSTANCE, PK_ACTION_ALL
+from rolekit.config.dbus import DBUS_PATH_ROLES
 from rolekit.logger import log
 from rolekit.server.decorators import dbus_handle_exceptions
 from rolekit.server.decorators import dbus_service_method
@@ -46,9 +47,12 @@ from rolekit.server.io.systemd import disable_units
 from rolekit.server.io.systemd import SystemdTargetUnit
 from rolekit.server.io.systemd import SystemdFailureUnit
 from rolekit.server.io.systemd import SystemdExtensionUnits
+from rolekit.server.io.systemd import escape_systemd_unit
 from rolekit.dbus_utils import dbus_introspection_add_properties
 from rolekit.dbus_utils import dbus_label_escape, dbus_to_python
 from rolekit.dbus_utils import SystemdJobHandler, target_unit_state
+from rolekit.dbus_utils import SYSTEMD_UNIT_PATH, SYSTEMD_MANAGER_NAME
+from rolekit.dbus_utils import map_systemd_state
 from rolekit.errors import COMMAND_FAILED, INVALID_PROPERTY, INVALID_STATE
 from rolekit.errors import INVALID_VALUE, MISSING_CHECK, READONLY_SETTING
 from rolekit.errors import RolekitError, UNKNOWN_SETTING
@@ -105,6 +109,7 @@ class RoleBase(slip.dbus.service.Object):
         super(RoleBase, self).__init__(*args, **kwargs)
         self.busname = args[0]
         self.path = args[1]
+        self._bus = slip.dbus.SystemBus()
         self._parent = parent
         self._name = name
         self._escaped_name = dbus_label_escape(name)
@@ -122,6 +127,21 @@ class RoleBase(slip.dbus.service.Object):
         # No loaded self._settings, set state to NASCENT
         if not "state" in self._settings:
             self._settings["state"] = NASCENT
+        elif self._settings["state"] == SYSTEMD:
+            # We need to get the current state from systemd
+            try:
+                self._settings["state"] = target_unit_state(self.target_unit)
+            except:
+                # If we couldn't get the target state, we need to assume that
+                # it is ERROR
+                self._settings["state"] = ERROR
+                self.timeout_restart()
+                return
+
+            # Then we need to set up a signal monitor to update this state
+            # if it changes in systemd
+            self.monitor_unit()
+
 
         self.timeout_restart()
 
@@ -467,6 +487,22 @@ class RoleBase(slip.dbus.service.Object):
         if self._settings["state"] in args:
             return
         raise RolekitError(INVALID_STATE, "Not in state '%s', but '%s'" % ("' or '".join(args), self._settings["state"]))
+
+
+    def monitor_unit(self):
+            objpath = "%s/%s" % (SYSTEMD_UNIT_PATH, self.target_unit)
+            escaped_objpath = escape_systemd_unit(objpath)
+
+            self._bus.add_signal_receiver(
+                handler_function=self.update_unit_state,
+                bus_name=SYSTEMD_MANAGER_NAME,
+                path=escaped_objpath,
+                signal_name="PropertiesChanged")
+
+    def update_unit_state(self, interface, changed, invalidated):
+        if "ActiveState" in changed:
+            self.change_state(state=map_systemd_state(changed["ActiveState"]),
+                              write=False)
 
     def change_state(self, state, error="", write=False):
         # change the state of the instance to state if it is valid and not in
@@ -974,6 +1010,10 @@ class RoleBase(slip.dbus.service.Object):
             log.debug9("Reloading systemd units\n")
             with SystemdJobHandler() as job_handler:
                 job_handler.manager.Reload()
+
+
+            # Start monitoring the role
+            self.monitor_unit()
 
             # Attempt to start the newly-deployed role
             # We do this because many role-installers will conclude by
