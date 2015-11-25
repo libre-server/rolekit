@@ -52,6 +52,7 @@ from rolekit.dbus_utils import SystemdJobHandler, target_unit_state
 from rolekit.errors import COMMAND_FAILED, INVALID_PROPERTY, INVALID_STATE
 from rolekit.errors import INVALID_VALUE, MISSING_CHECK, READONLY_SETTING
 from rolekit.errors import RolekitError, UNKNOWN_SETTING
+from rolekit.util import get_target_unit_name
 
 from firewall.client import FirewallClient
 from firewall.functions import getPortRange
@@ -115,8 +116,8 @@ class RoleBase(slip.dbus.service.Object):
         self._settings = settings
         self._settings.connect("changed", self._emit_property_changed)
         # TODO: place target_unit in settings
-        self.target_unit = "role-%s-%s.target" % (self.get_type(),
-                                                  self.get_name())
+        self.target_unit = get_target_unit_name(self.get_type(),
+                                                self.get_name())
 
         # No loaded self._settings, set state to NASCENT
         if not "state" in self._settings:
@@ -607,7 +608,7 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.start_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            target_unit = "role-%s-%s.target" % (self.get_type(), self.get_name())
+            target_unit = get_target_unit_name(self.get_type(), self.get_name())
 
             log.debug9("Enabling %s" % target_unit)
             enable_units([target_unit])
@@ -632,7 +633,7 @@ class RoleBase(slip.dbus.service.Object):
         log.debug1("%s.stop_services_async()", self._log_prefix)
 
         with SystemdJobHandler() as job_handler:
-            target_unit = "role-%s-%s.target" % (self.get_type(), self.get_name())
+            target_unit = get_target_unit_name(self.get_type(), self.get_name())
 
             log.debug9("Disabling %s" % target_unit)
             disable_units([target_unit])
@@ -1016,9 +1017,8 @@ class RoleBase(slip.dbus.service.Object):
 
 
     def create_target(self, target):
-        target['targetname'] = \
-            'role-%s-%s.target' % (target['Role'],
-                                   target['Instance'])
+        target['targetname'] = get_target_unit_name(target['Role'],
+                                                    target['Instance'])
         log.debug9("Creating target file {0}".format(target['targetname']))
 
         target['failurename'] = \

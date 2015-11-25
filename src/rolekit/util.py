@@ -52,3 +52,11 @@ def validate_name(name):
     if not re.match(VALIDATE_NAME_REGEXP, name):
         raise RolekitError(INVALID_NAME, "'%s' is not a valid name." % name)
     return True
+
+def get_target_unit_name(role_type, name):
+    """
+    :param role_type: Role type
+    :param name: Role instance name
+    :return: A string containing the name of the matching systemd unit
+    """
+    return "role-%s-%s.target" % (role_type, name)
