@@ -24,6 +24,7 @@
 import os
 import dbus.service
 from rolekit.server.rolebase import RoleBase
+from rolekit.server.rolebase import RoleDeploymentValues
 from rolekit import async
 from rolekit.dbus_utils import SystemdJobHandler
 from rolekit.config import SYSTEMD_UNITS
@@ -192,13 +193,11 @@ class Role(RoleBase):
         with SystemdJobHandler() as job_handler:
             job_handler.manager.Reload()
 
-        # Return the target dictionary
-        target = {'Role': 'memcache',
-                  'Instance': self.get_name(),
-                  'Description': "Memory Cache Role - %s" %
-                                 self.get_name(),
-                  'Wants': ['memcached_%s.service' % self.get_name()],
-                  'After': ['network.target']}
+        # Return the target information
+        target = RoleDeploymentValues(self.get_type(), self.get_name(),
+                                      "Memory Cache")
+        target.add_required_units(['memcached_%s.service' % self.get_name()])
+
         log.debug9("TRACE: exiting do_deploy_async")
         yield target
 

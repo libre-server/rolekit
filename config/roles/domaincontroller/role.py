@@ -28,6 +28,7 @@ import re
 
 from rolekit.logger import log
 from rolekit.server.rolebase import RoleBase
+from rolekit.server.rolebase import RoleDeploymentValues
 from rolekit.server.io.hostname import set_hostname
 from rolekit import async
 from rolekit.errors import COMMAND_FAILED, INVALID_PROPERTY, INVALID_VALUE
@@ -257,13 +258,11 @@ class Role(RoleBase):
             # If the subprocess returned non-zero, raise an exception
             raise RolekitError(COMMAND_FAILED, "%d" % result.status)
 
+
         # Create the systemd target definition
-        target = {'Role': 'domaincontroller',
-                  'Instance': self.get_name(),
-                  'Description': "Domain Controller Role - %s" %
-                                 self.get_name(),
-                  'Wants': ['ipa.service'],
-                  'After': ['syslog.target', 'network.target']}
+        target = RoleDeploymentValues(self.get_type(), self.get_name(),
+                                      "Domain Controller")
+        target.add_required_units(['ipa.service'])
 
         # We're done!
         yield target

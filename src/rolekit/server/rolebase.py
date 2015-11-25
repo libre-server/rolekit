@@ -44,9 +44,7 @@ from rolekit.server.decorators import dbus_handle_exceptions
 from rolekit.server.decorators import dbus_service_method
 from rolekit.server.io.systemd import enable_units
 from rolekit.server.io.systemd import disable_units
-from rolekit.server.io.systemd import SystemdTargetUnit
-from rolekit.server.io.systemd import SystemdFailureUnit
-from rolekit.server.io.systemd import SystemdExtensionUnits
+from rolekit.server.io.systemd import SystemdUnitParser
 from rolekit.server.io.systemd import escape_systemd_unit
 from rolekit.dbus_utils import dbus_introspection_add_properties
 from rolekit.dbus_utils import dbus_label_escape, dbus_to_python
@@ -1031,37 +1029,10 @@ class RoleBase(slip.dbus.service.Object):
 
 
     def create_target(self, target):
-        target['targetname'] = get_target_unit_name(target['Role'],
-                                                    target['Instance'])
-        log.debug9("Creating target file {0}".format(target['targetname']))
+        self._settings['target_unit'] = target.get_unit_name()
+        log.debug9("Creating target unit %s" % self._settings['target_unit'])
 
-        target['failurename'] = \
-            'role-fail-%s-%s.service' % (target['Role'],
-                                        target['Instance'])
-        log.debug9("Creating failure file {0}".format(target['failurename']))
-
-        # Create target unit
-        self._settings['target_unit'], target['extensions'] = \
-                SystemdTargetUnit(target).write()
-
-        # Create failure notification unit
-        self._settings['failure_unit'] = SystemdFailureUnit(target).write()
-
-        # Create extension units for required components
-        extunits = SystemdExtensionUnits(target)
-        # Store created units so we can clean them up on decommission
-        extunits_settings = {}
-        for dep in SYSTEMD_DEPS:
-            if dep in target:
-                for unit in target[dep]:
-                    if unit in extunits_settings:
-                        continue
-                    log.debug9("Creating extension unit for {0}".format(unit))
-                    extunits_settings[unit] = os.path.normpath(
-                            extunits.write(unit))
-        if extunits_settings:
-            self._settings['extension_units'] = list(
-                    extunits_settings.values())
+        target.write()
 
         # Tell systemd to reload the daemon configuration
         log.debug9("Reloading systemd units\n")
@@ -1069,21 +1040,18 @@ class RoleBase(slip.dbus.service.Object):
             job_handler.manager.Reload()
 
     def cleanup_targets(self):
-        # remove created units, avoid removing files multiple times
-        files = set(self._settings.get('extension_units', ()))
-        files.update({
-            self._settings[x] for x in ('target_unit', 'failure_unit')
-            if x in self._settings})
-
-        for f in files:
-            try:
-                os.unlink(f)
-            except Exception as e:
-                log.warning(
-                    "Couldn't remove unit '{}': {!s}\n".format(
-                        f, e))
-            else:
-                log.debug9("Removed unit '{}'\n".format(f))
+        # remove created target units
+        if "target_unit" not in self._settings:
+            return
+        try:
+            os.unlink(os.path.join(SYSTEMD_UNITS,
+                                   self._settings['target_unit']))
+        except Exception as e:
+            log.warning(
+                "Couldn't remove unit '{}': {!s}\n".format(
+                    self._settings['target_unit'], e))
+        else:
+            log.debug9("Removed unit '{}'\n".format(self._settings['target_unit']))
 
         # tell systemd about it
         with SystemdJobHandler() as job_handler:
@@ -1258,3 +1226,95 @@ class RoleBase(slip.dbus.service.Object):
                 raise
             else:
                 self._settings.write()
+
+class RoleDeploymentValues:
+    """
+    Class to hold return values from the RoleBase plugins
+    """
+    def __init__(self, role_name, instance_name, pretty):
+        """
+        :param role_name: The name of the type of role
+        :param instance_name: A unique name for this instance
+        :param pretty: The pretty name of the role for the description
+        """
+        self._role_name = role_name
+        self._instance_name = instance_name
+        self._desc = "%s Role - %s" % (pretty, instance_name)
+        self._requirements = []
+        self._unitname = get_target_unit_name(role_name, instance_name)
+
+
+    # Getters
+    def get_role_name(self):
+        return self._role_name
+
+    def get_instance_name(self):
+        return self._instance_name
+
+    def get_unit_name(self):
+        return self._unitname
+
+    def get_description(self):
+        return self._desc
+
+    # Setters
+    def set_role_name(self, name):
+        self._role_name = name
+
+    def set_instance_name(self, name):
+        self._instance_name = name
+
+    def set_unit_name(self, name):
+        self._unitname = name
+
+    def set_description(self, desc):
+        self._desc = desc
+
+    def add_required_units(self, units):
+        """
+        Add a list of systemd units to the role target
+        :param units: An iterable list of strings containing the names of
+                      systemd units
+        :return: None
+        """
+
+        self._requirements.extend(units)
+
+    # Get a systemd unit file from this object
+    def to_unitfile(self):
+        unitfile = SystemdUnitParser()
+
+        # == Create the [Unit] Section == #
+        unitfile['Unit'] = {}
+        unitfile['Unit']['Description'] = self._desc
+        unitfile['Unit']['Requires'] = tuple(self._requirements)
+        unitfile['Unit']['BindsTo'] = tuple(self._requirements)
+
+        # All roles are also assumed to require the network, so
+        # we will start it after network.target
+        unitfile['Unit']['After'] = "network.target"
+
+        # == Create the [Install] section == #
+        unitfile['Install'] = {}
+        unitfile['Install']['RequiredBy'] = tuple(self._requirements)
+
+        # All roles are enabled for the multi-user.target
+        unitfile['Install']['WantedBy'] = "multi-user.target"
+
+        return unitfile
+
+    def write(self, unit=None):
+        """
+        Write out a systemd unit file from these values
+        :param service: The name of the service unit. If unspecified, it will
+                        default to role-<roletype->-<instance>.target
+        :return:
+        """
+
+        if not unit:
+            unit = self._unitname
+
+        unitfile = self.to_unitfile()
+
+        with open(os.path.join(SYSTEMD_UNITS, unit), 'w') as configfile:
+            unitfile.write(configfile)

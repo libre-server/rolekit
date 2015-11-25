@@ -35,11 +35,13 @@ from rolekit.config import ROLEKIT_ROLES, READY_TO_START, RUNNING, DEPLOYING, \
 from rolekit.dbus_utils import SystemdJobHandler
 from rolekit.logger import log
 from rolekit.server.rolebase import RoleBase
+from rolekit.server.rolebase import RoleDeploymentValues
 from rolekit import async
 from rolekit.errors import COMMAND_FAILED
 from rolekit.errors import INVALID_PROPERTY, INVALID_SETTING, INVALID_VALUE
 from rolekit.errors import MISSING_ID, RolekitError
 from rolekit.util import generate_password
+
 
 # A list of states that may indicate that another instance of the DB
 # Role is already available on this system. It expressly ignores
@@ -427,25 +429,9 @@ class Role(RoleBase):
                     raise RolekitError(COMMAND_FAILED, "Restarting service failed: %s" % details)
 
         # Create the systemd target definition
-        #
-        # We use all of BindsTo, Requires and RequiredBy so we can ensure that
-        # all database instances are started and stopped together, since
-        # they're really all a single daemon service.
-        #
-        # The intention here is that starting or stopping any role instance or
-        # the main postgresql server will result in the same action happening
-        # to all roles. This way, rolekit maintains an accurate view of what
-        # instances are running and can communicate that to anyone registered
-        # to listen for notifications.
-
-        target = {'Role': 'databaseserver',
-                  'Instance': self.get_name(),
-                  'Description': "Database Server Role - %s" %
-                                 self.get_name(),
-                  'BindsTo': ['postgresql.service'],
-                  'Requires': ['postgresql.service'],
-                  'RequiredBy': ['postgresql.service'],
-                  'After': ['syslog.target', 'network.target']}
+        target = RoleDeploymentValues(self.get_type(), self.get_name(),
+                                      "Database Server")
+        target.add_required_units(['postgresql.service'])
 
         log.debug2("TRACE: Database server deployed")
 

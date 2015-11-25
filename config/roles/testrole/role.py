@@ -22,6 +22,7 @@ import dbus
 import dbus.service
 
 from rolekit.server.rolebase import RoleBase
+from rolekit.server.rolebase import RoleDeploymentValues
 from rolekit.errors import INVALID_PROPERTY, RolekitError
 
 # Some example imports:
@@ -65,12 +66,10 @@ class Role(RoleBase):
         # Do the magic
         #
         # In case of error raise an exception
-        target = {'Role': 'testrole',
-                  'Instance': self.get_name(),
-                  'Description': "Test Role - %s" %
-                                 self.get_name(),
-                  'Wants': ['rolekit.socket'],
-                  'After': ['syslog.target', 'network.target']}
+        target = RoleDeploymentValues(self.get_type(), self.get_name(),
+                                      "Test Role")
+        target.add_required_units(['rolekit.socket'])
+
         yield target
 
 
