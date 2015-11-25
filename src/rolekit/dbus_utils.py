@@ -27,6 +27,8 @@ import urllib
 
 from concurrent.futures import Future
 from rolekit.logger import log
+from rolekit.config import READY_TO_START, RUNNING, REDEPLOYING, \
+                           STARTING, STOPPING, ERROR
 
 PY2 = sys.version < '3'
 
@@ -290,6 +292,15 @@ class SystemdJobHandler(object):
         """
         assert self.__signal_match is not None and len(self.__pending_jobs) != 0
         return self.__future
+
+def map_systemd_state(systemd_state):
+    sd2rk_state = {
+        'active': RUNNING,
+        'inactive': READY_TO_START,
+        'activating': STARTING,
+        'deactivating': STOPPING,
+    }
+    return sd2rk_state.get(systemd_state, ERROR)
 
 def target_unit_state(target_unit):
     with SystemdJobHandler() as job_handler:
