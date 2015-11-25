@@ -1,6 +1,6 @@
 Summary: A server daemon with D-Bus interface providing a server roles
 Name: rolekit
-Version: 0.4.0.1
+Version: 0.5.0
 Release: 0%{?dist}
 URL: https://github.com/libre-server/rolekit
 License: GPLv2+
@@ -120,6 +120,10 @@ make install DESTDIR=%{buildroot}
 
 
 %changelog
+* Wed Nov 25 2015 Stephen Gallagher <sgallagh@redhat.com> 0.5.0-0
+- Revamp unit file creation logic
+- Update Vagrantfile to Fedora 23
+
 * Wed Oct 07 2015 Stephen Gallagher <sgallagh@redhat.com> 0.4.0.1-0
 - Fix import bugs
 
