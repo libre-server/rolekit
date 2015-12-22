@@ -32,7 +32,7 @@
 
   <!-- rolekit_roles -->
   <xsl:template match="config.rolekit_roles">
-    <xsl:text>@PREFIX@/rolekit/roles</xsl:text>
+    <xsl:text>@PREFIX@/lib/rolekit/roles</xsl:text>
   </xsl:template>
 
   <!-- italic filenames -->
