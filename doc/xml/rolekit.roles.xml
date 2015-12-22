@@ -13,6 +13,7 @@
   Copyright (C) 2014 Red Hat, Inc.
   Authors:
   Thomas Woerner <twoerner@redhat.com>
+  Nils Philippsen <nils@redhat.com>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -52,18 +53,13 @@
       The basic structure of a role:
     </para>
     <programlisting>
-import dbus
-import dbus.service
-import slip.dbus
-import slip.dbus.service
-
-from rolekit.config import *
-from rolekit.config.dbus import *
-from rolekit.logger import log
-from rolekit.server.decorators import *
-from rolekit.server.rolebase import *
-from rolekit.dbus_utils import *
-from rolekit.errors import *
+<comment>#from rolekit.config import ...
+#from rolekit.config.dbus import ...
+#from rolekit.logger import log
+#from rolekit.server.decorators import ...</comment>
+from rolekit.server.rolebase import RoleBase
+<comment>#from rolekit.dbus_utils import ...
+#from rolekit.errors import ...</comment>
 
 class Role(RoleBase):
 <comment>    # Use _DEFAULTS from RoleBase and overwrite settings or add new if needed.
