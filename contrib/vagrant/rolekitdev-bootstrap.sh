@@ -12,8 +12,8 @@ hostnamectl set-hostname vagrant.rolekit.lan
 
 cat << EOF >> /home/vagrant/.bashrc
 source /usr/share/git-core/contrib/completion/git-prompt.sh
-export GIT_PS1_SHOWDIRTYSTATE=1
-export PS1='[\u@\h:\W\$(__git_ps1 " (%s)")]\$\[\e[0m\] '
+GIT_PS1_SHOWDIRTYSTATE=1
+PS1='[\u@\h:\W\$(__git_ps1 " (%s)")]\$\[\e[0m\] '
 EOF
 
 RK_ARCH=$(uname -m)
