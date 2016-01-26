@@ -643,9 +643,6 @@ class RoleBase(slip.dbus.service.Object):
         with SystemdJobHandler() as job_handler:
             target_unit = get_target_unit_name(self.get_type(), self.get_name())
 
-            log.debug9("Disabling %s" % target_unit)
-            disable_units([target_unit])
-
             log.debug9("Stopping %s" % target_unit)
             job_path = job_handler.manager.StopUnit(target_unit, "replace")
             job_handler.register_job(job_path)
@@ -655,6 +652,9 @@ class RoleBase(slip.dbus.service.Object):
         if any([x for x in job_results.values() if x not in ("skipped", "done")]):
             details = ", ".join(["%s: %s" % item for item in job_results.items()])
             raise RolekitError(COMMAND_FAILED, "Stopping services failed: %s" % details)
+
+        log.debug9("Disabling %s" % target_unit)
+        disable_units([target_unit])
 
     def installFirewall(self):
         """install firewall"""
