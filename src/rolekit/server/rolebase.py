@@ -34,11 +34,10 @@ from rolekit import async
 from rolekit.config import DECOMMISSIONING, DEPLOYING, ERROR, NASCENT
 from rolekit.config import READY_TO_START, REDEPLOYING, RUNNING, STARTING
 from rolekit.config import STOPPING, UPDATING, SYSTEMD
-from rolekit.config import ETC_ROLEKIT_DEFERREDROLES, SYSTEMD_DEPS
+from rolekit.config import ETC_ROLEKIT_DEFERREDROLES
 from rolekit.config import SYSTEMD_UNITS
 from rolekit.config import PERSISTENT_STATES, TRANSITIONAL_STATES
 from rolekit.config.dbus import DBUS_INTERFACE_ROLE_INSTANCE, PK_ACTION_ALL
-from rolekit.config.dbus import DBUS_PATH_ROLES
 from rolekit.logger import log
 from rolekit.server.decorators import dbus_handle_exceptions
 from rolekit.server.decorators import dbus_service_method
