@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-10-13 20:30+0200\n"
+"POT-Creation-Date: 2017-07-11 10:25-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,16 +17,16 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: .././src/roled:138
+#: .././src/roled:136
 #, c-format
 msgid "Fork #1 failed: %d (%s)"
 msgstr ""
 
-#: .././src/roled:161
+#: .././src/roled:159
 #, c-format
 msgid "You need to be root to run %s."
 msgstr ""
 
-#: .././src/roled:171
+#: .././src/roled:169
 msgid "Not starting roled, already running."
 msgstr ""
