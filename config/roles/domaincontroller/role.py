@@ -191,7 +191,7 @@ class Role(RoleBase):
         ipa_install_args = [
             'ipa-server-install', '-U',
                 '-r', values['realm_name'],
-                '-d', values['domain_name'],
+                '-n', values['domain_name'],
                 '-p', values['dm_password'],
                 '-a', values['admin_password'],
             ]
