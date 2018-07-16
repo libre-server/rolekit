@@ -1,3 +1,0 @@
-REVIEWBOARD_URL = "https://reviewboard-fedoraserver.rhcloud.com"
-REPOSITORY = "rolekit"
-BRANCH = "master"
